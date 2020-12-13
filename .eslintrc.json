@@ -1,0 +1,27 @@
+{
+  "env": {
+    "commonjs": true,
+    "es2020": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended",
+    "prettier/@typescript-eslint"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 11
+  },
+  "plugins": ["@typescript-eslint", "node"],
+  "ignorePatterns": ["*.lock"],
+  "rules": {
+    "node/no-deprecated-api": "error",
+    "camelcase": "error",
+    "spaced-comment": "error",
+    "linebreak-style": ["error", "unix"],
+    "no-useless-escape": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off"
+  }
+}

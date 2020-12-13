@@ -1,0 +1,37 @@
+{
+  "appenders": {
+    "fileLog": {
+      "type": "file",
+      "filename": "./log/mizuhanome.log",
+      "layout": {
+        "type": "pattern",
+        "pattern": "[%d] (%z) [%p] %c - %m"
+      },
+      "pattern": "yyyyMMdd",
+      "backups": 6,
+      "level": "TRACE"
+    },
+    "consoleLog": {
+      "type": "console",
+      "layout": {
+        "type": "pattern",
+        "pattern": "%[[%d] (%z) [%p] %c -%] %m"
+      }
+    },
+    "consoleInfoLog": {
+      "type": "logLevelFilter",
+      "appender": "consoleLog",
+      "level": "INFO"
+    }
+  },
+  "categories": {
+    "default": {
+      "appenders": ["fileLog", "consoleInfoLog"],
+      "level": "TRACE"
+    },
+    "mizuhanome": {
+      "appenders": ["fileLog", "consoleInfoLog"],
+      "level": "TRACE"
+    }
+  }
+}
