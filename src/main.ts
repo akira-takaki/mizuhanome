@@ -12,6 +12,7 @@ interface Config {
   accessKey: string;
   capital: number;
   rate: number;
+  diffPoint: number;
 }
 
 /**
@@ -206,6 +207,8 @@ async function autobuy(): Promise<void> {
       10
     );
     logger.info("1回分の資金 : " + capitalForOne + "円");
+    const diffPoint = config.diffPoint;
+    logger.info("diffPoint : " + diffPoint);
     for (let i = 0; i < sortedRacecardArray.length; i++) {
       const racecard: RacecardResponse = sortedRacecardArray[i];
       logger.debug(
@@ -314,44 +317,69 @@ async function autobuy(): Promise<void> {
         .sort()
         .reverse();
       logger.debug("sortedPlayerPowers = " + util.inspect(sortedPlayerPowers));
-      const diffPoint = 3;
       let ticket: Ticket | undefined = undefined;
       const diffPoint3t = sortedPlayerPowers[2] - sortedPlayerPowers[3];
       const diffPoint2t = sortedPlayerPowers[1] - sortedPlayerPowers[2];
       if (diffPoint3t > diffPoint) {
         // 「予想の強さ」3位 と 4位 の差が diffPoint より大きければ
-        // 三連単
+        // 三連単 or 三連複
         const bet: number = parseInt(
           (
             Math.round((capitalForOne * (1 + diffPoint3t / 10)) / 100) * 100
           ).toString(),
           10
         );
-        const ticketNumber: TicketNumber = {
-          numberset: predictsResponse.top6["3t"][0],
-          bet: bet,
-        };
-        ticket = {
-          type: "3t",
-          numbers: [ticketNumber],
-        };
+        if (sortedPlayerPowers[1] - sortedPlayerPowers[2] > diffPoint) {
+          // 三連単
+          const ticketNumber: TicketNumber = {
+            numberset: predictsResponse.top6["3t"][0],
+            bet: bet,
+          };
+          ticket = {
+            type: "3t",
+            numbers: [ticketNumber],
+          };
+        } else {
+          // 三連複
+          const ticketNumber: TicketNumber = {
+            numberset: predictsResponse.top6["3f"][0],
+            bet: bet,
+          };
+          ticket = {
+            type: "3f",
+            numbers: [ticketNumber],
+          };
+        }
       } else if (diffPoint2t > diffPoint) {
         // 「予想の強さ」2位 と 3位 の差が diffPoint より大きければ
-        // 二連単
+        // 二連単 or 二連複
         const bet: number = parseInt(
           (
             Math.round((capitalForOne * (1 + diffPoint2t / 10)) / 100) * 100
           ).toString(),
           10
         );
-        const ticketNumber: TicketNumber = {
-          numberset: predictsResponse.top6["2t"][0],
-          bet: bet,
-        };
-        ticket = {
-          type: "2t",
-          numbers: [ticketNumber],
-        };
+        if (sortedPlayerPowers[0] - sortedPlayerPowers[1] > diffPoint) {
+          // 二連単
+          const ticketNumber: TicketNumber = {
+            numberset: predictsResponse.top6["2t"][0],
+            bet: bet,
+          };
+          ticket = {
+            type: "2t",
+            numbers: [ticketNumber],
+          };
+        } else {
+          // 二連複
+          const ticketNumber: TicketNumber = {
+            numberset: predictsResponse.top6["2f"][0],
+            bet: bet,
+          };
+          ticket = {
+            type: "2f",
+            numbers: [ticketNumber],
+          };
+        }
       } else {
         ticket = undefined;
       }
