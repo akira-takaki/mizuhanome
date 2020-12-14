@@ -44,6 +44,15 @@ interface RacecardResponse {
   /** 日付。年(4桁)-月(2桁)-日(2桁)。 */
   hd: string;
 
+  /** R番号 */
+  rno: number;
+
+  /** 場所の名前 */
+  jname: string;
+
+  /** 大会名 */
+  ktitle: string;
+
   /** 場外締切時刻 */
   deadlinegai: string;
 }
@@ -212,6 +221,9 @@ async function autobuy(): Promise<void> {
     for (let i = 0; i < sortedRacecardArray.length; i++) {
       const racecard: RacecardResponse = sortedRacecardArray[i];
       logger.debug(
+        racecard.jname + " " + racecard.ktitle + " R" + racecard.rno.toString()
+      );
+      logger.debug(
         `dataid=${racecard.dataid}, hd=${racecard.hd}, deadlinegai=${racecard.deadlinegai}`
       );
 
@@ -237,7 +249,7 @@ async function autobuy(): Promise<void> {
 
         if (sessionExpiredMinusOneMinute.isBefore(nowDayjs)) {
           // セッションの期限1分前を過ぎたらセッションを更新
-          logger.info("セッションの更新");
+          logger.debug("セッションの更新");
           const sessionRefreshUrl: string =
             baseUrl + "/refresh" + "?session=" + session;
           let refreshAxiosResponse: AxiosResponse<RefreshResponse>;
@@ -386,7 +398,7 @@ async function autobuy(): Promise<void> {
 
       // 舟券購入
       if (ticket !== undefined) {
-        logger.info("舟券購入");
+        logger.debug("舟券購入");
         const autobuyRequest: AutobuyRequest = {
           tickets: [ticket],
           private: true,
@@ -405,7 +417,7 @@ async function autobuy(): Promise<void> {
           autobuyAxiosResponse = await axios.post(autobuyUrl, autobuyRequest, {
             headers: { "Content-Type": "application/json" },
           });
-          logger.info(util.inspect(autobuyAxiosResponse.data));
+          logger.debug(util.inspect(autobuyAxiosResponse.data));
         } catch (err) {
           logger.error("舟券購入 失敗", err);
         }
