@@ -112,6 +112,66 @@ async function sleepFunc(millisecond: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, millisecond));
 }
 
+/**
+ * 賭け金を100円単位にする
+ */
+function round(bet: number): number {
+  const r: number = Math.round(bet / 100) * 100;
+  let i: number = parseInt(r.toString(), 10);
+  if (i < 100) {
+    i = 100;
+  }
+  return i;
+}
+
+/**
+ * 組番と賭け金を作る
+ */
+function makeTicketNumberArray(
+  totalBet: number,
+  numbersetArray: string[],
+  top: number
+): TicketNumber[] {
+  let split: number = top;
+  if (numbersetArray.length < split) {
+    split = numbersetArray.length;
+  }
+
+  // 1つの組番の賭け金を計算
+  const bet: number = round(totalBet / split);
+
+  const ticketNumberArray: TicketNumber[] = [];
+  for (let i = 0; i < split; i++) {
+    const ticketNumber: TicketNumber = {
+      numberset: numbersetArray[i],
+      bet: bet,
+    };
+    ticketNumberArray.push(ticketNumber);
+  }
+
+  return ticketNumberArray;
+}
+
+/**
+ * 券を作る
+ */
+function makeTicket(
+  type: string,
+  totalBet: number,
+  numbersetArray: string[],
+  top: number
+): Ticket {
+  const ticketNumberArray: TicketNumber[] = makeTicketNumberArray(
+    totalBet,
+    numbersetArray,
+    top
+  );
+  return {
+    type: type,
+    numbers: ticketNumberArray,
+  };
+}
+
 async function autobuy(): Promise<void> {
   logger.info("設定ファイルの読み込み");
   let config: Config;
@@ -329,68 +389,35 @@ async function autobuy(): Promise<void> {
         .sort()
         .reverse();
       logger.debug("sortedPlayerPowers = " + util.inspect(sortedPlayerPowers));
+
       let ticket: Ticket | undefined = undefined;
-      const diffPoint3t = sortedPlayerPowers[2] - sortedPlayerPowers[3];
-      const diffPoint2t = sortedPlayerPowers[1] - sortedPlayerPowers[2];
-      if (diffPoint3t > diffPoint) {
+
+      // 券種を決める
+      const diffPoint3 = sortedPlayerPowers[2] - sortedPlayerPowers[3];
+      const diffPoint2 = sortedPlayerPowers[1] - sortedPlayerPowers[2];
+      if (diffPoint3 > diffPoint) {
         // 「予想の強さ」3位 と 4位 の差が diffPoint より大きければ
         // 三連単 or 三連複
-        const bet: number = parseInt(
-          (
-            Math.round((capitalForOne * (1 + diffPoint3t / 10)) / 100) * 100
-          ).toString(),
-          10
-        );
+        const totalBet: number = capitalForOne * (1 + diffPoint3 / 10);
         if (sortedPlayerPowers[1] - sortedPlayerPowers[2] > diffPoint) {
+          // 「予想の強さ」2位 と 3位 の差が diffPoint より大きければ
           // 三連単
-          const ticketNumber: TicketNumber = {
-            numberset: predictsResponse.top6["3t"][0],
-            bet: bet,
-          };
-          ticket = {
-            type: "3t",
-            numbers: [ticketNumber],
-          };
+          ticket = makeTicket("3t", totalBet, predictsResponse.top6["3t"], 6);
         } else {
           // 三連複
-          const ticketNumber: TicketNumber = {
-            numberset: predictsResponse.top6["3f"][0],
-            bet: bet,
-          };
-          ticket = {
-            type: "3f",
-            numbers: [ticketNumber],
-          };
+          ticket = makeTicket("3f", totalBet, predictsResponse.top6["3f"], 4);
         }
-      } else if (diffPoint2t > diffPoint) {
+      } else if (diffPoint2 > diffPoint) {
         // 「予想の強さ」2位 と 3位 の差が diffPoint より大きければ
         // 二連単 or 二連複
-        const bet: number = parseInt(
-          (
-            Math.round((capitalForOne * (1 + diffPoint2t / 10)) / 100) * 100
-          ).toString(),
-          10
-        );
+        const totalBet: number = capitalForOne * (1 + diffPoint2 / 10);
         if (sortedPlayerPowers[0] - sortedPlayerPowers[1] > diffPoint) {
+          // 「予想の強さ」1位 と 2位 の差が diffPoint より大きければ
           // 二連単
-          const ticketNumber: TicketNumber = {
-            numberset: predictsResponse.top6["2t"][0],
-            bet: bet,
-          };
-          ticket = {
-            type: "2t",
-            numbers: [ticketNumber],
-          };
+          ticket = makeTicket("2t", totalBet, predictsResponse.top6["2t"], 2);
         } else {
           // 二連複
-          const ticketNumber: TicketNumber = {
-            numberset: predictsResponse.top6["2f"][0],
-            bet: bet,
-          };
-          ticket = {
-            type: "2f",
-            numbers: [ticketNumber],
-          };
+          ticket = makeTicket("2f", totalBet, predictsResponse.top6["2f"], 1);
         }
       } else {
         ticket = undefined;
@@ -441,23 +468,23 @@ async function autobuy(): Promise<void> {
 async function main(): Promise<void> {
   logger.info("起動");
 
-  // 毎日 08:00 に実行
+  // 毎日 08:30 に実行
   cron.schedule(
-    "0 0 8 * * *",
+    "0 30 8 * * *",
     async () => {
       await autobuy();
     },
     { timezone: "Asia/Tokyo" }
   );
 
-  // 08:00を過ぎて起動されたら処理を始める
+  // 08:30を過ぎて起動されたら処理を始める
   const startDayjs: dayjs.Dayjs = dayjs()
     .set("hour", 8)
-    .set("minute", 0)
+    .set("minute", 30)
     .set("second", 0);
   const nowDayjs: dayjs.Dayjs = dayjs();
   if (nowDayjs.isAfter(startDayjs)) {
-    logger.info("08:00を過ぎたため実行");
+    logger.info("08:30を過ぎたため実行");
     await autobuy();
   }
 }
