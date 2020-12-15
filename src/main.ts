@@ -402,7 +402,7 @@ async function autobuy(): Promise<void> {
         if (sortedPlayerPowers[1] - sortedPlayerPowers[2] > diffPoint) {
           // 「予想の強さ」2位 と 3位 の差が diffPoint より大きければ
           // 三連単
-          ticket = makeTicket("3t", totalBet, predictsResponse.top6["3t"], 6);
+          ticket = makeTicket("3t", totalBet, predictsResponse.top6["3t"], 5);
         } else {
           // 三連複
           ticket = makeTicket("3f", totalBet, predictsResponse.top6["3f"], 2);
