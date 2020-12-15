@@ -405,7 +405,7 @@ async function autobuy(): Promise<void> {
           ticket = makeTicket("3t", totalBet, predictsResponse.top6["3t"], 6);
         } else {
           // 三連複
-          ticket = makeTicket("3f", totalBet, predictsResponse.top6["3f"], 4);
+          ticket = makeTicket("3f", totalBet, predictsResponse.top6["3f"], 2);
         }
       } else if (diffPoint2 > diffPoint) {
         // 「予想の強さ」2位 と 3位 の差が diffPoint より大きければ
@@ -414,7 +414,7 @@ async function autobuy(): Promise<void> {
         if (sortedPlayerPowers[0] - sortedPlayerPowers[1] > diffPoint) {
           // 「予想の強さ」1位 と 2位 の差が diffPoint より大きければ
           // 二連単
-          ticket = makeTicket("2t", totalBet, predictsResponse.top6["2t"], 2);
+          ticket = makeTicket("2t", totalBet, predictsResponse.top6["2t"], 1);
         } else {
           // 二連複
           ticket = makeTicket("2f", totalBet, predictsResponse.top6["2f"], 1);
