@@ -114,6 +114,16 @@ async function sleepFunc(millisecond: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, millisecond));
 }
 
+function bet100(autobuyRequest: AutobuyRequest) {
+  for (let i = 0; i < autobuyRequest.tickets.length; i++) {
+    const ticket: Ticket = autobuyRequest.tickets[i];
+    for (let j = 0; j < ticket.numbers.length; j++) {
+      const ticketNumber: TicketNumber = ticket.numbers[j];
+      ticketNumber.bet = 100;
+    }
+  }
+}
+
 function calcPower(powers: number[], top: number): number {
   let topPower = 0;
   for (let i = 0; i < top; i++) {
@@ -470,6 +480,11 @@ async function autobuy(): Promise<void> {
           private: true,
         };
         logger.debug("舟券 = " + util.inspect(autobuyRequest, { depth: null }));
+
+        // お試し START
+        // 賭け金をすべて 100円 にする
+        bet100(autobuyRequest);
+        // お試し END
 
         // 舟券購入 処理
         const autobuyUrl: string =
