@@ -13,6 +13,8 @@ interface Config {
   capital: number;
   rate: number;
   diffPoint: number;
+  top3BasePower: number;
+  top2BasePower: number;
 }
 
 /**
@@ -110,6 +112,14 @@ const logger: log4js.Logger = log4js.getLogger("mizuhanome");
  */
 async function sleepFunc(millisecond: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, millisecond));
+}
+
+function calcPower(powers: number[], top: number): number {
+  let topPower = 0;
+  for (let i = 0; i < top; i++) {
+    topPower = topPower + powers[i];
+  }
+  return topPower;
 }
 
 /**
@@ -263,8 +273,8 @@ async function autobuy(): Promise<void> {
       }
     );
 
-    // 各レースで舟券購入
-    const capital = config.capital;
+    // 設定値確認
+    const capital: number = config.capital;
     logger.info("資金 : " + capital + "円");
     const capitalForDay: number = parseInt(
       ((capital / 100) * config.rate).toString(),
@@ -276,12 +286,23 @@ async function autobuy(): Promise<void> {
       10
     );
     logger.info("1回分の資金 : " + capitalForOne + "円");
-    const diffPoint = config.diffPoint;
+    const diffPoint: number = config.diffPoint;
     logger.info("diffPoint : " + diffPoint);
+    const top3BasePower: number = config.top3BasePower;
+    logger.info("top3BasePower : " + top3BasePower);
+    const top2BasePower: number = config.top2BasePower;
+    logger.info("top2BasePower : " + top2BasePower);
+
+    // 各レースで舟券購入
     for (let i = 0; i < sortedRacecardArray.length; i++) {
       const racecard: RacecardResponse = sortedRacecardArray[i];
       logger.debug(
-        racecard.jname + " " + racecard.ktitle + " R" + racecard.rno.toString()
+        "title : " +
+          racecard.jname +
+          "_" +
+          racecard.ktitle +
+          "_R" +
+          racecard.rno.toString()
       );
       logger.debug(
         `dataid=${racecard.dataid}, hd=${racecard.hd}, deadlinegai=${racecard.deadlinegai}`
@@ -398,11 +419,24 @@ async function autobuy(): Promise<void> {
       if (diffPoint3 > diffPoint) {
         // 「予想の強さ」3位 と 4位 の差が diffPoint より大きければ
         // 三連単 or 三連複
-        const totalBet: number = capitalForOne * (1 + diffPoint3 / 10);
+
+        // トータル賭け金を決める
+        const top3Power = calcPower(sortedPlayerPowers, 3);
+        const top3DiffPoint: number = top3Power - top3BasePower;
+        const totalBet: number = capitalForOne * (1 + top3DiffPoint / 10);
+
         if (sortedPlayerPowers[1] - sortedPlayerPowers[2] > diffPoint) {
           // 「予想の強さ」2位 と 3位 の差が diffPoint より大きければ
           // 三連単
-          ticket = makeTicket("3t", totalBet, predictsResponse.top6["3t"], 5);
+          let top: number;
+          if (sortedPlayerPowers[0] - sortedPlayerPowers[1] > diffPoint) {
+            // 「予想の強さ」1位 と 2位 の差が diffPoint より大きければ
+            // 券の数を絞る
+            top = 3;
+          } else {
+            top = 4;
+          }
+          ticket = makeTicket("3t", totalBet, predictsResponse.top6["3t"], top);
         } else {
           // 三連複
           ticket = makeTicket("3f", totalBet, predictsResponse.top6["3f"], 2);
@@ -410,7 +444,12 @@ async function autobuy(): Promise<void> {
       } else if (diffPoint2 > diffPoint) {
         // 「予想の強さ」2位 と 3位 の差が diffPoint より大きければ
         // 二連単 or 二連複
-        const totalBet: number = capitalForOne * (1 + diffPoint2 / 10);
+
+        // トータル賭け金を決める
+        const top2Power = calcPower(sortedPlayerPowers, 2);
+        const top2DiffPoint: number = top2Power - top2BasePower;
+        const totalBet: number = capitalForOne * (1 + top2DiffPoint / 10);
+
         if (sortedPlayerPowers[0] - sortedPlayerPowers[1] > diffPoint) {
           // 「予想の強さ」1位 と 2位 の差が diffPoint より大きければ
           // 二連単
