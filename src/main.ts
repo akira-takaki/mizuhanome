@@ -439,7 +439,26 @@ async function autobuy(): Promise<void> {
           // 「予想の強さ」2位 と 3位 の差が diffPoint より大きければ
           // 三連単
           let top: number;
-          if (sortedPlayerPowers[0] - sortedPlayerPowers[1] > diffPoint) {
+          if (
+            sortedPlayerPowers[0] - sortedPlayerPowers[1] > diffPoint * 2 &&
+            sortedPlayerPowers[1] - sortedPlayerPowers[2] > diffPoint * 2
+          ) {
+            // 「予想の強さ」1位 と 2位 の差が (diffPoint * 2) より大きく
+            // かつ
+            // 「予想の強さ」2位 と 3位 の差が (diffPoint * 2) より大きければ
+            // 券の数を絞る
+            top = 1;
+          } else if (
+            sortedPlayerPowers[0] - sortedPlayerPowers[1] >
+            diffPoint * 2
+          ) {
+            // 「予想の強さ」1位 と 2位 の差が (diffPoint * 2) より大きければ
+            // 券の数を絞る
+            top = 2;
+          } else if (
+            sortedPlayerPowers[0] - sortedPlayerPowers[1] >
+            diffPoint
+          ) {
             // 「予想の強さ」1位 と 2位 の差が diffPoint より大きければ
             // 券の数を絞る
             top = 3;
