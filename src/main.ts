@@ -6,15 +6,15 @@ import dayjs from "dayjs";
 import csvtojson from "csvtojson";
 import * as util from "util";
 
+/**
+ * 設定
+ */
 interface Config {
   baseUrl: string;
   email: string;
   accessKey: string;
   capital: number;
   rate: number;
-  diffPoint: number;
-  top3BasePower: number;
-  top2BasePower: number;
 }
 
 /**
@@ -76,6 +76,22 @@ interface PredictsResponse {
 }
 
 /**
+ * オッズ
+ */
+interface Odds {
+  [key: string]: string;
+}
+
+/**
+ * 期待値
+ */
+interface ExpectedValue {
+  type: string;
+  numberset: string;
+  expectedValue: number;
+}
+
+/**
  * 舟券番号、賭け金
  */
 interface TicketNumber {
@@ -124,12 +140,40 @@ function bet100(autobuyRequest: AutobuyRequest) {
   }
 }
 
-function calcPower(powers: number[], top: number): number {
-  let topPower = 0;
-  for (let i = 0; i < top; i++) {
-    topPower = topPower + powers[i];
+/**
+ * 期待値を計算する
+ */
+function calcExpectedValue(
+  playerPowers: number[],
+  type: string,
+  top6: string[],
+  odds: Odds
+): ExpectedValue[] {
+  const expectedValueArray: ExpectedValue[] = [];
+
+  for (let i = 0; i < top6.length; i++) {
+    const numberset: string = top6[i];
+
+    // numberset の「予想の強さ」を集計する
+    let power = 0;
+    for (let j = 0; j < numberset.length; j++) {
+      const index: number = parseInt(numberset.substring(j, j + 1), 10) - 1;
+      power = power + playerPowers[index];
+    }
+
+    // numberset のオッズを取り出す
+    const oddsKey: string = "odds_" + type + numberset;
+    const numbersetOdds: number = parseFloat(odds[oddsKey]);
+
+    // 期待値を計算する
+    expectedValueArray.push({
+      type: type,
+      numberset: numberset,
+      expectedValue: (power / 300) * numbersetOdds,
+    });
   }
-  return topPower;
+
+  return expectedValueArray;
 }
 
 /**
@@ -145,51 +189,74 @@ function round(bet: number): number {
 }
 
 /**
- * 組番と賭け金を作る
- */
-function makeTicketNumberArray(
-  totalBet: number,
-  numbersetArray: string[],
-  top: number
-): TicketNumber[] {
-  let split: number = top;
-  if (numbersetArray.length < split) {
-    split = numbersetArray.length;
-  }
-
-  // 1つの組番の賭け金を計算
-  const bet: number = round(totalBet / split);
-
-  const ticketNumberArray: TicketNumber[] = [];
-  for (let i = 0; i < split; i++) {
-    const ticketNumber: TicketNumber = {
-      numberset: numbersetArray[i],
-      bet: bet,
-    };
-    ticketNumberArray.push(ticketNumber);
-  }
-
-  return ticketNumberArray;
-}
-
-/**
  * 券を作る
  */
 function makeTicket(
-  type: string,
   totalBet: number,
-  numbersetArray: string[],
-  top: number
-): Ticket {
-  const ticketNumberArray: TicketNumber[] = makeTicketNumberArray(
-    totalBet,
-    numbersetArray,
-    top
+  expectedValues: ExpectedValue[]
+): Ticket[] {
+  const bet: number = round(totalBet / expectedValues.length);
+
+  // 券種でソートする
+  const sortedExpectedValues: ExpectedValue[] = expectedValues.sort(
+    (e1, e2) => {
+      if (e1.type > e2.type) {
+        return 1;
+      } else if (e1.type < e2.type) {
+        return -1;
+      } else {
+        return 0;
+      }
+    }
   );
-  return {
-    type: type,
-    numbers: ticketNumberArray,
-  };
+
+  let prevType = "";
+  let group: ExpectedValue[] = [];
+  const tickets: Ticket[] = [];
+  for (let i = 0; i < sortedExpectedValues.length; i++) {
+    const expectedValue: ExpectedValue = sortedExpectedValues[i];
+
+    if (i === 0) {
+      prevType = expectedValue.type;
+    }
+
+    if (prevType !== expectedValue.type) {
+      // ブレイク処理
+      const ticketNumbers: TicketNumber[] = [];
+      for (let j = 0; j < group.length; j++) {
+        ticketNumbers.push({
+          numberset: group[j].numberset,
+          bet: bet,
+        });
+      }
+      tickets.push({
+        type: prevType,
+        numbers: ticketNumbers,
+      });
+
+      // 初期化
+      group = [];
+    }
+
+    group.push(expectedValue);
+    prevType = expectedValue.type;
+  }
+  if (group.length > 0) {
+    // ブレイク処理
+    const ticketNumbers: TicketNumber[] = [];
+    for (let j = 0; j < group.length; j++) {
+      ticketNumbers.push({
+        numberset: group[j].numberset,
+        bet: bet,
+      });
+    }
+    tickets.push({
+      type: prevType,
+      numbers: ticketNumbers,
+    });
+  }
+
+  return tickets;
 }
 
 async function autobuy(): Promise<void> {
@@ -296,12 +363,6 @@ async function autobuy(): Promise<void> {
       10
     );
     logger.info("1回分の資金 : " + capitalForOne + "円");
-    const diffPoint: number = config.diffPoint;
-    logger.info("diffPoint : " + diffPoint);
-    const top3BasePower: number = config.top3BasePower;
-    logger.info("top3BasePower : " + top3BasePower);
-    const top2BasePower: number = config.top2BasePower;
-    logger.info("top2BasePower : " + top2BasePower);
 
     // 各レースで舟券購入
     for (let i = 0; i < sortedRacecardArray.length; i++) {
@@ -392,6 +453,18 @@ async function autobuy(): Promise<void> {
         continue;
       }
 
+      // オッズ
+      const oddsUrl: string =
+        baseUrl + "/data/odds/" + racecard.dataid + "?session=" + session;
+      let oddsAxiosResponse: AxiosResponse;
+      try {
+        oddsAxiosResponse = await axios.get(oddsUrl);
+      } catch (err) {
+        logger.error("オッズ 失敗", err);
+        continue;
+      }
+      const odds: Odds = oddsAxiosResponse.data.body;
+
       // 直前予想
       const predictsType2Url: string =
         baseUrl +
@@ -414,88 +487,58 @@ async function autobuy(): Promise<void> {
       }
       logger.debug("直前予想 : " + util.inspect(predictsResponse));
 
-      // ===== 舟券選定 =====
-      // 出走選手の「予想の強さ」を降順にソート
-      const sortedPlayerPowers: number[] = predictsResponse.player_powers
-        .sort()
-        .reverse();
-      logger.debug("sortedPlayerPowers = " + util.inspect(sortedPlayerPowers));
+      // 三連単の期待値を計算
+      const expectedValueArray3t: ExpectedValue[] = calcExpectedValue(
+        predictsResponse.player_powers,
+        "3t",
+        predictsResponse.top6["3t"],
+        odds
+      );
 
-      let ticket: Ticket | undefined = undefined;
+      // 三連複の期待値を計算
+      const expectedValueArray3f: ExpectedValue[] = calcExpectedValue(
+        predictsResponse.player_powers,
+        "3f",
+        predictsResponse.top6["3f"],
+        odds
+      );
 
-      // 券種を決める
-      const diffPoint3 = sortedPlayerPowers[2] - sortedPlayerPowers[3];
-      const diffPoint2 = sortedPlayerPowers[1] - sortedPlayerPowers[2];
-      if (diffPoint3 > diffPoint) {
-        // 「予想の強さ」3位 と 4位 の差が diffPoint より大きければ
-        // 三連単 or 三連複
-
-        // トータル賭け金を決める
-        const top3Power = calcPower(sortedPlayerPowers, 3);
-        const top3DiffPoint: number = top3Power - top3BasePower;
-        const totalBet: number = capitalForOne * (1 + top3DiffPoint / 10);
-
-        if (sortedPlayerPowers[1] - sortedPlayerPowers[2] > diffPoint) {
-          // 「予想の強さ」2位 と 3位 の差が diffPoint より大きければ
-          // 三連単
-          let top: number;
-          if (
-            sortedPlayerPowers[0] - sortedPlayerPowers[1] > diffPoint * 2 &&
-            sortedPlayerPowers[1] - sortedPlayerPowers[2] > diffPoint * 2
-          ) {
-            // 「予想の強さ」1位 と 2位 の差が (diffPoint * 2) より大きく
-            // かつ
-            // 「予想の強さ」2位 と 3位 の差が (diffPoint * 2) より大きければ
-            // 券の数を絞る
-            top = 1;
-          } else if (
-            sortedPlayerPowers[0] - sortedPlayerPowers[1] >
-            diffPoint * 2
-          ) {
-            // 「予想の強さ」1位 と 2位 の差が (diffPoint * 2) より大きければ
-            // 券の数を絞る
-            top = 2;
-          } else if (
-            sortedPlayerPowers[0] - sortedPlayerPowers[1] >
-            diffPoint
-          ) {
-            // 「予想の強さ」1位 と 2位 の差が diffPoint より大きければ
-            // 券の数を絞る
-            top = 3;
+      // 三連単と三連複の期待値を合わせて降順ソートする
+      let expectedValueArray3: ExpectedValue[] = [];
+      expectedValueArray3 = expectedValueArray3.concat(expectedValueArray3t);
+      expectedValueArray3 = expectedValueArray3.concat(expectedValueArray3f);
+      const sortedExpectedValueArray3: ExpectedValue[] = expectedValueArray3
+        .sort((e1, e2) => {
+          if (e1.expectedValue > e2.expectedValue) {
+            return 1;
+          } else if (e1.expectedValue < e2.expectedValue) {
+            return -1;
           } else {
-            top = 4;
+            return 0;
           }
-          ticket = makeTicket("3t", totalBet, predictsResponse.top6["3t"], top);
-        } else {
-          // 三連複
-          ticket = makeTicket("3f", totalBet, predictsResponse.top6["3f"], 2);
-        }
-      } else if (diffPoint2 > diffPoint) {
-        // 「予想の強さ」2位 と 3位 の差が diffPoint より大きければ
-        // 二連単 or 二連複
+        })
+        .reverse();
+      logger.debug(
+        "sortedExpectedValueArray3=" +
+          util.inspect(sortedExpectedValueArray3, { depth: null })
+      );
 
-        // トータル賭け金を決める
-        const top2Power = calcPower(sortedPlayerPowers, 2);
-        const top2DiffPoint: number = top2Power - top2BasePower;
-        const totalBet: number = capitalForOne * (1 + top2DiffPoint / 10);
+      // TODO 将来は、期待値の閾値を決めて、それ以上のものだけ取り出す。
+      // TODO 閾値を超えるものがなければ舟券を購入しないこともある。
+      // 今は、期待値が高い2つを取り出す
+      const top2ExpectedValue: ExpectedValue[] = sortedExpectedValueArray3.slice(
+        0,
+        2
+      );
 
-        if (sortedPlayerPowers[0] - sortedPlayerPowers[1] > diffPoint) {
-          // 「予想の強さ」1位 と 2位 の差が diffPoint より大きければ
-          // 二連単
-          ticket = makeTicket("2t", totalBet, predictsResponse.top6["2t"], 1);
-        } else {
-          // 二連複
-          ticket = makeTicket("2f", totalBet, predictsResponse.top6["2f"], 1);
-        }
-      } else {
-        ticket = undefined;
-      }
+      // 券を作る
+      const tickets: Ticket[] = makeTicket(capitalForOne, top2ExpectedValue);
 
       // 舟券購入
-      if (ticket !== undefined) {
+      if (tickets.length > 0) {
         logger.debug("舟券購入");
         const autobuyRequest: AutobuyRequest = {
-          tickets: [ticket],
+          tickets: tickets,
           private: true,
         };
         logger.debug("舟券 = " + util.inspect(autobuyRequest, { depth: null }));

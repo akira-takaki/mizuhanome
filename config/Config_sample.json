@@ -3,8 +3,5 @@
   "email": "aaa@bbb.ccc",
   "accessKey": "aaabbbccc",
   "capital": 1000000,
-  "rate": 20,
-  "diffPoint": 4,
-  "top3BasePower": 150,
-  "top2BasePower": 100
+  "rate": 20
 }
