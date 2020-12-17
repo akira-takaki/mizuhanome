@@ -15,6 +15,7 @@ interface Config {
   accessKey: string;
   capital: number;
   rate: number;
+  thresholdExpectedValue: number;
 }
 
 /**
@@ -89,6 +90,9 @@ interface ExpectedValue {
   type: string;
   numberset: string;
   expectedValue: number;
+  power: number;
+  odds: number;
+  rank: number;
 }
 
 /**
@@ -130,16 +134,6 @@ async function sleepFunc(millisecond: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, millisecond));
 }
 
-function bet100(autobuyRequest: AutobuyRequest) {
-  for (let i = 0; i < autobuyRequest.tickets.length; i++) {
-    const ticket: Ticket = autobuyRequest.tickets[i];
-    for (let j = 0; j < ticket.numbers.length; j++) {
-      const ticketNumber: TicketNumber = ticket.numbers[j];
-      ticketNumber.bet = 100;
-    }
-  }
-}
-
 /**
  * 期待値を計算する
  */
@@ -170,6 +164,9 @@ function calcExpectedValue(
       type: type,
       numberset: numberset,
       expectedValue: (power / 300) * numbersetOdds,
+      power: power,
+      odds: numbersetOdds,
+      rank: i + 1,
     });
   }
 
@@ -195,7 +192,11 @@ function makeTicket(
   totalBet: number,
   expectedValues: ExpectedValue[]
 ): Ticket[] {
-  const bet: number = round(totalBet / expectedValues.length);
+  if (expectedValues.length <= 0) {
+    return [];
+  }
+
+  const bet: number = totalBet / expectedValues.length;
 
   // 券種でソートする
   const sortedExpectedValues: ExpectedValue[] = expectedValues.sort(
@@ -226,7 +227,7 @@ function makeTicket(
       for (let j = 0; j < group.length; j++) {
         ticketNumbers.push({
           numberset: group[j].numberset,
-          bet: bet,
+          bet: round(bet * (1 + (6 - group[j].rank) / 10)),
         });
       }
       tickets.push({
@@ -247,7 +248,7 @@ function makeTicket(
     for (let j = 0; j < group.length; j++) {
       ticketNumbers.push({
         numberset: group[j].numberset,
-        bet: bet,
+        bet: round(bet * (1 + (6 - group[j].rank) / 10)),
       });
     }
     tickets.push({
@@ -363,6 +364,8 @@ async function autobuy(): Promise<void> {
       10
     );
     logger.info("1回分の資金 : " + capitalForOne + "円");
+    const thresholdExpectedValue: number = config.thresholdExpectedValue;
+    logger.info("thresholdExpectedValue=" + thresholdExpectedValue);
 
     // 各レースで舟券購入
     for (let i = 0; i < sortedRacecardArray.length; i++) {
@@ -523,16 +526,17 @@ async function autobuy(): Promise<void> {
           util.inspect(sortedExpectedValueArray3, { depth: null })
       );
 
-      // TODO 将来は、期待値の閾値を決めて、それ以上のものだけ取り出す。
-      // TODO 閾値を超えるものがなければ舟券を購入しないこともある。
-      // 今は、期待値が高い2つを取り出す
-      const top2ExpectedValue: ExpectedValue[] = sortedExpectedValueArray3.slice(
-        0,
-        2
+      // 期待値の閾値を決めて、それ以上のものだけ取り出す。
+      // 閾値を超えるものがなければ舟券を購入しないこともある。
+      const filteredExpectedValue: ExpectedValue[] = sortedExpectedValueArray3.filter(
+        (each) => each.expectedValue >= thresholdExpectedValue
       );
 
       // 券を作る
-      const tickets: Ticket[] = makeTicket(capitalForOne, top2ExpectedValue);
+      const tickets: Ticket[] = makeTicket(
+        capitalForOne,
+        filteredExpectedValue
+      );
 
       // 舟券購入
       if (tickets.length > 0) {
@@ -542,11 +546,6 @@ async function autobuy(): Promise<void> {
           private: true,
         };
         logger.debug("舟券 = " + util.inspect(autobuyRequest, { depth: null }));
-
-        // お試し START
-        // 賭け金をすべて 100円 にする
-        bet100(autobuyRequest);
-        // お試し END
 
         // 舟券購入 処理
         const autobuyUrl: string =

@@ -3,5 +3,6 @@
   "email": "aaa@bbb.ccc",
   "accessKey": "aaabbbccc",
   "capital": 1000000,
-  "rate": 20
+  "rate": 20,
+  "thresholdExpectedValue": 10
 }
