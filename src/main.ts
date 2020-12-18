@@ -15,6 +15,7 @@ interface Config {
   accessKey: string;
   capital: number;
   rate: number;
+  thresholdRank: number;
   thresholdExpectedValue: number;
 }
 
@@ -276,8 +277,7 @@ async function autobuy(): Promise<void> {
 
   // 認証
   logger.info("認証");
-  const authenticateUrl: string =
-    baseUrl + "/authenticate" + "?email=" + email + "&accessKey=" + accessKey;
+  const authenticateUrl = `${baseUrl}/authenticate?email=${email}&accessKey=${accessKey}`;
   let authenticateAxiosResponse: AxiosResponse<AuthenticateResponse>;
   try {
     authenticateAxiosResponse = await axios.post<AuthenticateResponse>(
@@ -313,8 +313,7 @@ async function autobuy(): Promise<void> {
     const todayDayjs: dayjs.Dayjs = dayjs();
     const yyyy: string = todayDayjs.format("YYYY");
     const mm: string = todayDayjs.format("MM");
-    const racecardUrl: string =
-      baseUrl + "/data/racecard/" + yyyy + "/" + mm + "?session=" + session;
+    const racecardUrl = `${baseUrl}/data/racecard/${yyyy}/${mm}?session=${session}`;
     let racecardArray: RacecardResponse[];
     try {
       const racecardAxiosResponse: AxiosResponse = await axios.get(racecardUrl);
@@ -364,8 +363,10 @@ async function autobuy(): Promise<void> {
       10
     );
     logger.info("1回分の資金 : " + capitalForOne + "円");
+    const thresholdRank: number = config.thresholdRank;
+    logger.info("ランクの閾値=" + thresholdRank);
     const thresholdExpectedValue: number = config.thresholdExpectedValue;
-    logger.info("thresholdExpectedValue=" + thresholdExpectedValue);
+    logger.info("期待値の閾値=" + thresholdExpectedValue);
 
     // 各レースで舟券購入
     for (let i = 0; i < sortedRacecardArray.length; i++) {
@@ -405,8 +406,7 @@ async function autobuy(): Promise<void> {
         if (sessionExpiredMinusOneMinute.isBefore(nowDayjs)) {
           // セッションの期限1分前を過ぎたらセッションを更新
           logger.debug("セッションの更新");
-          const sessionRefreshUrl: string =
-            baseUrl + "/refresh" + "?session=" + session;
+          const sessionRefreshUrl = `${baseUrl}/refresh?session=${session}`;
           let refreshAxiosResponse: AxiosResponse<RefreshResponse>;
           try {
             refreshAxiosResponse = await axios.post<RefreshResponse>(
@@ -457,8 +457,7 @@ async function autobuy(): Promise<void> {
       }
 
       // オッズ
-      const oddsUrl: string =
-        baseUrl + "/data/odds/" + racecard.dataid + "?session=" + session;
+      const oddsUrl = `${baseUrl}/data/odds/${racecard.dataid}?session=${session}`;
       let oddsAxiosResponse: AxiosResponse;
       try {
         oddsAxiosResponse = await axios.get(oddsUrl);
@@ -469,14 +468,7 @@ async function autobuy(): Promise<void> {
       const odds: Odds = oddsAxiosResponse.data.body;
 
       // 直前予想
-      const predictsType2Url: string =
-        baseUrl +
-        "/predicts/" +
-        racecard.dataid +
-        "/top6" +
-        "?session=" +
-        session +
-        "&type=2";
+      const predictsType2Url = `${baseUrl}/predicts/${racecard.dataid}/top6?session=${session}&type=2`;
       let predictsResponse: PredictsResponse;
       try {
         const predictsAxiosResponse: AxiosResponse<PredictsResponse> = await axios.get<PredictsResponse>(
@@ -498,19 +490,8 @@ async function autobuy(): Promise<void> {
         odds
       );
 
-      // 三連複の期待値を計算
-      const expectedValueArray3f: ExpectedValue[] = calcExpectedValue(
-        predictsResponse.player_powers,
-        "3f",
-        predictsResponse.top6["3f"],
-        odds
-      );
-
-      // 三連単と三連複の期待値を合わせて降順ソートする
-      let expectedValueArray3: ExpectedValue[] = [];
-      expectedValueArray3 = expectedValueArray3.concat(expectedValueArray3t);
-      expectedValueArray3 = expectedValueArray3.concat(expectedValueArray3f);
-      const sortedExpectedValueArray3: ExpectedValue[] = expectedValueArray3
+      // 三連単の期待値を降順ソートする
+      const sortedExpectedValueArray3: ExpectedValue[] = expectedValueArray3t
         .sort((e1, e2) => {
           if (e1.expectedValue > e2.expectedValue) {
             return 1;
@@ -526,20 +507,23 @@ async function autobuy(): Promise<void> {
           util.inspect(sortedExpectedValueArray3, { depth: null })
       );
 
-      // 期待値の閾値を決めて、それ以上のものだけ取り出す。
-      // 閾値を超えるものがなければ舟券を購入しないこともある。
+      // 閾値を決めて、条件に合ったものだけ取り出す。
+      // 条件に合うものが無ければ舟券を購入しないこともある。
       const filteredExpectedValue: ExpectedValue[] = sortedExpectedValueArray3.filter(
-        (each) => each.expectedValue >= thresholdExpectedValue
-      );
-
-      // 券を作る
-      const tickets: Ticket[] = makeTicket(
-        capitalForOne,
-        filteredExpectedValue
+        (each) =>
+          each.rank <= thresholdRank &&
+          each.expectedValue >= thresholdExpectedValue
       );
 
       // 舟券購入
-      if (tickets.length > 0) {
+      // 1つのレースでの当たる確率を上げるため三連単を4点買う
+      if (filteredExpectedValue.length >= 4) {
+        // 券を作る
+        const tickets: Ticket[] = makeTicket(
+          capitalForOne,
+          filteredExpectedValue
+        );
+
         logger.debug("舟券購入");
         const autobuyRequest: AutobuyRequest = {
           tickets: tickets,
@@ -548,12 +532,7 @@ async function autobuy(): Promise<void> {
         logger.debug("舟券 = " + util.inspect(autobuyRequest, { depth: null }));
 
         // 舟券購入 処理
-        const autobuyUrl: string =
-          baseUrl +
-          "/autobuy/" +
-          predictsResponse.dataid +
-          "?session=" +
-          session;
+        const autobuyUrl = `${baseUrl}/autobuy/${predictsResponse.dataid}?session=${session}`;
         let autobuyAxiosResponse: AxiosResponse;
         try {
           autobuyAxiosResponse = await axios.post(autobuyUrl, autobuyRequest, {
@@ -568,8 +547,7 @@ async function autobuy(): Promise<void> {
   } finally {
     // セッションの破棄
     logger.info("セッションの破棄");
-    const sessionDestroyUrl: string =
-      baseUrl + "/destroy" + "?session=" + session;
+    const sessionDestroyUrl = `${baseUrl}/destroy?session=${session}`;
     let destroyAxiosResponse: AxiosResponse;
     try {
       destroyAxiosResponse = await axios.post(sessionDestroyUrl);
