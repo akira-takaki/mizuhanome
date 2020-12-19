@@ -17,6 +17,7 @@ interface Config {
   rate: number;
   thresholdRank: number;
   thresholdExpectedValue: number;
+  default2tBet: number;
 }
 
 /**
@@ -133,6 +134,160 @@ const logger: log4js.Logger = log4js.getLogger("mizuhanome");
  */
 async function sleepFunc(millisecond: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, millisecond));
+}
+
+/**
+ * 二連単で負けた分の履歴を保持する
+ * isDecision が true の場合、結果が確定した。
+ */
+interface Store2t {
+  dataid: number;
+  numberset: string;
+  bet: number;
+  odds: string | null;
+  isDecision: boolean;
+}
+
+const store2tDir = "./store";
+const store2tFileName = `${store2tDir}/store2t.json`;
+let isLockByStore2t = false;
+
+/**
+ * 二連単で負けた分の履歴を書き込む
+ */
+function writeStore2t(store2tArray: Store2t[]): void {
+  fs.mkdirpSync(store2tDir);
+  fs.writeFileSync(store2tFileName, JSON.stringify(store2tArray, null, 2));
+}
+
+/**
+ * 二連単で負けた分の履歴を読み込む
+ */
+function readStore2t(): Store2t[] {
+  if (fs.existsSync(store2tFileName)) {
+    return JSON.parse(fs.readFileSync(store2tFileName).toString());
+  } else {
+    return [];
+  }
+}
+
+/**
+ * 二連単の賭け金を計算する
+ * ココモ法
+ */
+async function calc2tBet(
+  dataid: number,
+  numberset: string,
+  default2tBet: number
+): Promise<number> {
+  while (isLockByStore2t) {
+    await sleepFunc(1000);
+  }
+  isLockByStore2t = true;
+
+  let bet: number;
+  try {
+    // ファイルから読み込む
+    const store2tArray: Store2t[] = readStore2t();
+
+    if (store2tArray.length <= 0) {
+      bet = default2tBet;
+    } else if (store2tArray.length === 1) {
+      bet = store2tArray[store2tArray.length - 1].bet;
+    } else {
+      let allBet = 0;
+      for (let i = 0; i < store2tArray.length; i++) {
+        allBet = allBet + store2tArray[i].bet;
+      }
+      if (allBet > 20000) {
+        // 賭け金が 2万円 を超えたら損切り
+        bet = default2tBet;
+      } else {
+        bet =
+          store2tArray[store2tArray.length - 2].bet +
+          store2tArray[store2tArray.length - 1].bet;
+      }
+    }
+
+    // 今回の分を追加する
+    store2tArray.push({
+      dataid: dataid,
+      numberset: numberset,
+      bet: bet,
+      odds: null,
+      isDecision: false,
+    });
+
+    // ファイルへ書き込む
+    writeStore2t(store2tArray);
+  } finally {
+    isLockByStore2t = false;
+  }
+
+  // 賭け金を返す
+  return bet;
+}
+
+/**
+ * 結果
+ */
+interface Raceresult {
+  [key: string]: string | null;
+}
+
+/**
+ * 二連単で賭けた分の履歴の結果を更新する
+ * 結果が勝ちならば履歴をクリアする
+ */
+async function updateStore2t(baseUrl: string, session: string): Promise<void> {
+  logger.trace("call updateStore2t()");
+
+  while (isLockByStore2t) {
+    await sleepFunc(1000);
+  }
+  isLockByStore2t = true;
+
+  try {
+    // ファイルから読み込む
+    let store2tArray: Store2t[] = readStore2t();
+
+    let isClear = false;
+    for (let i = 0; i < store2tArray.length; i++) {
+      const store2t: Store2t = store2tArray[i];
+
+      if (store2t.isDecision) {
+        continue;
+      }
+
+      const raceresultUrl = `${baseUrl}/data/raceresult/${store2t.dataid}?session=${session}`;
+      let raceresultAxiosResponse: AxiosResponse;
+      try {
+        raceresultAxiosResponse = await axios.get(raceresultUrl);
+      } catch (err) {
+        break;
+      }
+      const raceresult: Raceresult = raceresultAxiosResponse.data.body;
+      store2t.odds = raceresult[`odds_2t${store2t.numberset}`];
+      store2t.isDecision = true;
+
+      if (store2t.odds !== null && parseInt(store2t.odds, 10) >= 260) {
+        // 2.6倍以上で勝ち
+        // 勝ったら「負け履歴」を消す
+        isClear = true;
+      }
+
+      // 結果の反映は １件ずつ
+      break;
+    }
+    if (isClear) {
+      store2tArray = store2tArray.filter((value) => !value.isDecision);
+    }
+
+    // ファイルへ書き込む
+    writeStore2t(store2tArray);
+  } finally {
+    isLockByStore2t = false;
+  }
 }
 
 /**
@@ -308,7 +463,12 @@ async function autobuy(): Promise<void> {
     "minute"
   );
 
+  let intervalId: NodeJS.Timeout | null = null;
   try {
+    intervalId = setInterval(() => {
+      updateStore2t(baseUrl, session);
+    }, 10000);
+
     // 出走表
     const todayDayjs: dayjs.Dayjs = dayjs();
     const yyyy: string = todayDayjs.format("YYYY");
@@ -367,6 +527,8 @@ async function autobuy(): Promise<void> {
     logger.info("ランクの閾値=" + thresholdRank);
     const thresholdExpectedValue: number = config.thresholdExpectedValue;
     logger.info("期待値の閾値=" + thresholdExpectedValue);
+    const default2tBet: number = config.default2tBet;
+    logger.info("二連単の初期賭け金=" + default2tBet);
 
     // 各レースで舟券購入
     for (let i = 0; i < sortedRacecardArray.length; i++) {
@@ -515,15 +677,35 @@ async function autobuy(): Promise<void> {
           each.expectedValue >= thresholdExpectedValue
       );
 
-      // 舟券購入
-      // 1つのレースでの当たる確率を上げるため三連単を4点買う
-      if (filteredExpectedValue.length >= 4) {
-        // 券を作る
-        const tickets: Ticket[] = makeTicket(
-          capitalForOne,
-          filteredExpectedValue
-        );
+      let tickets: Ticket[];
 
+      if (filteredExpectedValue.length >= 4) {
+        // 期待値から券を作る
+        // 1つのレースでの当たる確率を上げるため三連単を4点買う
+        tickets = makeTicket(capitalForOne, filteredExpectedValue);
+      } else {
+        tickets = [];
+      }
+
+      // 二連単 1点 追加 (ココモ法)
+      const numberset2t: string = predictsResponse.top6["2t"][0];
+      const bet2t: number = await calc2tBet(
+        racecard.dataid,
+        numberset2t,
+        default2tBet
+      );
+      tickets.push({
+        type: "2t",
+        numbers: [
+          {
+            numberset: numberset2t,
+            bet: bet2t,
+          },
+        ],
+      });
+
+      // 舟券購入
+      if (tickets.length > 0) {
         logger.debug("舟券購入");
         const autobuyRequest: AutobuyRequest = {
           tickets: tickets,
@@ -532,7 +714,7 @@ async function autobuy(): Promise<void> {
         logger.debug("舟券 = " + util.inspect(autobuyRequest, { depth: null }));
 
         // 舟券購入 処理
-        const autobuyUrl = `${baseUrl}/autobuy/${predictsResponse.dataid}?session=${session}`;
+        const autobuyUrl = `${baseUrl}/autobuy/${racecard.dataid}?session=${session}`;
         let autobuyAxiosResponse: AxiosResponse;
         try {
           autobuyAxiosResponse = await axios.post(autobuyUrl, autobuyRequest, {
@@ -545,6 +727,10 @@ async function autobuy(): Promise<void> {
       }
     }
   } finally {
+    if (intervalId !== null) {
+      clearInterval(intervalId);
+    }
+
     // セッションの破棄
     logger.info("セッションの破棄");
     const sessionDestroyUrl = `${baseUrl}/destroy?session=${session}`;
@@ -580,6 +766,9 @@ async function main(): Promise<void> {
     logger.info("08:30を過ぎたため実行");
     await autobuy();
   }
+
+  // TEST
+  await autobuy();
 }
 
 main().catch((err) => {
