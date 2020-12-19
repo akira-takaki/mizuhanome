@@ -240,8 +240,6 @@ interface Raceresult {
  * 結果が勝ちならば履歴をクリアする
  */
 async function updateStore2t(baseUrl: string, session: string): Promise<void> {
-  logger.trace("call updateStore2t()");
-
   while (isLockByStore2t) {
     await sleepFunc(1000);
   }
