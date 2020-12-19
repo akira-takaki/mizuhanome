@@ -764,9 +764,6 @@ async function main(): Promise<void> {
     logger.info("08:30を過ぎたため実行");
     await autobuy();
   }
-
-  // TEST
-  await autobuy();
 }
 
 main().catch((err) => {
