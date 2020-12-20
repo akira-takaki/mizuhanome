@@ -3,13 +3,23 @@ import cron from "node-cron";
 import fs from "fs-extra";
 import axios, { AxiosResponse } from "axios";
 import dayjs from "dayjs";
-import csvtojson from "csvtojson";
 import * as util from "util";
+
+import { calc2tBet, updateStore2t } from "#/store2t";
+import {
+  authenticate,
+  AuthenticateResponse,
+  getRacecard,
+  RacecardResponse,
+  refresh,
+  setupApi,
+} from "#/api";
+import { sleepFunc } from "#/sleep";
 
 /**
  * 設定
  */
-interface Config {
+export interface Config {
   baseUrl: string;
   email: string;
   accessKey: string;
@@ -18,48 +28,6 @@ interface Config {
   thresholdRank: number;
   thresholdExpectedValue: number;
   default2tBet: number;
-}
-
-/**
- * 認証レスポンス
- */
-interface AuthenticateResponse {
-  status: string;
-  message: string;
-  session: string | undefined;
-  expiredAt: number | undefined;
-  errorId: string | undefined;
-}
-
-/**
- * セッションの更新レスポンス
- */
-interface RefreshResponse {
-  status: string;
-  expiredAt: number | undefined;
-}
-
-/**
- * 出走表レスポンス
- */
-interface RacecardResponse {
-  /** データID */
-  dataid: number;
-
-  /** 日付。年(4桁)-月(2桁)-日(2桁)。 */
-  hd: string;
-
-  /** R番号 */
-  rno: number;
-
-  /** 場所の名前 */
-  jname: string;
-
-  /** 大会名 */
-  ktitle: string;
-
-  /** 場外締切時刻 */
-  deadlinegai: string;
 }
 
 /**
@@ -125,168 +93,7 @@ interface AutobuyRequest {
 }
 
 log4js.configure("./config/LogConfig.json");
-const logger: log4js.Logger = log4js.getLogger("mizuhanome");
-
-/**
- * スリープ
- *
- * @param millisecond
- */
-async function sleepFunc(millisecond: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, millisecond));
-}
-
-/**
- * 二連単で負けた分の履歴を保持する
- * isDecision が true の場合、結果が確定した。
- */
-interface Store2t {
-  dataid: number;
-  numberset: string;
-  bet: number;
-  odds: string | null;
-  isDecision: boolean;
-}
-
-const store2tDir = "./store";
-const store2tFileName = `${store2tDir}/store2t.json`;
-let isLockByStore2t = false;
-
-/**
- * 二連単で負けた分の履歴を書き込む
- */
-function writeStore2t(store2tArray: Store2t[]): void {
-  fs.mkdirpSync(store2tDir);
-  fs.writeFileSync(store2tFileName, JSON.stringify(store2tArray, null, 2));
-}
-
-/**
- * 二連単で負けた分の履歴を読み込む
- */
-function readStore2t(): Store2t[] {
-  if (fs.existsSync(store2tFileName)) {
-    return JSON.parse(fs.readFileSync(store2tFileName).toString());
-  } else {
-    return [];
-  }
-}
-
-/**
- * 二連単の賭け金を計算する
- * ココモ法
- */
-async function calc2tBet(
-  dataid: number,
-  numberset: string,
-  default2tBet: number
-): Promise<number> {
-  while (isLockByStore2t) {
-    await sleepFunc(1000);
-  }
-  isLockByStore2t = true;
-
-  let bet: number;
-  try {
-    // ファイルから読み込む
-    const store2tArray: Store2t[] = readStore2t();
-
-    if (store2tArray.length <= 0) {
-      bet = default2tBet;
-    } else if (store2tArray.length === 1) {
-      bet = store2tArray[store2tArray.length - 1].bet;
-    } else {
-      let allBet = 0;
-      for (let i = 0; i < store2tArray.length; i++) {
-        allBet = allBet + store2tArray[i].bet;
-      }
-      if (allBet > 20000) {
-        // 賭け金が 2万円 を超えたら損切り
-        bet = default2tBet;
-      } else {
-        bet =
-          store2tArray[store2tArray.length - 2].bet +
-          store2tArray[store2tArray.length - 1].bet;
-      }
-    }
-
-    // 今回の分を追加する
-    store2tArray.push({
-      dataid: dataid,
-      numberset: numberset,
-      bet: bet,
-      odds: null,
-      isDecision: false,
-    });
-
-    // ファイルへ書き込む
-    writeStore2t(store2tArray);
-  } finally {
-    isLockByStore2t = false;
-  }
-
-  // 賭け金を返す
-  return bet;
-}
-
-/**
- * 結果
- */
-interface Raceresult {
-  [key: string]: string | null;
-}
-
-/**
- * 二連単で賭けた分の履歴の結果を更新する
- * 結果が勝ちならば履歴をクリアする
- */
-async function updateStore2t(baseUrl: string, session: string): Promise<void> {
-  while (isLockByStore2t) {
-    await sleepFunc(1000);
-  }
-  isLockByStore2t = true;
-
-  try {
-    // ファイルから読み込む
-    let store2tArray: Store2t[] = readStore2t();
-
-    let isClear = false;
-    for (let i = 0; i < store2tArray.length; i++) {
-      const store2t: Store2t = store2tArray[i];
-
-      if (store2t.isDecision) {
-        continue;
-      }
-
-      const raceresultUrl = `${baseUrl}/data/raceresult/${store2t.dataid}?session=${session}`;
-      let raceresultAxiosResponse: AxiosResponse;
-      try {
-        raceresultAxiosResponse = await axios.get(raceresultUrl);
-      } catch (err) {
-        break;
-      }
-      const raceresult: Raceresult = raceresultAxiosResponse.data.body;
-      store2t.odds = raceresult[`odds_2t${store2t.numberset}`];
-      store2t.isDecision = true;
-
-      if (store2t.odds !== null && parseInt(store2t.odds, 10) >= 260) {
-        // 2.6倍以上で勝ち
-        // 勝ったら「負け履歴」を消す
-        isClear = true;
-      }
-
-      // 結果の反映は １件ずつ
-      break;
-    }
-    if (isClear) {
-      store2tArray = store2tArray.filter((value) => !value.isDecision);
-    }
-
-    // ファイルへ書き込む
-    writeStore2t(store2tArray);
-  } finally {
-    isLockByStore2t = false;
-  }
-}
+export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
 
 /**
  * 期待値を計算する
@@ -424,34 +231,28 @@ async function autobuy(): Promise<void> {
     return;
   }
 
+  setupApi(config);
+
   const baseUrl = config.baseUrl;
-  const email = config.email;
-  const accessKey = config.accessKey;
 
   // 認証
-  logger.info("認証");
-  const authenticateUrl = `${baseUrl}/authenticate?email=${email}&accessKey=${accessKey}`;
-  let authenticateAxiosResponse: AxiosResponse<AuthenticateResponse>;
-  try {
-    authenticateAxiosResponse = await axios.post<AuthenticateResponse>(
-      authenticateUrl
-    );
-    logger.debug(util.inspect(authenticateAxiosResponse.data));
-  } catch (err) {
-    logger.error("認証 失敗", err);
+  const authenticateResponse:
+    | AuthenticateResponse
+    | undefined = await authenticate();
+  if (authenticateResponse === undefined) {
     return;
   }
-  if (authenticateAxiosResponse.data.session === undefined) {
+  if (authenticateResponse.session === undefined) {
     logger.error("session is undefined");
     return;
   }
-  const session: string = authenticateAxiosResponse.data.session;
-  if (authenticateAxiosResponse.data.expiredAt === undefined) {
+  const session: string = authenticateResponse.session;
+  if (authenticateResponse.expiredAt === undefined) {
     logger.error("expiredAt is undefined");
     return;
   }
   let sessionExpiredDayjs: dayjs.Dayjs = dayjs.unix(
-    authenticateAxiosResponse.data.expiredAt / 1000
+    authenticateResponse.expiredAt / 1000
   );
   logger.debug(
     "session expired at " + sessionExpiredDayjs.format("YYYY/MM/DD HH:mm:ss")
@@ -464,22 +265,16 @@ async function autobuy(): Promise<void> {
   let intervalId: NodeJS.Timeout | null = null;
   try {
     intervalId = setInterval(() => {
-      updateStore2t(baseUrl, session);
+      updateStore2t(session);
     }, 10000);
 
     // 出走表
     const todayDayjs: dayjs.Dayjs = dayjs();
-    const yyyy: string = todayDayjs.format("YYYY");
-    const mm: string = todayDayjs.format("MM");
-    const racecardUrl = `${baseUrl}/data/racecard/${yyyy}/${mm}?session=${session}`;
-    let racecardArray: RacecardResponse[];
-    try {
-      const racecardAxiosResponse: AxiosResponse = await axios.get(racecardUrl);
-
-      // CSVデータをJSONへ変換する
-      racecardArray = await csvtojson().fromString(racecardAxiosResponse.data);
-    } catch (err) {
-      logger.error("出走表 失敗", err);
+    const racecardArray: RacecardResponse[] | undefined = await getRacecard(
+      session,
+      todayDayjs
+    );
+    if (racecardArray === undefined) {
       return;
     }
 
@@ -540,7 +335,7 @@ async function autobuy(): Promise<void> {
           racecard.rno.toString()
       );
       logger.debug(
-        `dataid=${racecard.dataid}, hd=${racecard.hd}, deadlinegai=${racecard.deadlinegai}`
+        `dataid=${racecard.dataid}, jcd=${racecard.jcd}, hd=${racecard.hd}, deadlinegai=${racecard.deadlinegai}`
       );
 
       const deadlinegaiStr: string = racecard.hd + " " + racecard.deadlinegai;
@@ -565,31 +360,18 @@ async function autobuy(): Promise<void> {
 
         if (sessionExpiredMinusOneMinute.isBefore(nowDayjs)) {
           // セッションの期限1分前を過ぎたらセッションを更新
-          logger.debug("セッションの更新");
-          const sessionRefreshUrl = `${baseUrl}/refresh?session=${session}`;
-          let refreshAxiosResponse: AxiosResponse<RefreshResponse>;
-          try {
-            refreshAxiosResponse = await axios.post<RefreshResponse>(
-              sessionRefreshUrl
+          const expiredAt: number | undefined = await refresh(session);
+          if (expiredAt !== undefined) {
+            // セッションの期限を更新
+            sessionExpiredDayjs = dayjs.unix(expiredAt / 1000);
+            logger.debug(
+              "session expired at " +
+                sessionExpiredDayjs.format("YYYY/MM/DD HH:mm:ss")
             );
-            logger.debug(util.inspect(refreshAxiosResponse.data));
-            if (refreshAxiosResponse.data.expiredAt !== undefined) {
-              // セッションの期限を更新
-              sessionExpiredDayjs = dayjs.unix(
-                refreshAxiosResponse.data.expiredAt / 1000
-              );
-              logger.debug(
-                "session expired at " +
-                  sessionExpiredDayjs.format("YYYY/MM/DD HH:mm:ss")
-              );
-              sessionExpiredMinusOneMinute = sessionExpiredDayjs.add(
-                -1,
-                "minute"
-              );
-            }
-          } catch (err) {
-            logger.error("セッションの更新 失敗", err);
-            return;
+            sessionExpiredMinusOneMinute = sessionExpiredDayjs.add(
+              -1,
+              "minute"
+            );
           }
         }
 
@@ -597,7 +379,6 @@ async function autobuy(): Promise<void> {
           // 場外締切時刻を過ぎていたら処理をパス
           isPass = true;
           isWait = false;
-          logger.trace("待つのをやめる " + nowDayjs.format(dateFormat));
           continue;
         } else if (
           deadlinegaiDayjs.isAfter(nowDayjs) &&
@@ -605,7 +386,6 @@ async function autobuy(): Promise<void> {
         ) {
           // 場外締切時刻よりも1分前ならば待つのをやめる
           isWait = false;
-          logger.trace("待つのをやめる " + nowDayjs.format(dateFormat));
         }
 
         // 5秒待つ
@@ -689,6 +469,7 @@ async function autobuy(): Promise<void> {
       const numberset2t: string = predictsResponse.top6["2t"][0];
       const bet2t: number = await calc2tBet(
         racecard.dataid,
+        racecard.jcd,
         numberset2t,
         default2tBet
       );
