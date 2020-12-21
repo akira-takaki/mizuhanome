@@ -100,6 +100,7 @@ export async function calc2tBet(
       if (allBet > 20000) {
         // 賭け金が 2万円 を超えたら損切り
         bet = default2tBet;
+        jcdHistory.histories = [];
       } else {
         bet =
           jcdHistory.histories[jcdHistory.histories.length - 2].bet +
