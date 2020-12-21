@@ -96,6 +96,14 @@ log4js.configure("./config/LogConfig.json");
 export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
 
 /**
+ * オッズを取り出す
+ */
+function pickupOdds(type: string, numberset: string, odds: Odds): number {
+  const oddsKey: string = "odds_" + type + numberset;
+  return parseFloat(odds[oddsKey]);
+}
+
+/**
  * 期待値を計算する
  */
 function calcExpectedValue(
@@ -117,8 +125,7 @@ function calcExpectedValue(
     }
 
     // numberset のオッズを取り出す
-    const oddsKey: string = "odds_" + type + numberset;
-    const numbersetOdds: number = parseFloat(odds[oddsKey]);
+    const numbersetOdds: number = pickupOdds(type, numberset, odds);
 
     // 期待値を計算する
     expectedValueArray.push({
@@ -422,6 +429,8 @@ async function autobuy(): Promise<void> {
       }
       logger.debug("直前予想 : " + util.inspect(predictsResponse));
 
+      let tickets: Ticket[] = [];
+
       // 三連単の期待値を計算
       const expectedValueArray3t: ExpectedValue[] = calcExpectedValue(
         predictsResponse.player_powers,
@@ -429,59 +438,53 @@ async function autobuy(): Promise<void> {
         predictsResponse.top6["3t"],
         odds
       );
-
-      // 三連単の期待値を降順ソートする
-      const sortedExpectedValueArray3: ExpectedValue[] = expectedValueArray3t
-        .sort((e1, e2) => {
-          if (e1.expectedValue > e2.expectedValue) {
-            return 1;
-          } else if (e1.expectedValue < e2.expectedValue) {
-            return -1;
-          } else {
-            return 0;
-          }
-        })
-        .reverse();
       logger.debug(
-        "sortedExpectedValueArray3=" +
-          util.inspect(sortedExpectedValueArray3, { depth: null })
+        "expectedValueArray3t=" +
+          util.inspect(expectedValueArray3t, { depth: null })
       );
 
       // 閾値を決めて、条件に合ったものだけ取り出す。
       // 条件に合うものが無ければ舟券を購入しないこともある。
-      const filteredExpectedValue: ExpectedValue[] = sortedExpectedValueArray3.filter(
-        (each) =>
-          each.rank <= thresholdRank &&
-          each.expectedValue >= thresholdExpectedValue
-      );
-
-      let tickets: Ticket[];
-
-      if (filteredExpectedValue.length >= 4) {
+      let matchCount = 0;
+      for (let j = 0; j < expectedValueArray3t.length; j++) {
+        const each: ExpectedValue = expectedValueArray3t[j];
+        if (each.expectedValue >= thresholdExpectedValue) {
+          matchCount++;
+        } else {
+          break;
+        }
+      }
+      if (matchCount >= thresholdRank) {
+        // 少なくとも、ランク1位から (thresholdRank)位までが期待値を超えている場合
         // 期待値から券を作る
-        // 1つのレースでの当たる確率を上げるため三連単を4点買う
-        tickets = makeTicket(capitalForOne, filteredExpectedValue);
-      } else {
-        tickets = [];
+        // 1つのレースでの当たる確率を上げるため三連単の上位4点を買う
+        tickets = tickets.concat(
+          makeTicket(capitalForOne, expectedValueArray3t.slice(0, 4))
+        );
       }
 
       // 二連単 1点 追加 (ココモ法)
       const numberset2t: string = predictsResponse.top6["2t"][0];
-      const bet2t: number = await calc2tBet(
-        racecard.dataid,
-        racecard.jcd,
-        numberset2t,
-        default2tBet
-      );
-      tickets.push({
-        type: "2t",
-        numbers: [
-          {
-            numberset: numberset2t,
-            bet: bet2t,
-          },
-        ],
-      });
+      const odds2t: number = pickupOdds("2t", numberset2t, odds);
+      if (odds2t >= 2.6) {
+        // オッズが 2.6倍以上ならば購入
+        logger.debug(`numberset2t=${numberset2t}, odds2t=${odds2t}`);
+        const bet2t: number = await calc2tBet(
+          racecard.dataid,
+          racecard.jcd,
+          numberset2t,
+          default2tBet
+        );
+        tickets.push({
+          type: "2t",
+          numbers: [
+            {
+              numberset: numberset2t,
+              bet: bet2t,
+            },
+          ],
+        });
+      }
 
       // 舟券購入
       if (tickets.length > 0) {
