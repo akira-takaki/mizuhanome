@@ -445,21 +445,23 @@ async function autobuy(): Promise<void> {
 
       // 閾値を決めて、条件に合ったものだけ取り出す。
       // 条件に合うものが無ければ舟券を購入しないこともある。
+      // ランク1位から (thresholdRank)位までを抽出
+      const expectedValueArray3tSelect: ExpectedValue[] = expectedValueArray3t.slice(
+        0,
+        thresholdRank
+      );
       let matchCount = 0;
-      for (let j = 0; j < expectedValueArray3t.length; j++) {
-        const each: ExpectedValue = expectedValueArray3t[j];
+      for (let j = 0; j < expectedValueArray3tSelect.length; j++) {
+        const each: ExpectedValue = expectedValueArray3tSelect[j];
         if (each.expectedValue >= thresholdExpectedValue) {
           matchCount++;
-        } else {
-          break;
         }
       }
-      if (matchCount >= thresholdRank) {
-        // 少なくとも、ランク1位から (thresholdRank)位までが期待値を超えている場合
+      if (matchCount >= 3) {
+        // ランク1位から (thresholdRank)位までで期待値を超えているものが3つ以上ある場合
         // 期待値から券を作る
-        // 1つのレースでの当たる確率を上げるため三連単の上位4点を買う
         tickets = tickets.concat(
-          makeTicket(capitalForOne, expectedValueArray3t.slice(0, 4))
+          makeTicket(capitalForOne, expectedValueArray3tSelect)
         );
       }
 
