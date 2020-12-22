@@ -1,6 +1,6 @@
 import fs from "fs-extra";
+import { Mutex } from "await-semaphore";
 
-import { sleepFunc } from "#/sleep";
 import { Raceresult, getRaceresult } from "#/api";
 
 /**
@@ -32,7 +32,7 @@ interface Store2t {
 
 const store2tDir = "./store";
 const store2tFileName = `${store2tDir}/store2t.json`;
-let isLockByStore2t = false;
+const mutex: Mutex = new Mutex();
 
 /**
  * 二連単の負けた履歴 を書き込む
@@ -63,10 +63,7 @@ export async function calc2tBet(
   numberset: string,
   default2tBet: number
 ): Promise<number> {
-  while (isLockByStore2t) {
-    await sleepFunc(1000);
-  }
-  isLockByStore2t = true;
+  const release: () => void = await mutex.acquire();
 
   let bet: number;
   try {
@@ -120,7 +117,7 @@ export async function calc2tBet(
     // ファイルへ書き込む
     writeStore2t(store2t);
   } finally {
-    isLockByStore2t = false;
+    release();
   }
 
   // 賭け金を返す
@@ -132,10 +129,7 @@ export async function calc2tBet(
  * 結果が勝ちならば履歴をクリアする
  */
 export async function updateStore2t(session: string): Promise<void> {
-  while (isLockByStore2t) {
-    await sleepFunc(1000);
-  }
-  isLockByStore2t = true;
+  const release: () => void = await mutex.acquire();
 
   try {
     // ファイルから読み込む
@@ -179,6 +173,6 @@ export async function updateStore2t(session: string): Promise<void> {
     // ファイルへ書き込む
     writeStore2t(store2t);
   } finally {
-    isLockByStore2t = false;
+    release();
   }
 }
