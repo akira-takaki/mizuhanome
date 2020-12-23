@@ -1,7 +1,8 @@
 import fs from "fs-extra";
 import { Mutex } from "await-semaphore";
 
-import { Raceresult, getRaceresult } from "#/api";
+import { currencyFormatter, logger } from "#/main";
+import { RaceResult, getRaceResult } from "#/api";
 
 /**
  * 二連単で負けた分の履歴
@@ -68,7 +69,7 @@ export async function calc2tBet(
   let bet: number;
   try {
     // ファイルから読み込む
-    const store2t: Store2t = readStore2t();
+    const store2t = readStore2t();
 
     let jcdHistory: JcdHistory | undefined = undefined;
     for (let i = 0; i < store2t.jcdHistories.length; i++) {
@@ -96,6 +97,7 @@ export async function calc2tBet(
       }
       if (allBet > 20000) {
         // 賭け金が 2万円 を超えたら損切り
+        logger.debug(`損切り: jcd=${jcd} ${currencyFormatter.format(allBet)}`);
         bet = default2tBet;
         jcdHistory.histories = [];
       } else {
@@ -125,7 +127,7 @@ export async function calc2tBet(
 }
 
 /**
- * 二連単で賭けた分の履歴の結果を更新する
+ * 二連単で賭けた履歴 の結果を更新する
  * 結果が勝ちならば履歴をクリアする
  */
 export async function updateStore2t(session: string): Promise<void> {
@@ -133,7 +135,7 @@ export async function updateStore2t(session: string): Promise<void> {
 
   try {
     // ファイルから読み込む
-    const store2t: Store2t = readStore2t();
+    const store2t = readStore2t();
 
     for (let i = 0; i < store2t.jcdHistories.length; i++) {
       const jcdHistory: JcdHistory = store2t.jcdHistories[i];
@@ -147,7 +149,7 @@ export async function updateStore2t(session: string): Promise<void> {
         }
 
         // 結果を取得
-        const raceresult: Raceresult | undefined = await getRaceresult(
+        const raceresult: RaceResult | undefined = await getRaceResult(
           session,
           betHistory.dataid
         );

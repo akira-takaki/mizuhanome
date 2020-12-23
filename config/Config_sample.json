@@ -6,5 +6,6 @@
   "rate": 20,
   "thresholdRank": 3,
   "thresholdExpectedValue": 10,
+  "thresholdOdds2t": 2,
   "default2tBet": 100
 }
