@@ -349,43 +349,43 @@ async function boatRace(): Promise<void> {
       }
       logger.debug("直前予想 : " + util.inspect(predicts));
 
-      let tickets: Ticket[] = [];
+      const tickets: Ticket[] = [];
 
-      // 三連単の期待値を計算
-      const expectedValues3t = calcExpectedValue(
-        predicts.player_powers,
-        "3t",
-        predicts.top6["3t"],
-        odds
-      );
-      logger.debug(
-        "expectedValues3t=" + util.inspect(expectedValues3t, { depth: null })
-      );
-
-      // 閾値を決めて、条件に合ったものだけ取り出す。
-      // 条件に合うものが無ければ舟券を購入しないこともある。
-      // ランク1位から (thresholdRank)位までを抽出
-      const expectedValues3tSelect = expectedValues3t.slice(0, thresholdRank);
-      let matchCount = 0;
-      for (let j = 0; j < expectedValues3tSelect.length; j++) {
-        const each = expectedValues3tSelect[j];
-        if (each.expectedValue >= thresholdExpectedValue) {
-          matchCount++;
-        }
-      }
-      if (matchCount >= 3) {
-        // ランク1位から (thresholdRank)位までで期待値を超えているものが3つ以上ある場合
-        // 期待値から券を作る
-        tickets = tickets.concat(
-          makeTicket(capitalForOne, expectedValues3tSelect)
-        );
-      }
+      // // 三連単の期待値を計算
+      // const expectedValues3t = calcExpectedValue(
+      //   predicts.player_powers,
+      //   "3t",
+      //   predicts.top6["3t"],
+      //   odds
+      // );
+      // logger.debug(
+      //   "expectedValues3t=" + util.inspect(expectedValues3t, { depth: null })
+      // );
+      //
+      // // 閾値を決めて、条件に合ったものだけ取り出す。
+      // // 条件に合うものが無ければ舟券を購入しないこともある。
+      // // ランク1位から (thresholdRank)位までを抽出
+      // const expectedValues3tSelect = expectedValues3t.slice(0, thresholdRank);
+      // let matchCount = 0;
+      // for (let j = 0; j < expectedValues3tSelect.length; j++) {
+      //   const each = expectedValues3tSelect[j];
+      //   if (each.expectedValue >= thresholdExpectedValue) {
+      //     matchCount++;
+      //   }
+      // }
+      // if (matchCount >= 3) {
+      //   // ランク1位から (thresholdRank)位までで期待値を超えているものが3つ以上ある場合
+      //   // 期待値から券を作る
+      //   tickets = tickets.concat(
+      //     makeTicket(capitalForOne, expectedValues3tSelect)
+      //   );
+      // }
 
       // 二連単 1点 追加 (ココモ法)
       const numberset2t = predicts.top6["2t"][0];
       const odds2t = pickupOdds("2t", numberset2t, odds);
-      if (odds2t >= thresholdOdds2t) {
-        // オッズが (thresholdOdds2t)倍以上ならば購入
+      if (odds2t < thresholdOdds2t) {
+        // オッズが (thresholdOdds2t)倍未満ならば購入
         logger.debug(`numberset2t: ${numberset2t}, odds2t: ${odds2t}`);
         const bet2t = await calc2tBet(
           raceCard.dataid,
