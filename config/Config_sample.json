@@ -3,7 +3,7 @@
   "email": "aaa@bbb.ccc",
   "accessKey": "aaabbbccc",
   "capital": 1000000,
-  "rate": 20,
+  "rate": 0.2,
   "thresholdRank": 3,
   "thresholdExpectedValue": 10,
   "thresholdOdds2t": 2,

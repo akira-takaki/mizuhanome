@@ -27,8 +27,22 @@ export interface Config {
   baseUrl: string;
   email: string;
   accessKey: string;
+
+  /** 資金 */
   capital: number;
-  rate: number;
+
+  /** 仮定の「的中率(パーセント)」 */
+  assumedHittingRate: number;
+
+  /** 仮定の「回収金額率(パーセント)」 */
+  assumedCollectRate: number;
+
+  /** 仮定の「購入する金額率(パーセント)」 */
+  assumedAmountPurchasedRate: number;
+
+  /** 仮定の「参加するレース数率(パーセント)」 */
+  assumedEntryRaceCountRate: number;
+
   thresholdRank: number;
   thresholdExpectedValue: number;
   thresholdOdds2t: number;
@@ -257,7 +271,7 @@ async function boatRace(): Promise<void> {
     const capital = config.capital;
     logger.info(`資金 : ${currencyFormatter.format(capital)}`);
     const capitalForDay = parseInt(
-      ((capital / 100) * config.rate).toString(),
+      (capital * config.assumedAmountPurchasedRate).toString(),
       10
     );
     logger.info(`本日の資金 : ${currencyFormatter.format(capitalForDay)}`);
