@@ -264,6 +264,7 @@ function tabulateBetDayResult2(betDayResult: BetDayResult): void {
   for (let i = 0; i < betDayResult.betRaceResults.length; i++) {
     const betRaceResult = betDayResult.betRaceResults[i];
 
+    let isHitting = false;
     for (let j = 0; j < betRaceResult.betResults.length; j++) {
       const betResult = betRaceResult.betResults[j];
 
@@ -275,9 +276,12 @@ function tabulateBetDayResult2(betDayResult: BetDayResult): void {
         collect = collect + betResult.dividend;
       }
       if (betResult.odds !== null) {
-        // 的中した数 を加算
-        hitting++;
+        isHitting = true;
       }
+    }
+    if (isHitting) {
+      // 的中した数 を加算
+      hitting++;
     }
   }
 
