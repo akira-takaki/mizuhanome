@@ -4,7 +4,6 @@ import fs from "fs-extra";
 import dayjs from "dayjs";
 import * as util from "util";
 
-import { calc2tBet, updateStore2t } from "#/store2t";
 import {
   authenticate,
   autoBuy,
@@ -13,12 +12,21 @@ import {
   getPredicts,
   getRaceCard,
   Odds,
+  Predicts,
   refresh,
   setupApi,
   Ticket,
-  TicketNumber,
 } from "#/api";
 import { sleep } from "#/sleep";
+import {
+  addBetRaceResult,
+  BetDayResult,
+  hasNotDecision,
+  initBetDayResult,
+  makeBetDayResult,
+  tabulateBetDayResult,
+  updateBetRaceResult,
+} from "#/betResult";
 
 /**
  * 設定
@@ -42,23 +50,6 @@ export interface Config {
 
   /** 仮定の「参加するレース数率(パーセント)」 */
   assumedEntryRaceCountRate: number;
-
-  thresholdRank: number;
-  thresholdExpectedValue: number;
-  thresholdOdds2t: number;
-  default2tBet: number;
-}
-
-/**
- * 期待値
- */
-interface ExpectedValue {
-  type: string;
-  numberset: string;
-  expectedValue: number;
-  power: number;
-  odds: number;
-  rank: number;
 }
 
 log4js.configure("./config/LogConfig.json");
@@ -78,47 +69,9 @@ function pickupOdds(type: string, numberset: string, odds: Odds): number {
 }
 
 /**
- * 期待値を計算する
- */
-function calcExpectedValue(
-  playerPowers: number[],
-  type: string,
-  top6: string[],
-  odds: Odds
-): ExpectedValue[] {
-  const expectedValues: ExpectedValue[] = [];
-
-  for (let i = 0; i < top6.length; i++) {
-    const numberset = top6[i];
-
-    // numberset の「予想の強さ」を集計する
-    let power = 0;
-    for (let j = 0; j < numberset.length; j++) {
-      const index = parseInt(numberset.substring(j, j + 1), 10) - 1;
-      power = power + playerPowers[index];
-    }
-
-    // numberset のオッズを取り出す
-    const numbersetOdds = pickupOdds(type, numberset, odds);
-
-    // 期待値を計算する
-    expectedValues.push({
-      type: type,
-      numberset: numberset,
-      expectedValue: (power / 300) * numbersetOdds,
-      power: power,
-      odds: numbersetOdds,
-      rank: i + 1,
-    });
-  }
-
-  return expectedValues;
-}
-
-/**
  * 賭け金を100円単位にする
  */
-function round(bet: number): number {
+function roundBet(bet: number): number {
   const r = Math.round(bet / 100) * 100;
   let i = parseInt(r.toString(), 10);
   if (i < 100) {
@@ -128,82 +81,49 @@ function round(bet: number): number {
 }
 
 /**
- * 券を作る
+ * 購入する舟券を追加する
+ *
+ * @param betDayResult 日単位の賭け結果
+ * @param odds オッズ
+ * @param predicts 直前予想
+ * @param tickets 舟券配列
  */
-function makeTicket(
-  totalBet: number,
-  expectedValues: ExpectedValue[]
-): Ticket[] {
-  if (expectedValues.length <= 0) {
-    return [];
-  }
+function addTicket(
+  betDayResult: BetDayResult,
+  odds: Odds,
+  predicts: Predicts,
+  tickets: Ticket[]
+): void {
+  const ticket: Ticket = {
+    type: "3t",
+    numbers: [],
+  };
 
-  const bet = totalBet / expectedValues.length;
+  for (let i = 0; i < predicts.top6["3t"].length; i++) {
+    const numberset = predicts.top6["3t"][i];
+    const numbersetOdds = pickupOdds("3t", numberset, odds);
 
-  // 券種でソートする
-  const sortedExpectedValues = expectedValues.sort((e1, e2) => {
-    if (e1.type > e2.type) {
-      return 1;
-    } else if (e1.type < e2.type) {
-      return -1;
-    } else {
-      return 0;
-    }
-  });
+    if (betDayResult.assumed.raceDividend !== null) {
+      // 賭け金
+      //  = 回収率を維持するための1レースの配当金 ÷ オッズ
+      const bet = roundBet(betDayResult.assumed.raceDividend / numbersetOdds);
 
-  let prevType = "";
-  let group: ExpectedValue[] = [];
-  const tickets: Ticket[] = [];
-  for (let i = 0; i < sortedExpectedValues.length; i++) {
-    const expectedValue = sortedExpectedValues[i];
-
-    if (i === 0) {
-      prevType = expectedValue.type;
-    }
-
-    if (prevType !== expectedValue.type) {
-      // ブレイク処理
-      const ticketNumbers: TicketNumber[] = [];
-      for (let j = 0; j < group.length; j++) {
-        ticketNumbers.push({
-          numberset: group[j].numberset,
-          bet: round(bet * (1 + (6 - group[j].rank) / 10)),
-        });
-      }
-      tickets.push({
-        type: prevType,
-        numbers: ticketNumbers,
-      });
-
-      // 初期化
-      group = [];
-    }
-
-    group.push(expectedValue);
-    prevType = expectedValue.type;
-  }
-  if (group.length > 0) {
-    // ブレイク処理
-    const ticketNumbers: TicketNumber[] = [];
-    for (let j = 0; j < group.length; j++) {
-      ticketNumbers.push({
-        numberset: group[j].numberset,
-        bet: round(bet * (1 + (6 - group[j].rank) / 10)),
+      ticket.numbers.push({
+        numberset: numberset,
+        bet: bet,
       });
     }
-    tickets.push({
-      type: prevType,
-      numbers: ticketNumbers,
-    });
   }
 
-  return tickets;
+  tickets.push(ticket);
 }
 
 /**
  * ボートレース
  */
 async function boatRace(): Promise<void> {
+  const today = dayjs();
+
   logger.info("設定ファイルの読み込み");
   let config: Config;
   try {
@@ -216,40 +136,32 @@ async function boatRace(): Promise<void> {
   setupApi(config);
 
   // 認証
-  const sessionInfo = await authenticate();
-  if (sessionInfo === undefined) {
-    return;
-  }
-  if (sessionInfo.session === undefined) {
+  const session = await authenticate();
+  if (session === undefined) {
     logger.error("session is undefined");
     return;
   }
-  const session = sessionInfo.session;
-  if (sessionInfo.expiredAt === undefined) {
-    logger.error("expiredAt is undefined");
-    return;
-  }
-  let sessionExpiredDayjs = dayjs.unix(sessionInfo.expiredAt / 1000);
-  let sessionExpiredMinusOneMinute = sessionExpiredDayjs.add(-1, "minute");
 
-  let intervalId: NodeJS.Timeout | null = null;
+  let sessionIntervalId: NodeJS.Timeout | null = null;
+  let betResultIntervalId: NodeJS.Timeout | null = null;
   try {
-    intervalId = setInterval(() => {
-      // 定期的に「二連単で賭けた履歴」の結果を更新する
-      updateStore2t(session);
-    }, 10000);
+    sessionIntervalId = setInterval(() => {
+      // セッションの更新 50分ごと
+      refresh(session);
+    }, 50 * 60 * 1000);
 
-    // 出走表
-    const todayDayjs = dayjs();
-    const raceCards = await getRaceCard(session, todayDayjs);
-    if (raceCards === undefined) {
+    // 出走表 (当月分)
+    const raceCardsForMonth = await getRaceCard(session, today);
+    if (raceCardsForMonth === undefined) {
       return;
     }
 
     // 出走表を当日、今の時間より未来のものだけに絞る
-    const yyyymmdd = todayDayjs.format("YYYY-MM-DD");
-    const hhmmss = todayDayjs.format("HH:mm:ss");
-    const raceCardsForDay = raceCards.filter((value) => value.hd === yyyymmdd);
+    const yyyymmdd = today.format("YYYY-MM-DD");
+    const hhmmss = today.format("HH:mm:ss");
+    const raceCardsForDay = raceCardsForMonth.filter(
+      (value) => value.hd === yyyymmdd
+    );
     const filteredRaceCards = raceCardsForDay.filter(
       (value) => value.deadlinegai > hhmmss
     );
@@ -267,27 +179,21 @@ async function boatRace(): Promise<void> {
       }
     });
 
+    // 日単位の賭け結果 の初期化
+    const betDayResult = makeBetDayResult(
+      today,
+      config,
+      raceCardsForDay.length
+    );
+    await initBetDayResult(today, betDayResult);
+
     // 設定値確認
-    const capital = config.capital;
-    logger.info(`資金 : ${currencyFormatter.format(capital)}`);
-    const capitalForDay = parseInt(
-      (capital * config.assumedAmountPurchasedRate).toString(),
-      10
-    );
-    logger.info(`本日の資金 : ${currencyFormatter.format(capitalForDay)}`);
-    const capitalForOne = parseInt(
-      (capitalForDay / raceCardsForDay.length).toString(),
-      10
-    );
-    logger.info(`1回分の資金 : ${currencyFormatter.format(capitalForOne)}`);
-    const thresholdRank = config.thresholdRank;
-    logger.info(`三連単のランクの閾値=${thresholdRank}`);
-    const thresholdExpectedValue = config.thresholdExpectedValue;
-    logger.info(`三連単の期待値の閾値=${thresholdExpectedValue}`);
-    const thresholdOdds2t = config.thresholdOdds2t;
-    logger.info(`二連単のオッズ閾値=${thresholdOdds2t}`);
-    const default2tBet = config.default2tBet;
-    logger.info(`二連単の初期賭け金=${currencyFormatter.format(default2tBet)}`);
+    logger.info(util.inspect(betDayResult));
+
+    betResultIntervalId = setInterval(() => {
+      // 日単位の賭け結果 の勝敗を更新する
+      updateBetRaceResult(today, session);
+    }, 10000);
 
     // 各レースで舟券購入
     for (let i = 0; i < sortedRaceCards.length; i++) {
@@ -299,44 +205,32 @@ async function boatRace(): Promise<void> {
         `dataid=${raceCard.dataid}, jcd=${raceCard.jcd}, hd=${raceCard.hd}, deadlinegai=${raceCard.deadlinegai}`
       );
 
+      // 場外締切時刻の1分前の時間を計算
       const deadLineGaiStr = `${raceCard.hd} ${raceCard.deadlinegai}`;
       const dateFormat = "YYYY-MM-DD HH:mm:ss";
-      const deadLineGaiDayjs = dayjs(deadLineGaiStr, dateFormat);
-      if (deadLineGaiDayjs.format(dateFormat) !== deadLineGaiStr) {
+      const deadLineGai = dayjs(deadLineGaiStr, dateFormat);
+      if (deadLineGai.format(dateFormat) !== deadLineGaiStr) {
         logger.error(
           "日付フォーマットエラー : deadLineGaiStr=" + deadLineGaiStr
         );
         continue;
       }
-      const deadLineGaiMinusOneMinute = deadLineGaiDayjs.add(-1, "minute");
+      const deadLineGaiMinusOneMinute = deadLineGai.add(-1, "minute");
 
       logger.trace("場外締切時刻の1分前まで待つ");
       let isPass = false;
       let isWait = true;
       while (isWait) {
-        const nowDayjs = dayjs();
+        const now = dayjs();
 
-        if (sessionExpiredMinusOneMinute.isBefore(nowDayjs)) {
-          // セッションの期限1分前を過ぎたらセッションを更新
-          const expiredAt = await refresh(session);
-          if (expiredAt !== undefined) {
-            // セッションの期限を更新
-            sessionExpiredDayjs = dayjs.unix(expiredAt / 1000);
-            sessionExpiredMinusOneMinute = sessionExpiredDayjs.add(
-              -1,
-              "minute"
-            );
-          }
-        }
-
-        if (deadLineGaiDayjs.isBefore(nowDayjs)) {
+        if (deadLineGai.isBefore(now)) {
           // 場外締切時刻を過ぎていたら処理をパス
           isPass = true;
           isWait = false;
           continue;
         } else if (
-          deadLineGaiDayjs.isAfter(nowDayjs) &&
-          deadLineGaiMinusOneMinute.isBefore(nowDayjs)
+          deadLineGai.isAfter(now) &&
+          deadLineGaiMinusOneMinute.isBefore(now)
         ) {
           // 場外締切時刻よりも1分前ならば待つのをやめる
           isWait = false;
@@ -365,67 +259,34 @@ async function boatRace(): Promise<void> {
 
       const tickets: Ticket[] = [];
 
-      // // 三連単の期待値を計算
-      // const expectedValues3t = calcExpectedValue(
-      //   predicts.player_powers,
-      //   "3t",
-      //   predicts.top6["3t"],
-      //   odds
-      // );
-      // logger.debug(
-      //   "expectedValues3t=" + util.inspect(expectedValues3t, { depth: null })
-      // );
-      //
-      // // 閾値を決めて、条件に合ったものだけ取り出す。
-      // // 条件に合うものが無ければ舟券を購入しないこともある。
-      // // ランク1位から (thresholdRank)位までを抽出
-      // const expectedValues3tSelect = expectedValues3t.slice(0, thresholdRank);
-      // let matchCount = 0;
-      // for (let j = 0; j < expectedValues3tSelect.length; j++) {
-      //   const each = expectedValues3tSelect[j];
-      //   if (each.expectedValue >= thresholdExpectedValue) {
-      //     matchCount++;
-      //   }
-      // }
-      // if (matchCount >= 3) {
-      //   // ランク1位から (thresholdRank)位までで期待値を超えているものが3つ以上ある場合
-      //   // 期待値から券を作る
-      //   tickets = tickets.concat(
-      //     makeTicket(capitalForOne, expectedValues3tSelect)
-      //   );
-      // }
+      // 購入する舟券を追加する
+      addTicket(betDayResult, odds, predicts, tickets);
 
-      // 二連単 1点 追加 (ココモ法)
-      const numberset2t = predicts.top6["2t"][0];
-      const odds2t = pickupOdds("2t", numberset2t, odds);
-      if (odds2t < thresholdOdds2t) {
-        // オッズが (thresholdOdds2t)倍未満ならば購入
-        logger.debug(`numberset2t: ${numberset2t}, odds2t: ${odds2t}`);
-        const bet2t = await calc2tBet(
-          raceCard.dataid,
-          raceCard.jcd,
-          numberset2t,
-          default2tBet
-        );
-        tickets.push({
-          type: "2t",
-          numbers: [
-            {
-              numberset: numberset2t,
-              bet: bet2t,
-            },
-          ],
-        });
-      }
-
-      // 舟券購入
       if (tickets.length > 0) {
-        await autoBuy(session, raceCard.dataid, tickets);
+        logger.debug(`tickets=${util.inspect(tickets, { depth: null })}`);
+
+        // 日単位の賭け結果 に レースの賭け結果 を追加する
+        await addBetRaceResult(today, raceCard.dataid, tickets);
+
+        // 舟券購入
+        // await autoBuy(session, raceCard.dataid, tickets);
       }
     }
+
+    while (await hasNotDecision(today)) {
+      // 日単位の賭け結果 でレース結果が決定してないものがあるあいだ待つ
+      await sleep(10000);
+    }
+
+    // 日単位の賭け結果 の集計
+    await tabulateBetDayResult(today);
   } finally {
-    if (intervalId !== null) {
-      clearInterval(intervalId);
+    if (sessionIntervalId !== null) {
+      clearInterval(sessionIntervalId);
+    }
+
+    if (betResultIntervalId !== null) {
+      clearInterval(betResultIntervalId);
     }
 
     // セッションの破棄

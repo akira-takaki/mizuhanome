@@ -53,7 +53,7 @@ interface Parameter {
   collect: number | null;
 
   /** 回収率を維持するための1レースの配当金 */
-  raceDividend: number;
+  raceDividend: number | null;
 
   /** 購入する or 購入した 金額率(パーセント) */
   amountPurchasedRate: number | null;
@@ -71,7 +71,7 @@ interface Parameter {
 /**
  * 日単位の賭け結果
  */
-interface BetDayResult {
+export interface BetDayResult {
   /** 日付 */
   date: string;
 
@@ -177,6 +177,151 @@ function equalsBetDayResult(v1: BetDayResult, v2: BetDayResult): boolean {
 }
 
 /**
+ * 設定 から 日単位の賭け結果 を作る
+ *
+ * @param date 日付
+ * @param config 設定
+ * @param raceCount 1日のレース数
+ * @return 日単位の賭け結果
+ */
+export function makeBetDayResult(
+  date: dayjs.Dayjs,
+  config: Config,
+  raceCount: number
+): BetDayResult {
+  // 仮定の「購入する金額」
+  //   =  「資金」 X  仮定の「購入する金額率(パーセント)」
+  const amountPurchased = Math.round(
+    config.capital * config.assumedAmountPurchasedRate
+  );
+
+  // 仮定の「回収金額」
+  //   =  「資金」 X  仮定の「回収金額率(パーセント)」
+  const collect = Math.round(config.capital * config.assumedCollectRate);
+
+  // 仮定の「参加するレース数」
+  //   =  「1日のレース数」 X  仮定の「参加するレース数率(パーセント)」
+  const entryRaceCount = Math.round(
+    raceCount * config.assumedEntryRaceCountRate
+  );
+
+  // 回収率を維持するための1レースの配当金
+  //   =  仮定の「回収金額」 ÷ ( 仮定の「参加するレース数」 X  仮定の「的中率(パーセント)」 )
+  const raceDividend = Math.round(
+    collect / (entryRaceCount * config.assumedHittingRate)
+  );
+
+  return {
+    date: date.format(DATE_FORMAT),
+    dateFormat: DATE_FORMAT,
+    capital: config.capital,
+    raceCount: raceCount,
+    assumed: {
+      hittingRate: config.assumedHittingRate,
+      collectRate: config.assumedCollectRate,
+      collect: collect,
+      raceDividend: raceDividend,
+      amountPurchasedRate: config.assumedAmountPurchasedRate,
+      amountPurchased: amountPurchased,
+      entryRaceCountRate: config.assumedEntryRaceCountRate,
+      entryRaceCount: entryRaceCount,
+    },
+    actual: {
+      hittingRate: null,
+      collectRate: null,
+      collect: null,
+      raceDividend: null,
+      amountPurchasedRate: null,
+      amountPurchased: null,
+      entryRaceCountRate: null,
+      entryRaceCount: null,
+    },
+    betRaceResults: [],
+  };
+}
+
+/**
+ * 日単位の賭け結果 の集計
+ *
+ * @param betDayResult 日単位の賭け結果
+ */
+function tabulateBetDayResult2(betDayResult: BetDayResult): void {
+  // 実際に「参加した レース数」
+  const entryRaceCount = betDayResult.betRaceResults.length;
+
+  // 実際に「参加した レース数率(パーセント)」
+  const entryRaceCountRate = entryRaceCount / betDayResult.raceCount;
+
+  // 実際に「購入した 金額」
+  let amountPurchased = 0;
+
+  // 実際の「回収金額」
+  let collect = 0;
+
+  // 的中した数
+  let hitting = 0;
+
+  for (let i = 0; i < betDayResult.betRaceResults.length; i++) {
+    const betRaceResult = betDayResult.betRaceResults[i];
+
+    for (let j = 0; j < betRaceResult.betResults.length; j++) {
+      const betResult = betRaceResult.betResults[j];
+
+      // 実際に「購入した 金額」 に 賭け金 を加算
+      amountPurchased = amountPurchased + betResult.bet;
+
+      if (betResult.dividend !== null) {
+        // 実際の「回収金額」 に 配当金 を加算
+        collect = collect + betResult.dividend;
+      }
+      if (betResult.odds !== null) {
+        // 的中した数 を加算
+        hitting++;
+      }
+    }
+  }
+
+  // 実際に「購入した 金額率(パーセント)」
+  const amountPurchasedRate = amountPurchased / betDayResult.capital;
+
+  /** 実際の「回収金額率(パーセント)」 */
+  const collectRate = collect / betDayResult.capital;
+
+  /** 実際の「的中率(パーセント)」 */
+  const hittingRate = hitting / entryRaceCount;
+
+  // 回収率を維持するための1レースの配当金
+  //   =  実際の「回収金額」 ÷ ( 実際に「参加したレース数」 X  実際の「的中率(パーセント)」 )
+  const raceDividend = Math.round(collect / (entryRaceCount * hittingRate));
+
+  betDayResult.actual.entryRaceCount = entryRaceCount;
+  betDayResult.actual.entryRaceCountRate = entryRaceCountRate;
+  betDayResult.actual.amountPurchased = amountPurchased;
+  betDayResult.actual.amountPurchasedRate = amountPurchasedRate;
+  betDayResult.actual.collect = collect;
+  betDayResult.actual.collectRate = collectRate;
+  betDayResult.actual.hittingRate = hittingRate;
+  betDayResult.actual.raceDividend = raceDividend;
+}
+
+/**
+ * 日単位の賭け結果 の集計 (ファイルアクセス付き)
+ *
+ * @param date 日付
+ */
+export async function tabulateBetDayResult(date: dayjs.Dayjs): Promise<void> {
+  const release: () => void = await mutex.acquire();
+
+  try {
+    const betDayResult = readBetDayResult(date);
+    tabulateBetDayResult2(betDayResult);
+    writeBetDayResult(date, betDayResult);
+  } finally {
+    release();
+  }
+}
+
+/**
  * 日単位の賭け結果 の初期化
  *
  * @param date 日付
@@ -208,32 +353,6 @@ export async function initBetDayResult(
     } else {
       writeBetDayResult(date, betDayResult);
     }
-  } finally {
-    release();
-  }
-}
-
-/**
- * 日単位の賭け結果 の集計
- *
- * @param betDayResult 日単位の賭け結果
- */
-function tabulateBetDayResult2(betDayResult: BetDayResult): void {
-  // TODO
-}
-
-/**
- * 日単位の賭け結果 の集計 (ファイルアクセス付き)
- *
- * @param date 日付
- */
-export async function tabulateBetDayResult(date: dayjs.Dayjs): Promise<void> {
-  const release: () => void = await mutex.acquire();
-
-  try {
-    const betDayResult = readBetDayResult(date);
-    tabulateBetDayResult2(betDayResult);
-    writeBetDayResult(date, betDayResult);
   } finally {
     release();
   }

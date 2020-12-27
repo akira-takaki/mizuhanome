@@ -2,10 +2,19 @@
   "baseUrl": "https://aaaa/bbb/bbb",
   "email": "aaa@bbb.ccc",
   "accessKey": "aaabbbccc",
+
+  "COMMENT": "資金",
   "capital": 1000000,
-  "rate": 0.2,
-  "thresholdRank": 3,
-  "thresholdExpectedValue": 10,
-  "thresholdOdds2t": 2,
-  "default2tBet": 100
+
+  "COMMENT": "仮定の「的中率(パーセント)」",
+  "assumedHittingRate": 0.1,
+
+  "COMMENT": "仮定の「回収金額率(パーセント)」",
+  "assumedCollectRate": 1.1,
+
+  "COMMENT": "仮定の「購入する金額率(パーセント)」",
+  "assumedAmountPurchasedRate": 0.1,
+
+  "COMMENT": "仮定の「参加するレース数率(パーセント)」",
+  "assumedEntryRaceCountRate": 0.5
 }

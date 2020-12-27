@@ -29,7 +29,7 @@ export interface SessionInfo {
 /**
  * 認証
  */
-export async function authenticate(): Promise<SessionInfo | undefined> {
+export async function authenticate(): Promise<string | undefined> {
   logger.info("認証");
   const url = `${baseUrl}/authenticate?email=${email}&accessKey=${accessKey}`;
   let axiosResponse: AxiosResponse<SessionInfo>;
@@ -41,7 +41,7 @@ export async function authenticate(): Promise<SessionInfo | undefined> {
     return undefined;
   }
 
-  return axiosResponse.data;
+  return axiosResponse.data.session;
 }
 
 /**
@@ -55,7 +55,7 @@ interface RefreshResponse {
 /**
  * セッションの更新
  */
-export async function refresh(session: string): Promise<number | undefined> {
+export async function refresh(session: string): Promise<void> {
   logger.debug("セッションの更新");
   const url = `${baseUrl}/refresh?session=${session}`;
   let axiosResponse: AxiosResponse<RefreshResponse>;
@@ -63,11 +63,8 @@ export async function refresh(session: string): Promise<number | undefined> {
     axiosResponse = await axios.post<RefreshResponse>(url);
     logger.debug(util.inspect(axiosResponse.data));
   } catch (err) {
-    logger.error("セッションの更新 失敗", err);
-    return undefined;
+    throw new Error("セッションの更新 失敗");
   }
-
-  return axiosResponse.data.expiredAt;
 }
 
 /**
@@ -116,10 +113,10 @@ export interface RaceCard {
  */
 export async function getRaceCard(
   session: string,
-  todayDayjs: dayjs.Dayjs
+  today: dayjs.Dayjs
 ): Promise<RaceCard[] | undefined> {
-  const yyyy = todayDayjs.format("YYYY");
-  const mm = todayDayjs.format("MM");
+  const yyyy = today.format("YYYY");
+  const mm = today.format("MM");
   const url = `${baseUrl}/data/racecard/${yyyy}/${mm}?session=${session}`;
   let raceCards: RaceCard[];
   try {
