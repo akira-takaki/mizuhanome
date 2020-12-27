@@ -197,7 +197,7 @@ export function makeBetDayResult(
 
   // 仮定の「回収金額」
   //   =  「資金」 X  仮定の「回収金額率(パーセント)」
-  const collect = Math.round(config.capital * config.assumedCollectRate);
+  const collect = Math.round(amountPurchased * config.assumedCollectRate);
 
   // 仮定の「参加するレース数」
   //   =  「1日のレース数」 X  仮定の「参加するレース数率(パーセント)」
@@ -289,7 +289,7 @@ function tabulateBetDayResult2(betDayResult: BetDayResult): void {
   const amountPurchasedRate = amountPurchased / betDayResult.capital;
 
   /** 実際の「回収金額率(パーセント)」 */
-  const collectRate = collect / betDayResult.capital;
+  const collectRate = collect / amountPurchased;
 
   /** 実際の「的中率(パーセント)」 */
   const hittingRate = hitting / entryRaceCount;

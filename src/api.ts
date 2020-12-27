@@ -159,9 +159,9 @@ export async function getOdds(
 }
 
 /**
- * 直前予想
+ * 直前予想トップ6
  */
-export interface Predicts {
+export interface PredictsTop6 {
   status: string;
   dataid: string;
   // eslint-disable-next-line camelcase
@@ -175,16 +175,49 @@ export interface Predicts {
 }
 
 /**
- * 直前予想取得
+ * 直前予想トップ6取得
  */
-export async function getPredicts(
+export async function getPredictsTop6(
   session: string,
   dataid: number
-): Promise<Predicts | undefined> {
+): Promise<PredictsTop6 | undefined> {
   const url = `${baseUrl}/predicts/${dataid}/top6?session=${session}&type=2`;
-  let predicts: Predicts;
+  let predicts: PredictsTop6;
   try {
-    const axiosResponse: AxiosResponse<Predicts> = await axios.get<Predicts>(
+    const axiosResponse: AxiosResponse<PredictsTop6> = await axios.get<PredictsTop6>(
+      url
+    );
+    predicts = axiosResponse.data;
+  } catch (err) {
+    // 異常レスポンスのときは無視
+    logger.debug("直前予想なし");
+    return undefined;
+  }
+
+  return predicts;
+}
+
+/**
+ * 直前予想全確率
+ */
+export interface PredictsAll {
+  status: string;
+  predict: {
+    [key: string]: string;
+  };
+}
+
+/**
+ * 直前予想全確率取得
+ */
+export async function getPredictsAll(
+  session: string,
+  dataid: number
+): Promise<PredictsAll | undefined> {
+  const url = `${baseUrl}/predicts/${dataid}?session=${session}&type=2`;
+  let predicts: PredictsAll;
+  try {
+    const axiosResponse: AxiosResponse<PredictsAll> = await axios.get<PredictsAll>(
       url
     );
     predicts = axiosResponse.data;

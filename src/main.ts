@@ -9,10 +9,12 @@ import {
   autoBuy,
   destroy,
   getOdds,
-  getPredicts,
+  getPredictsAll,
+  getPredictsTop6,
   getRaceCard,
   Odds,
-  Predicts,
+  PredictsAll,
+  PredictsTop6,
   refresh,
   setupApi,
   Ticket,
@@ -62,6 +64,11 @@ export const currencyFormatter = new Intl.NumberFormat("ja-JP", {
 
 /**
  * オッズを取り出す
+ *
+ * @param type 舟券の種類
+ * @param numberset 組番
+ * @param odds オッズ情報
+ * @return オッズ
  */
 function pickupOdds(type: string, numberset: string, odds: Odds): number {
   const oddsKey: string = "odds_" + type + numberset;
@@ -70,6 +77,9 @@ function pickupOdds(type: string, numberset: string, odds: Odds): number {
 
 /**
  * 賭け金を100円単位にする
+ *
+ * @param bet 賭け金
+ * @return 100円単位の賭け金
  */
 function roundBet(bet: number): number {
   const r = Math.round(bet / 100) * 100;
@@ -81,17 +91,77 @@ function roundBet(bet: number): number {
 }
 
 /**
+ * 組番と確率
+ */
+interface Percent {
+  numberset: string;
+  percent: string;
+}
+
+/**
+ * 指定された舟券の種類の確率を取り出す
+ *
+ * @param type 舟券の種類
+ * @param predictsAll 直前予想全確率
+ * @return 指定された舟券の種類の確率配列
+ */
+function filteredTypePercent(
+  type: string,
+  predictsAll: PredictsAll
+): Percent[] {
+  return Object.keys(predictsAll.predict)
+    .filter((key) => key.startsWith(type))
+    .map(
+      (key): Percent => ({
+        numberset: key.substring(2),
+        percent: predictsAll.predict[key],
+      })
+    )
+    .sort((e1, e2) => {
+      if (e1.percent > e2.percent) {
+        return 1;
+      } else if (e1.percent < e2.percent) {
+        return -1;
+      } else {
+        return 0;
+      }
+    })
+    .reverse();
+}
+
+/**
+ * 指定された組番の確率を返す
+ *
+ * @param numberset 組番
+ * @param percents 確率配列
+ * @return 確率
+ */
+function pickupPercent(numberset: string, percents: Percent[]): number {
+  for (let i = 0; i < percents.length; i++) {
+    const percent = percents[i];
+
+    if (numberset === percent.numberset) {
+      return parseFloat(percent.percent);
+    }
+  }
+
+  return 0;
+}
+
+/**
  * 購入する舟券を追加する
  *
  * @param betDayResult 日単位の賭け結果
  * @param odds オッズ
- * @param predicts 直前予想
+ * @param predictsTop6 直前予想トップ6
+ * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
  */
 function addTicket(
   betDayResult: BetDayResult,
   odds: Odds,
-  predicts: Predicts,
+  predictsTop6: PredictsTop6,
+  predictsAll: PredictsAll,
   tickets: Ticket[]
 ): void {
   const ticket: Ticket = {
@@ -99,8 +169,20 @@ function addTicket(
     numbers: [],
   };
 
-  for (let i = 0; i < predicts.top6["3t"].length; i++) {
-    const numberset = predicts.top6["3t"][i];
+  // 舟券の種類ごとの確率を取り出す
+  // 三連単の確率降順
+  const percents = filteredTypePercent("3t", predictsAll);
+  logger.debug("直前予想三連単全確率 : " + util.inspect(percents));
+
+  for (let i = 0; i < predictsTop6.top6["3t"].length; i++) {
+    const numberset = predictsTop6.top6["3t"][i];
+
+    const percent = pickupPercent(numberset, percents);
+    if (percent < 0.1) {
+      // 確率が 0.1未満ならば賭けない
+      continue;
+    }
+
     const numbersetOdds = pickupOdds("3t", numberset, odds);
 
     if (betDayResult.assumed.raceDividend !== null) {
@@ -250,17 +332,23 @@ async function boatRace(): Promise<void> {
         continue;
       }
 
-      // 直前予想取得
-      const predicts = await getPredicts(session, raceCard.dataid);
-      if (predicts === undefined) {
+      // 直前予想トップ6取得
+      const predictsTop6 = await getPredictsTop6(session, raceCard.dataid);
+      if (predictsTop6 === undefined) {
         continue;
       }
-      logger.debug("直前予想 : " + util.inspect(predicts));
+      logger.debug("直前予想トップ6 : " + util.inspect(predictsTop6));
+
+      // 直前予想全確率取得
+      const predictsAll = await getPredictsAll(session, raceCard.dataid);
+      if (predictsAll === undefined) {
+        continue;
+      }
 
       const tickets: Ticket[] = [];
 
       // 購入する舟券を追加する
-      addTicket(betDayResult, odds, predicts, tickets);
+      addTicket(betDayResult, odds, predictsTop6, predictsAll, tickets);
 
       if (tickets.length > 0) {
         logger.debug(`tickets=${util.inspect(tickets, { depth: null })}`);
