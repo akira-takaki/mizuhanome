@@ -196,8 +196,9 @@ function addTicket(
       });
     }
   }
-
-  tickets.push(ticket);
+  if (ticket.numbers.length > 0) {
+    tickets.push(ticket);
+  }
 }
 
 /**
