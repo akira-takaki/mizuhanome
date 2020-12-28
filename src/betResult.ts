@@ -2,8 +2,9 @@ import fs from "fs-extra";
 import dayjs from "dayjs";
 import { Mutex } from "await-semaphore/index";
 
-import { getRaceResult, RaceResult, Ticket } from "#/api";
+import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
 import { Config } from "#/main";
+import { filteredTypePercent, pickupOdds, pickupPercent } from "#/myUtil";
 
 /**
  * 賭け結果
@@ -15,11 +16,20 @@ interface BetResult {
   /** 組番 */
   numberset: string;
 
+  /** 確率 */
+  percent: number;
+
   /** 賭け金 */
   bet: number;
 
+  /** レース前オッズ */
+  preOdds: number;
+
+  /** レース前オッズ を元にした 配当金 */
+  preDividend: number;
+
   /** オッズ */
-  odds: string | null;
+  odds: number | null;
 
   /** 配当金 */
   dividend: number | null;
@@ -153,27 +163,29 @@ function readBetDayResult(date: dayjs.Dayjs): BetDayResult {
  * @param v2 日単位の賭け結果
  */
 function equalsBetDayResult(v1: BetDayResult, v2: BetDayResult): boolean {
+  let isEqual = true;
+
   if (v1.capital !== v2.capital) {
-    return false;
+    isEqual = false;
   }
 
   if (v1.assumed.hittingRate !== v2.assumed.hittingRate) {
-    return false;
+    isEqual = false;
   }
 
   if (v1.assumed.collectRate !== v2.assumed.collectRate) {
-    return false;
+    isEqual = false;
   }
 
   if (v1.assumed.amountPurchasedRate !== v2.assumed.amountPurchasedRate) {
-    return false;
+    isEqual = false;
   }
 
-  if (v1.assumed.entryRaceCountRate !== v2.assumed.entryRaceCountRate) {
-    return false;
+  if (v1.assumed.entryRaceCountRate === v2.assumed.entryRaceCountRate) {
+    isEqual = false;
   }
 
-  return true;
+  return isEqual;
 }
 
 /**
@@ -367,11 +379,15 @@ export async function initBetDayResult(
  *
  * @param date 日付
  * @param dataid データID
+ * @param odds オッズ
+ * @param predictsAll 直前予想全確率
  * @param tickets 舟券
  */
 export async function addBetRaceResult(
   date: dayjs.Dayjs,
   dataid: number,
+  odds: Odds,
+  predictsAll: PredictsAll,
   tickets: Ticket[]
 ): Promise<void> {
   const release: () => void = await mutex.acquire();
@@ -381,11 +397,27 @@ export async function addBetRaceResult(
 
     const betResults: BetResult[] = [];
     for (let i = 0; i < tickets.length; i++) {
-      for (let j = 0; j < tickets[i].numbers.length; j++) {
+      const ticket = tickets[i];
+
+      const type = ticket.type;
+      const percents = filteredTypePercent(type, predictsAll);
+
+      for (let j = 0; j < ticket.numbers.length; j++) {
+        const ticketNumber = ticket.numbers[j];
+
+        const numberset = ticketNumber.numberset;
+        const percent = pickupPercent(numberset, percents);
+        const bet = ticketNumber.bet;
+        const preOdds = pickupOdds(type, numberset, odds);
+        const preDividend = bet * preOdds;
+
         betResults.push({
-          type: tickets[i].type,
-          numberset: tickets[i].numbers[j].numberset,
-          bet: tickets[i].numbers[j].bet,
+          type: type,
+          numberset: numberset,
+          percent: percent,
+          bet: bet,
+          preOdds: preOdds,
+          preDividend: preDividend,
           odds: null,
           dividend: null,
         });
@@ -439,11 +471,11 @@ export async function updateBetRaceResult(
       for (let j = 0; j < betRaceResult.betResults.length; j++) {
         const betResult = betRaceResult.betResults[j];
 
-        betResult.odds =
+        const oddsStr =
           raceResult[`odds_${betResult.type}${betResult.numberset}`];
-        if (betResult.odds !== null) {
-          betResult.dividend =
-            (parseInt(betResult.odds, 10) * betResult.bet) / 100;
+        if (oddsStr !== null) {
+          betResult.odds = parseInt(oddsStr, 10) / 100;
+          betResult.dividend = betResult.bet * betResult.odds;
         } else {
           betResult.dividend = 0;
         }
