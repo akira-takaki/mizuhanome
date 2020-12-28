@@ -63,7 +63,7 @@ log4js.configure("./config/LogConfig.json");
 export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
 
 /**
- * 購入する舟券を追加する
+ * 購入する三連単の舟券を追加する
  *
  * @param betDayResult 日単位の賭け結果
  * @param odds オッズ
@@ -71,7 +71,7 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
  */
-function addTicket(
+function addTicket3t(
   betDayResult: BetDayResult,
   odds: Odds,
   predictsTop6: PredictsTop6,
@@ -84,13 +84,15 @@ function addTicket(
     numbers: [],
   };
 
-  logger.debug("直前予想トップ6 : " + util.inspect(predictsTop6));
+  logger.debug(
+    "直前予想 三連単 トップ6 : " + util.inspect(predictsTop6.top6[type])
+  );
 
   // 舟券の種類ごとの確率を取り出す
   // 三連単の確率降順
   const percents = filteredTypePercent(type, predictsAll);
   logger.debug(
-    "直前予想三連単確率トップ10 : " + util.inspect(percents.slice(0, 10))
+    "直前予想 三連単 確率トップ10 : " + util.inspect(percents.slice(0, 10))
   );
 
   for (let i = 0; i < predictsTop6.top6[type].length; i++) {
@@ -115,6 +117,46 @@ function addTicket(
       });
     }
   }
+  if (ticket.numbers.length > 0) {
+    tickets.push(ticket);
+  }
+}
+
+/**
+ * 購入する二連単の舟券を追加する
+ *
+ * @param betDayResult 日単位の賭け結果
+ * @param odds オッズ
+ * @param predictsTop6 直前予想トップ6
+ * @param predictsAll 直前予想全確率
+ * @param tickets 舟券配列
+ */
+function addTicket2t(
+  betDayResult: BetDayResult,
+  odds: Odds,
+  predictsTop6: PredictsTop6,
+  predictsAll: PredictsAll,
+  tickets: Ticket[]
+): void {
+  const type = "2t";
+  const ticket: Ticket = {
+    type: type,
+    numbers: [],
+  };
+
+  logger.debug(
+    "直前予想 二連単 トップ6 : " + util.inspect(predictsTop6.top6[type])
+  );
+
+  // 舟券の種類ごとの確率を取り出す
+  // 二連単の確率降順
+  const percents = filteredTypePercent(type, predictsAll);
+  logger.debug(
+    "直前予想 二連単 確率トップ10 : " + util.inspect(percents.slice(0, 10))
+  );
+
+  // TODO 二連単の舟券追加
+
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
   }
@@ -260,8 +302,11 @@ async function boatRace(): Promise<void> {
 
       const tickets: Ticket[] = [];
 
-      // 購入する舟券を追加する
-      addTicket(betDayResult, odds, predictsTop6, predictsAll, tickets);
+      // 購入する三連単の舟券を追加する
+      addTicket3t(betDayResult, odds, predictsTop6, predictsAll, tickets);
+
+      // 購入する二連単の舟券を追加する
+      addTicket2t(betDayResult, odds, predictsTop6, predictsAll, tickets);
 
       if (tickets.length > 0) {
         logger.debug(`tickets=${util.inspect(tickets, { depth: null })}`);
