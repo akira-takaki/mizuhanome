@@ -181,7 +181,7 @@ function equalsBetDayResult(v1: BetDayResult, v2: BetDayResult): boolean {
     isEqual = false;
   }
 
-  if (v1.assumed.entryRaceCountRate === v2.assumed.entryRaceCountRate) {
+  if (v1.assumed.entryRaceCountRate !== v2.assumed.entryRaceCountRate) {
     isEqual = false;
   }
 
