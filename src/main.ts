@@ -155,6 +155,12 @@ function addTicket2t(
     "直前予想 二連単 確率トップ10 : " + util.inspect(percents.slice(0, 10))
   );
 
+  const numberset = predictsTop6.top6[type][0];
+  const numbersetOdds = pickupOdds(type, numberset, odds);
+  logger.debug(
+    `直前予想 二連単 トップ1 オッズ : numberset: ${numberset}, odds: ${numbersetOdds}`
+  );
+
   // TODO 二連単の舟券追加
 
   if (ticket.numbers.length > 0) {
