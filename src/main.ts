@@ -18,7 +18,6 @@ import {
   setupApi,
   Ticket,
 } from "#/api";
-import { sleep } from "#/sleep";
 import {
   addBetRaceResult,
   BetDayResult,
@@ -33,6 +32,7 @@ import {
   pickupOdds,
   pickupPercent,
   roundBet,
+  sleep,
 } from "#/myUtil";
 import { updateStore2t } from "#/store2t";
 

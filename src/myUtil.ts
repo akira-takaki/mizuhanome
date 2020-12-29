@@ -1,6 +1,15 @@
 import { Odds, PredictsAll } from "#/api";
 
 /**
+ * スリープ
+ *
+ * @param millisecond
+ */
+export async function sleep(millisecond: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, millisecond));
+}
+
+/**
  * オッズを取り出す
  *
  * @param type 舟券の種類
