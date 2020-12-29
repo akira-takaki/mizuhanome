@@ -34,7 +34,7 @@ import {
   roundBet,
   sleep,
 } from "#/myUtil";
-import { updateStore2t } from "#/store2t";
+import { calc2tBet, updateStore2t } from "#/store2t";
 
 /**
  * 設定
@@ -113,8 +113,13 @@ function addTicket3t(
     if (betDayResult.assumed.raceDividend !== null) {
       // 賭け金
       //  = 回収率を維持するための1レースの配当金 ÷ オッズ X (1 + 確率)
+      // ※レース前のオッズ が レース後に下がってしまうので -1 の補正をする。
+      let numbersetOdds2 = numbersetOdds - 1;
+      if (numbersetOdds2 < 1) {
+        numbersetOdds2 = 1;
+      }
       const bet = roundBet(
-        (betDayResult.assumed.raceDividend / numbersetOdds) * (1 + percent)
+        (betDayResult.assumed.raceDividend / numbersetOdds2) * (1 + percent)
       );
 
       ticket.numbers.push({
@@ -175,11 +180,11 @@ async function addTicket2t(
 
   if (numbersetOdds >= 3 && percent >= 0.2) {
     // 二連単の舟券追加
-    // const bet = await calc2tBet(dataid, jcd, numberset, default2tBet);
-    // ticket.numbers.push({
-    //   numberset: numberset,
-    //   bet: bet,
-    // });
+    const bet = await calc2tBet(dataid, jcd, numberset, default2tBet);
+    ticket.numbers.push({
+      numberset: numberset,
+      bet: bet,
+    });
   }
 
   if (ticket.numbers.length > 0) {
