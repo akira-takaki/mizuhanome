@@ -103,12 +103,17 @@ function addTicket3t(
     const numberset = predictsTop6.top6[type][i];
 
     const percent = pickupPercent(numberset, percents);
-    if (percent < 0.1) {
-      // 確率が 0.1未満ならば賭けない
-      continue;
+    const numbersetOdds = pickupOdds(type, numberset, odds);
+
+    if (i === 0 && numbersetOdds < 5) {
+      // トップ1 が オッズ 5未満ならば 三連単 を賭けない
+      break;
     }
 
-    const numbersetOdds = pickupOdds(type, numberset, odds);
+    if (percent < 0.1) {
+      // 確率が 0.1未満ならば この組番 を賭けない
+      continue;
+    }
 
     if (betDayResult.assumed.raceDividend !== null) {
       // 賭け金
