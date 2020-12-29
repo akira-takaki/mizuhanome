@@ -34,6 +34,7 @@ import {
   pickupPercent,
   roundBet,
 } from "#/myUtil";
+import { updateStore2t } from "#/store2t";
 
 /**
  * 設定
@@ -57,6 +58,9 @@ export interface Config {
 
   /** 仮定の「参加するレース数率(パーセント)」 */
   assumedEntryRaceCountRate: number;
+
+  /** 二連単の賭け金のデフォルト額 */
+  default2tBet: number;
 }
 
 log4js.configure("./config/LogConfig.json");
@@ -125,19 +129,23 @@ function addTicket3t(
 /**
  * 購入する二連単の舟券を追加する
  *
- * @param betDayResult 日単位の賭け結果
+ * @param dataid データID
+ * @param jcd 場所番号
+ * @param default2tBet デフォルトの二連単の賭け金
  * @param odds オッズ
  * @param predictsTop6 直前予想トップ6
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
  */
-function addTicket2t(
-  betDayResult: BetDayResult,
+async function addTicket2t(
+  dataid: number,
+  jcd: number,
+  default2tBet: number,
   odds: Odds,
   predictsTop6: PredictsTop6,
   predictsAll: PredictsAll,
   tickets: Ticket[]
-): void {
+): Promise<void> {
   const type = "2t";
   const ticket: Ticket = {
     type: type,
@@ -161,7 +169,16 @@ function addTicket2t(
     `直前予想 二連単 トップ1 オッズ : numberset: ${numberset}, odds: ${numbersetOdds}`
   );
 
-  // TODO 二連単の舟券追加
+  const percent = pickupPercent(numberset, percents);
+
+  if (numbersetOdds >= 3 && percent >= 0.2) {
+    // 二連単の舟券追加
+    // const bet = await calc2tBet(dataid, jcd, numberset, default2tBet);
+    // ticket.numbers.push({
+    //   numberset: numberset,
+    //   bet: bet,
+    // });
+  }
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -194,6 +211,7 @@ async function boatRace(): Promise<void> {
 
   let sessionIntervalId: NodeJS.Timeout | null = null;
   let betResultIntervalId: NodeJS.Timeout | null = null;
+  let store2tIntervalId: NodeJS.Timeout | null = null;
   try {
     sessionIntervalId = setInterval(() => {
       // セッションの更新 50分ごと
@@ -244,6 +262,11 @@ async function boatRace(): Promise<void> {
       // 日単位の賭け結果 の勝敗を更新する
       updateBetRaceResult(today, session);
     }, 10000);
+
+    store2tIntervalId = setInterval(() => {
+      // 二連単で賭けた履歴 の結果を更新する
+      updateStore2t(session);
+    }, 9000);
 
     // 各レースで舟券購入
     for (let i = 0; i < sortedRaceCards.length; i++) {
@@ -312,7 +335,15 @@ async function boatRace(): Promise<void> {
       addTicket3t(betDayResult, odds, predictsTop6, predictsAll, tickets);
 
       // 購入する二連単の舟券を追加する
-      addTicket2t(betDayResult, odds, predictsTop6, predictsAll, tickets);
+      await addTicket2t(
+        raceCard.dataid,
+        raceCard.jcd,
+        config.default2tBet,
+        odds,
+        predictsTop6,
+        predictsAll,
+        tickets
+      );
 
       if (tickets.length > 0) {
         logger.debug(`tickets=${util.inspect(tickets, { depth: null })}`);
@@ -345,6 +376,10 @@ async function boatRace(): Promise<void> {
 
     if (betResultIntervalId !== null) {
       clearInterval(betResultIntervalId);
+    }
+
+    if (store2tIntervalId !== null) {
+      clearInterval(store2tIntervalId);
     }
 
     // セッションの破棄
