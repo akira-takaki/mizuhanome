@@ -112,8 +112,10 @@ function addTicket3t(
 
     if (betDayResult.assumed.raceDividend !== null) {
       // 賭け金
-      //  = 回収率を維持するための1レースの配当金 ÷ オッズ
-      const bet = roundBet(betDayResult.assumed.raceDividend / numbersetOdds);
+      //  = 回収率を維持するための1レースの配当金 ÷ オッズ X (1 + 確率)
+      const bet = roundBet(
+        (betDayResult.assumed.raceDividend / numbersetOdds) * (1 + percent)
+      );
 
       ticket.numbers.push({
         numberset: numberset,
