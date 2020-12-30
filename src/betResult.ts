@@ -95,13 +95,22 @@ export interface BetDayResult {
   raceCount: number;
 
   /** 仮定(三連単) */
-  assumed: Parameter;
+  assumed3t: Parameter;
 
   /** 実際(三連単) */
-  actual: Parameter;
+  actual3t: Parameter;
 
   /** 実際(二連単) */
   actual2t: Parameter;
+
+  /** 実際の「回収金額率(パーセント)」(三連単 と 二連単 合わせたもの) */
+  collectRateAll: number | null;
+
+  /** 実際に「購入した 金額」(三連単 と 二連単 合わせたもの) */
+  amountPurchasedAll: number | null;
+
+  /** 実際の「回収金額」(三連単 と 二連単 合わせたもの) */
+  collectAll: number | null;
 
   /** レースの賭け結果 */
   betRaceResults: BetRaceResult[];
@@ -172,19 +181,19 @@ function equalsBetDayResult(v1: BetDayResult, v2: BetDayResult): boolean {
     isEqual = false;
   }
 
-  if (v1.assumed.hittingRate !== v2.assumed.hittingRate) {
+  if (v1.assumed3t.hittingRate !== v2.assumed3t.hittingRate) {
     isEqual = false;
   }
 
-  if (v1.assumed.collectRate !== v2.assumed.collectRate) {
+  if (v1.assumed3t.collectRate !== v2.assumed3t.collectRate) {
     isEqual = false;
   }
 
-  if (v1.assumed.amountPurchasedRate !== v2.assumed.amountPurchasedRate) {
+  if (v1.assumed3t.amountPurchasedRate !== v2.assumed3t.amountPurchasedRate) {
     isEqual = false;
   }
 
-  if (v1.assumed.entryRaceCountRate !== v2.assumed.entryRaceCountRate) {
+  if (v1.assumed3t.entryRaceCountRate !== v2.assumed3t.entryRaceCountRate) {
     isEqual = false;
   }
 
@@ -231,7 +240,7 @@ export function makeBetDayResult(
     dateFormat: DATE_FORMAT,
     capital: config.capital,
     raceCount: raceCount,
-    assumed: {
+    assumed3t: {
       hittingRate: config.assumedHittingRate,
       collectRate: config.assumedCollectRate,
       collect: collect,
@@ -241,7 +250,7 @@ export function makeBetDayResult(
       entryRaceCountRate: config.assumedEntryRaceCountRate,
       entryRaceCount: entryRaceCount,
     },
-    actual: {
+    actual3t: {
       hittingRate: null,
       collectRate: null,
       collect: null,
@@ -261,6 +270,9 @@ export function makeBetDayResult(
       entryRaceCountRate: null,
       entryRaceCount: null,
     },
+    collectRateAll: null,
+    collectAll: null,
+    amountPurchasedAll: null,
     betRaceResults: [],
   };
 }
@@ -379,14 +391,14 @@ function tabulateBetDayResult2(betDayResult: BetDayResult): void {
     collect3t / (entryRaceCount3t * hittingRate3t)
   );
 
-  betDayResult.actual.entryRaceCount = entryRaceCount3t;
-  betDayResult.actual.entryRaceCountRate = entryRaceCountRate3t;
-  betDayResult.actual.amountPurchased = amountPurchased3t;
-  betDayResult.actual.amountPurchasedRate = amountPurchasedRate3t;
-  betDayResult.actual.collect = collect3t;
-  betDayResult.actual.collectRate = collectRate3t;
-  betDayResult.actual.hittingRate = hittingRate3t;
-  betDayResult.actual.raceDividend = raceDividend3t;
+  betDayResult.actual3t.entryRaceCount = entryRaceCount3t;
+  betDayResult.actual3t.entryRaceCountRate = entryRaceCountRate3t;
+  betDayResult.actual3t.amountPurchased = amountPurchased3t;
+  betDayResult.actual3t.amountPurchasedRate = amountPurchasedRate3t;
+  betDayResult.actual3t.collect = collect3t;
+  betDayResult.actual3t.collectRate = collectRate3t;
+  betDayResult.actual3t.hittingRate = hittingRate3t;
+  betDayResult.actual3t.raceDividend = raceDividend3t;
 
   // ===== 二連単 =====
   // 実際に「参加した レース数率(パーセント)」(二連単)
@@ -408,6 +420,17 @@ function tabulateBetDayResult2(betDayResult: BetDayResult): void {
   betDayResult.actual2t.collect = collect2t;
   betDayResult.actual2t.collectRate = collectRate2t;
   betDayResult.actual2t.hittingRate = hittingRate2t;
+
+  // ===== 三連単 と 二連単 合わせたもの =====
+  // 実際に「購入した 金額」
+  betDayResult.amountPurchasedAll = amountPurchased3t + amountPurchased2t;
+
+  // 実際の「回収金額」
+  betDayResult.collectAll = collect3t + collect2t;
+
+  // 実際の「回収金額率(パーセント)」
+  betDayResult.collectRateAll =
+    betDayResult.collectAll / betDayResult.amountPurchasedAll;
 }
 
 /**

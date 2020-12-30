@@ -115,7 +115,7 @@ function addTicket3t(
       continue;
     }
 
-    if (betDayResult.assumed.raceDividend !== null) {
+    if (betDayResult.assumed3t.raceDividend !== null) {
       // 賭け金
       //  = 回収率を維持するための1レースの配当金 ÷ オッズ X (1 + 確率)
       // ※レース前のオッズ が レース後に下がってしまうので -1 の補正をする。
@@ -124,7 +124,7 @@ function addTicket3t(
         numbersetOdds2 = 1;
       }
       const bet = roundBet(
-        (betDayResult.assumed.raceDividend / numbersetOdds2) * (1 + percent)
+        (betDayResult.assumed3t.raceDividend / numbersetOdds2) * (1 + percent)
       );
 
       ticket.numbers.push({
