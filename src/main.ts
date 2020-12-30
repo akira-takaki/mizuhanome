@@ -171,19 +171,15 @@ async function addTicket2t(
   // 舟券の種類ごとの確率を取り出す
   // 二連単の確率降順
   const percents = filteredTypePercent(type, predictsAll);
-  logger.debug(
-    "直前予想 二連単 確率トップ10 : " + util.inspect(percents.slice(0, 10))
-  );
 
   const numberset = predictsTop6.top6[type][0];
   const numbersetOdds = pickupOdds(type, numberset, odds);
+  const percent = pickupPercent(numberset, percents);
   logger.debug(
-    `直前予想 二連単 トップ1 オッズ : numberset: ${numberset}, odds: ${numbersetOdds}`
+    `直前予想 二連単 トップ1 オッズ : numberset: ${numberset}, odds: ${numbersetOdds}, percent: ${percent}`
   );
 
-  const percent = pickupPercent(numberset, percents);
-
-  if (numbersetOdds >= 3 && percent >= 0.2) {
+  if (numbersetOdds >= 5 && percent >= 0.25) {
     // 二連単の舟券追加
     const bet = await calc2tBet(dataid, jcd, numberset, default2tBet);
     ticket.numbers.push({
