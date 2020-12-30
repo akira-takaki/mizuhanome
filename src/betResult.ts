@@ -380,16 +380,18 @@ function tabulateBetDayResult2(betDayResult: BetDayResult): void {
   const amountPurchasedRate3t = amountPurchased3t / betDayResult.capital;
 
   // 実際の「回収金額率(パーセント)」(三連単)
-  const collectRate3t = collect3t / amountPurchased3t;
+  const collectRate3t =
+    amountPurchased3t > 0 ? collect3t / amountPurchased3t : 0;
 
   // 実際の「的中率(パーセント)」(三連単)
-  const hittingRate3t = hitting3t / entryRaceCount3t;
+  const hittingRate3t = entryRaceCount3t > 0 ? hitting3t / entryRaceCount3t : 0;
 
   // 回収率を維持するための1レースの配当金(三連単)
   //   =  実際の「回収金額」 ÷ ( 実際に「参加したレース数」 X  実際の「的中率(パーセント)」 )
-  const raceDividend3t = Math.round(
-    collect3t / (entryRaceCount3t * hittingRate3t)
-  );
+  const raceDividend3t =
+    entryRaceCount3t * hittingRate3t > 0
+      ? Math.round(collect3t / (entryRaceCount3t * hittingRate3t))
+      : 0;
 
   betDayResult.actual3t.entryRaceCount = entryRaceCount3t;
   betDayResult.actual3t.entryRaceCountRate = entryRaceCountRate3t;
@@ -408,10 +410,11 @@ function tabulateBetDayResult2(betDayResult: BetDayResult): void {
   const amountPurchasedRate2t = amountPurchased2t / betDayResult.capital;
 
   // 実際の「回収金額率(パーセント)」(二連単)
-  const collectRate2t = collect2t / amountPurchased2t;
+  const collectRate2t =
+    amountPurchased2t > 0 ? collect2t / amountPurchased2t : 0;
 
   // 実際の「的中率(パーセント)」(二連単)
-  const hittingRate2t = hitting2t / entryRaceCount2t;
+  const hittingRate2t = entryRaceCount2t > 0 ? hitting2t / entryRaceCount2t : 0;
 
   betDayResult.actual2t.entryRaceCount = entryRaceCount2t;
   betDayResult.actual2t.entryRaceCountRate = entryRaceCountRate2t;
@@ -430,7 +433,9 @@ function tabulateBetDayResult2(betDayResult: BetDayResult): void {
 
   // 実際の「回収金額率(パーセント)」
   betDayResult.collectRateAll =
-    betDayResult.collectAll / betDayResult.amountPurchasedAll;
+    betDayResult.amountPurchasedAll > 0
+      ? betDayResult.collectAll / betDayResult.amountPurchasedAll
+      : 0;
 }
 
 /**
