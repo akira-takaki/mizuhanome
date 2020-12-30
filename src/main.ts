@@ -179,7 +179,7 @@ async function addTicket2t(
     `直前予想 二連単 トップ1 オッズ : numberset: ${numberset}, odds: ${numbersetOdds}, percent: ${percent}`
   );
 
-  if (numbersetOdds >= 5 && percent >= 0.25) {
+  if (numbersetOdds >= 5 && numbersetOdds < 20 && percent >= 0.25) {
     // 二連単の舟券追加
     const bet = await calc2tBet(dataid, jcd, numberset, default2tBet);
     ticket.numbers.push({
