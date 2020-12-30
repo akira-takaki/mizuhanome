@@ -82,6 +82,11 @@ function addTicket3t(
   predictsAll: PredictsAll,
   tickets: Ticket[]
 ): void {
+  if (predictsTop6.player_powers[0] < 70) {
+    // 1号艇が70以上ないレースは買わない
+    return;
+  }
+
   const type = "3t";
   const ticket: Ticket = {
     type: type,
@@ -158,6 +163,11 @@ async function addTicket2t(
   predictsAll: PredictsAll,
   tickets: Ticket[]
 ): Promise<void> {
+  if (predictsTop6.player_powers[0] < 70) {
+    // 1号艇が70以上ないレースは買わない
+    return;
+  }
+
   const type = "2t";
   const ticket: Ticket = {
     type: type,
