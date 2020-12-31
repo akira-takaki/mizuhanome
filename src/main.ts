@@ -99,11 +99,6 @@ function addTicket3t(
     "直前予想 三連単 確率トップ10 : " + util.inspect(percents.slice(0, 10))
   );
 
-  if (predictsTop6.player_powers[0] < 70) {
-    // 1号艇が70以上ないレースは買わない
-    return;
-  }
-
   for (let i = 0; i < predictsTop6.top6[type].length; i++) {
     const numberset = predictsTop6.top6[type][i];
 
@@ -184,12 +179,7 @@ async function addTicket2t(
     `直前予想 二連単 トップ1 オッズ : numberset: ${numberset}, odds: ${numbersetOdds}, percent: ${percent}`
   );
 
-  if (predictsTop6.player_powers[0] < 70) {
-    // 1号艇が70以上ないレースは買わない
-    return;
-  }
-
-  if (numbersetOdds >= 5 && numbersetOdds < 20 && percent >= 0.25) {
+  if (numbersetOdds >= 3.6 && numbersetOdds < 20 && percent >= 0.2) {
     // 二連単の舟券追加
     const bet = await calc2tBet(dataid, jcd, numberset, default2tBet);
     ticket.numbers.push({
