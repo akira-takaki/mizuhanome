@@ -82,11 +82,6 @@ function addTicket3t(
   predictsAll: PredictsAll,
   tickets: Ticket[]
 ): void {
-  if (predictsTop6.player_powers[0] < 70) {
-    // 1号艇が70以上ないレースは買わない
-    return;
-  }
-
   const type = "3t";
   const ticket: Ticket = {
     type: type,
@@ -103,6 +98,11 @@ function addTicket3t(
   logger.debug(
     "直前予想 三連単 確率トップ10 : " + util.inspect(percents.slice(0, 10))
   );
+
+  if (predictsTop6.player_powers[0] < 70) {
+    // 1号艇が70以上ないレースは買わない
+    return;
+  }
 
   for (let i = 0; i < predictsTop6.top6[type].length; i++) {
     const numberset = predictsTop6.top6[type][i];
@@ -163,11 +163,6 @@ async function addTicket2t(
   predictsAll: PredictsAll,
   tickets: Ticket[]
 ): Promise<void> {
-  if (predictsTop6.player_powers[0] < 70) {
-    // 1号艇が70以上ないレースは買わない
-    return;
-  }
-
   const type = "2t";
   const ticket: Ticket = {
     type: type,
@@ -188,6 +183,11 @@ async function addTicket2t(
   logger.debug(
     `直前予想 二連単 トップ1 オッズ : numberset: ${numberset}, odds: ${numbersetOdds}, percent: ${percent}`
   );
+
+  if (predictsTop6.player_powers[0] < 70) {
+    // 1号艇が70以上ないレースは買わない
+    return;
+  }
 
   if (numbersetOdds >= 5 && numbersetOdds < 20 && percent >= 0.25) {
     // 二連単の舟券追加
@@ -340,6 +340,7 @@ async function boatRace(): Promise<void> {
       if (predictsTop6 === undefined) {
         continue;
       }
+      logger.debug("player_powers=" + util.inspect(predictsTop6.player_powers));
 
       // 直前予想全確率取得
       const predictsAll = await getPredictsAll(session, raceCard.dataid);
