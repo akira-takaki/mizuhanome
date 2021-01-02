@@ -34,7 +34,7 @@ import {
   roundBet,
   sleep,
 } from "#/myUtil";
-import { calc2tBet, updateStore2t } from "#/store2t";
+import { updateStore2t } from "#/store2t";
 
 /**
  * 設定
