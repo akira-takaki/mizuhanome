@@ -37,7 +37,8 @@ export async function authenticate(): Promise<string | undefined> {
     axiosResponse = await axios.post<SessionInfo>(url);
     logger.debug(util.inspect(axiosResponse.data));
   } catch (err) {
-    logger.error("認証 失敗", err);
+    logger.error("認証 失敗");
+    logger.debug(err);
     return undefined;
   }
 
@@ -78,7 +79,8 @@ export async function destroy(session: string): Promise<void> {
     axiosResponse = await axios.post(url);
     logger.debug(util.inspect(axiosResponse.data));
   } catch (err) {
-    logger.error("セッションの破棄 失敗", err);
+    logger.error("セッションの破棄 失敗");
+    logger.debug(err);
   }
 }
 
@@ -125,7 +127,8 @@ export async function getRaceCard(
     // CSVデータをJSONへ変換する
     raceCards = await csvtojson().fromString(axiosResponse.data);
   } catch (err) {
-    logger.error("出走表 失敗", err);
+    logger.error("出走表 失敗");
+    logger.debug(err);
     return undefined;
   }
 
@@ -151,7 +154,8 @@ export async function getOdds(
   try {
     axiosResponse = await axios.get(url);
   } catch (err) {
-    logger.error("オッズ 失敗", err);
+    logger.error("オッズ 失敗");
+    logger.debug(err);
     return undefined;
   }
 
@@ -281,7 +285,8 @@ export async function autoBuy(
     });
     logger.debug(util.inspect(axiosResponse.data));
   } catch (err) {
-    logger.error("舟券購入 失敗", err);
+    logger.error("舟券購入 失敗");
+    logger.debug(err);
   }
 }
 
