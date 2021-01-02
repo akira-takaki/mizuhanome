@@ -6,6 +6,7 @@ import * as util from "util";
 
 import {
   authenticate,
+  autoBuy,
   destroy,
   getOdds,
   getPredictsAll,
@@ -367,7 +368,7 @@ async function boatRace(): Promise<void> {
         );
 
         // 舟券購入
-        // await autoBuy(session, raceCard.dataid, tickets);
+        await autoBuy(session, raceCard.dataid, tickets);
       }
     }
 
