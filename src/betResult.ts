@@ -2,8 +2,8 @@ import fs from "fs-extra";
 import dayjs from "dayjs";
 import { Mutex } from "await-semaphore/index";
 
-import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
 import { Config } from "#/main";
+import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
 import { filteredTypePercent, pickupOdds, pickupPercent } from "#/myUtil";
 
 /**
@@ -111,6 +111,12 @@ export interface BetDayResult {
 
   /** 実際の「回収金額」(三連単 と 二連単 合わせたもの) */
   collectAll: number | null;
+
+  /** 『実際の「回収金額」』−『実際に「購入した金額」』の差額 */
+  differenceAll: number | null;
+
+  /** 次回の資金 */
+  nextCapital: number | null;
 
   /** レースの賭け結果 */
   betRaceResults: BetRaceResult[];
@@ -273,6 +279,8 @@ export function makeBetDayResult(
     collectRateAll: null,
     collectAll: null,
     amountPurchasedAll: null,
+    differenceAll: null,
+    nextCapital: null,
     betRaceResults: [],
   };
 }
@@ -436,6 +444,13 @@ function tabulateBetDayResult2(betDayResult: BetDayResult): void {
     betDayResult.amountPurchasedAll > 0
       ? betDayResult.collectAll / betDayResult.amountPurchasedAll
       : 0;
+
+  // 『実際の「回収金額」』−『実際に「購入した金額」』の差額
+  betDayResult.differenceAll =
+    betDayResult.collectAll - betDayResult.amountPurchasedAll;
+
+  // 次回の資金
+  betDayResult.nextCapital = betDayResult.capital + betDayResult.differenceAll;
 }
 
 /**
