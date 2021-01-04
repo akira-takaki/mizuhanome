@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import dayjs from "dayjs";
 import { Mutex } from "await-semaphore/index";
 
-import { Config } from "#/main";
+import { Config } from "#/config";
 import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
 import { filteredTypePercent, pickupOdds, pickupPercent } from "#/myUtil";
 
@@ -458,16 +458,21 @@ function tabulateBetDayResult2(betDayResult: BetDayResult): void {
  *
  * @param date 日付
  */
-export async function tabulateBetDayResult(date: dayjs.Dayjs): Promise<void> {
+export async function tabulateBetDayResult(
+  date: dayjs.Dayjs
+): Promise<BetDayResult> {
   const release: () => void = await mutex.acquire();
 
+  let betDayResult: BetDayResult;
   try {
-    const betDayResult = readBetDayResult(date);
+    betDayResult = readBetDayResult(date);
     tabulateBetDayResult2(betDayResult);
     writeBetDayResult(date, betDayResult);
   } finally {
     release();
   }
+
+  return betDayResult;
 }
 
 /**

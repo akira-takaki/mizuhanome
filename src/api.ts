@@ -3,7 +3,8 @@ import util from "util";
 import dayjs from "dayjs";
 import csvtojson from "csvtojson";
 
-import { logger, Config } from "#/main";
+import { logger } from "#/main";
+import { Config } from "#/config";
 
 let baseUrl: string;
 let email: string;

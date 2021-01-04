@@ -1,6 +1,5 @@
 import log4js from "log4js";
 import cron from "node-cron";
-import fs from "fs-extra";
 import dayjs from "dayjs";
 import * as util from "util";
 
@@ -36,33 +35,7 @@ import {
   sleep,
 } from "#/myUtil";
 import { updateStore2t } from "#/store2t";
-
-/**
- * 設定
- */
-export interface Config {
-  baseUrl: string;
-  email: string;
-  accessKey: string;
-
-  /** 資金 */
-  capital: number;
-
-  /** 仮定の「的中率(パーセント)」 */
-  assumedHittingRate: number;
-
-  /** 仮定の「回収金額率(パーセント)」 */
-  assumedCollectRate: number;
-
-  /** 仮定の「購入する金額率(パーセント)」 */
-  assumedAmountPurchasedRate: number;
-
-  /** 仮定の「参加するレース数率(パーセント)」 */
-  assumedEntryRaceCountRate: number;
-
-  /** 二連単の賭け金のデフォルト額 */
-  default2tBet: number;
-}
+import { Config, readConfig, writeConfig } from "#/config";
 
 log4js.configure("./config/LogConfig.json");
 export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
@@ -203,9 +176,10 @@ async function boatRace(): Promise<void> {
   logger.info("設定ファイルの読み込み");
   let config: Config;
   try {
-    config = JSON.parse(fs.readFileSync("./config/Config.json").toString());
+    config = await readConfig();
   } catch (err) {
-    logger.error("設定ファイルの読み込み 失敗", err);
+    logger.error("設定ファイルの読み込み 失敗");
+    logger.debug(err);
     return;
   }
 
@@ -378,7 +352,13 @@ async function boatRace(): Promise<void> {
     }
 
     // 日単位の賭け結果 の集計
-    await tabulateBetDayResult(today);
+    const tabulatedBetDayResult = await tabulateBetDayResult(today);
+
+    // 次回の資金を設定へ反映
+    if (tabulatedBetDayResult.nextCapital !== null) {
+      config.capital = tabulatedBetDayResult.nextCapital;
+      await writeConfig(config);
+    }
   } finally {
     if (sessionIntervalId !== null) {
       clearInterval(sessionIntervalId);
