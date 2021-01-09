@@ -5,7 +5,6 @@ import * as util from "util";
 
 import {
   authenticate,
-  autoBuy,
   destroy,
   getOdds,
   getPredictsAll,
@@ -29,12 +28,13 @@ import {
 } from "#/betResult";
 import {
   filteredTypePercent,
+  generateNumbersetInfo,
   pickupOdds,
   pickupPercent,
   roundBet,
   sleep,
 } from "#/myUtil";
-import { updateStore2t } from "#/store2t";
+import { calc2tBet, updateStore2t } from "#/store2t";
 import { Config, readConfig, writeConfig } from "#/config";
 
 log4js.configure("./config/LogConfig.json");
@@ -45,14 +45,12 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
  *
  * @param betDayResult 日単位の賭け結果
  * @param odds オッズ
- * @param predictsTop6 直前予想トップ6
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
  */
 function addTicket3t(
   betDayResult: BetDayResult,
   odds: Odds,
-  predictsTop6: PredictsTop6,
   predictsAll: PredictsAll,
   tickets: Ticket[]
 ): void {
@@ -62,30 +60,17 @@ function addTicket3t(
     numbers: [],
   };
 
+  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
   logger.debug(
-    "直前予想 三連単 トップ6 : " + util.inspect(predictsTop6.top6[type])
+    "直前予想 三連単 期待値トップ15 : " +
+      util.inspect(numbersetInfos.slice(0, 15), { depth: null })
   );
 
-  // 舟券の種類ごとの確率を取り出す
-  // 三連単の確率降順
-  const percents = filteredTypePercent(type, predictsAll);
-  logger.debug(
-    "直前予想 三連単 確率トップ10 : " + util.inspect(percents.slice(0, 10))
-  );
+  for (let i = 0; i < numbersetInfos.length; i++) {
+    const numbersetInfo = numbersetInfos[i];
 
-  for (let i = 0; i < predictsTop6.top6[type].length; i++) {
-    const numberset = predictsTop6.top6[type][i];
-
-    const percent = pickupPercent(numberset, percents);
-    const numbersetOdds = pickupOdds(type, numberset, odds);
-
-    if (i === 0 && numbersetOdds < 5) {
-      // トップ1 が オッズ 5未満ならば 三連単 を賭けない
-      break;
-    }
-
-    if (percent < 0.1) {
-      // 確率が 0.1未満ならば この組番 を賭けない
+    if (numbersetInfo.expectedValue < 1) {
+      // 期待値が 1 未満ならば賭けない
       continue;
     }
 
@@ -93,16 +78,17 @@ function addTicket3t(
       // 賭け金
       //  = 回収率を維持するための1レースの配当金 ÷ オッズ X (1 + 確率)
       // ※レース前のオッズ が レース後に下がってしまうので -1 の補正をする。
-      let numbersetOdds2 = numbersetOdds - 1;
+      let numbersetOdds2 = numbersetInfo.odds - 1;
       if (numbersetOdds2 < 1) {
         numbersetOdds2 = 1;
       }
       const bet = roundBet(
-        (betDayResult.assumed3t.raceDividend / numbersetOdds2) * (1 + percent)
+        (betDayResult.assumed3t.raceDividend / numbersetOdds2) *
+          (1 + numbersetInfo.percent)
       );
 
       ticket.numbers.push({
-        numberset: numberset,
+        numberset: numbersetInfo.numberset,
         bet: bet,
       });
     }
@@ -153,14 +139,14 @@ async function addTicket2t(
     `直前予想 二連単 トップ1 オッズ : numberset: ${numberset}, odds: ${numbersetOdds}, percent: ${percent}`
   );
 
-  // if (numbersetOdds >= 3.6 && numbersetOdds < 20 && percent >= 0.2) {
-  //   // 二連単の舟券追加
-  //   const bet = await calc2tBet(dataid, jcd, numberset, default2tBet);
-  //   ticket.numbers.push({
-  //     numberset: numberset,
-  //     bet: bet,
-  //   });
-  // }
+  if (numbersetOdds >= 3.6 && numbersetOdds < 20 && percent >= 0.2) {
+    // 二連単の舟券追加
+    const bet = await calc2tBet(dataid, jcd, numberset, default2tBet);
+    ticket.numbers.push({
+      numberset: numberset,
+      bet: bet,
+    });
+  }
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -316,18 +302,18 @@ async function boatRace(): Promise<void> {
       const tickets: Ticket[] = [];
 
       // 購入する三連単の舟券を追加する
-      addTicket3t(betDayResult, odds, predictsTop6, predictsAll, tickets);
+      addTicket3t(betDayResult, odds, predictsAll, tickets);
 
-      // 購入する二連単の舟券を追加する
-      await addTicket2t(
-        raceCard.dataid,
-        raceCard.jcd,
-        config.default2tBet,
-        odds,
-        predictsTop6,
-        predictsAll,
-        tickets
-      );
+      // // 購入する二連単の舟券を追加する
+      // await addTicket2t(
+      //   raceCard.dataid,
+      //   raceCard.jcd,
+      //   config.default2tBet,
+      //   odds,
+      //   predictsTop6,
+      //   predictsAll,
+      //   tickets
+      // );
 
       if (tickets.length > 0) {
         logger.debug(`tickets=${util.inspect(tickets, { depth: null })}`);
@@ -342,7 +328,7 @@ async function boatRace(): Promise<void> {
         );
 
         // 舟券購入
-        await autoBuy(session, raceCard.dataid, tickets);
+        // await autoBuy(session, raceCard.dataid, tickets);
       }
     }
 

@@ -4,7 +4,7 @@ import { Mutex } from "await-semaphore/index";
 
 import { Config } from "#/config";
 import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
-import { filteredTypePercent, pickupOdds, pickupPercent } from "#/myUtil";
+import { generateNumbersetInfo, pickupNumbersetInfo } from "#/myUtil";
 
 /**
  * 賭け結果
@@ -16,6 +16,9 @@ interface BetResult {
   /** 組番 */
   numberset: string;
 
+  /** パワー */
+  powers: number[];
+
   /** 確率 */
   percent: number;
 
@@ -24,6 +27,9 @@ interface BetResult {
 
   /** レース前オッズ */
   preOdds: number;
+
+  /** 期待値 */
+  expectedValue: number;
 
   /** レース前オッズ を元にした 配当金 */
   preDividend: number;
@@ -538,27 +544,31 @@ export async function addBetRaceResult(
       const ticket = tickets[i];
 
       const type = ticket.type;
-      const percents = filteredTypePercent(type, predictsAll);
+      const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
       for (let j = 0; j < ticket.numbers.length; j++) {
         const ticketNumber = ticket.numbers[j];
 
         const numberset = ticketNumber.numberset;
-        const percent = pickupPercent(numberset, percents);
         const bet = ticketNumber.bet;
-        const preOdds = pickupOdds(type, numberset, odds);
-        const preDividend = bet * preOdds;
 
-        betResults.push({
-          type: type,
-          numberset: numberset,
-          percent: percent,
-          bet: bet,
-          preOdds: preOdds,
-          preDividend: preDividend,
-          odds: null,
-          dividend: null,
-        });
+        const numbersetInfo = pickupNumbersetInfo(numberset, numbersetInfos);
+        if (numbersetInfo !== undefined) {
+          const preDividend = bet * numbersetInfo.odds;
+
+          betResults.push({
+            type: type,
+            numberset: numberset,
+            powers: numbersetInfo.powers,
+            percent: numbersetInfo.percent,
+            bet: bet,
+            preOdds: numbersetInfo.odds,
+            expectedValue: numbersetInfo.expectedValue,
+            preDividend: preDividend,
+            odds: null,
+            dividend: null,
+          });
+        }
       }
     }
 

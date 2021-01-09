@@ -103,3 +103,130 @@ export function pickupPercent(numberset: string, percents: Percent[]): number {
 
   return 0;
 }
+
+interface Power {
+  numberStr: string;
+  power: number;
+}
+
+/**
+ * 指定された組番のパワーを返す
+ *
+ * @param numberset 組番
+ * @param predictsAll 直前予想全確率
+ * @return 指定された組番のパワー
+ */
+export function pickupPowers(
+  numberset: string,
+  predictsAll: PredictsAll
+): number[] {
+  const powers: number[] = [];
+
+  const allPowers: Power[] = Object.keys(predictsAll.predict)
+    .filter((key) => key.startsWith("player"))
+    .map(
+      (key): Power => ({
+        numberStr: key.substring("player".length, "player".length + 1),
+        power: parseFloat(predictsAll.predict[key].toString()),
+      })
+    );
+
+  for (let i = 0; i < numberset.length; i++) {
+    const numberStr = numberset.substring(i, i + 1);
+    for (let j = 0; j < allPowers.length; j++) {
+      if (numberStr === allPowers[j].numberStr) {
+        powers.push(allPowers[j].power);
+      }
+    }
+  }
+
+  return powers;
+}
+
+/**
+ * 組番情報
+ */
+export interface NumbersetInfo {
+  /** 組番 */
+  numberset: string;
+
+  /** パワー */
+  powers: number[];
+
+  /** 確率 */
+  percent: number;
+
+  /** オッズ */
+  odds: number;
+
+  /**
+   * 期待値 = 確率 x オッズ
+   */
+  expectedValue: number;
+}
+
+/**
+ * 組番情報配列を生成する。
+ * 期待値の降順になっている。
+ *
+ * @param type 舟券の種類
+ * @param predictsAll 直前予想全確率
+ * @param odds オッズ情報
+ * @return 組番情報配列
+ */
+export function generateNumbersetInfo(
+  type: string,
+  predictsAll: PredictsAll,
+  odds: Odds
+): NumbersetInfo[] {
+  const numbersetInfos: NumbersetInfo[] = [];
+
+  // 全組番の確率
+  const percents = filteredTypePercent(type, predictsAll);
+
+  for (let i = 0; i < percents.length; i++) {
+    const percent: number = parseFloat(percents[i].percent);
+    const numbersetOdds = pickupOdds(type, percents[i].numberset, odds);
+
+    numbersetInfos.push({
+      numberset: percents[i].numberset,
+      powers: pickupPowers(percents[i].numberset, predictsAll),
+      percent: percent,
+      odds: numbersetOdds,
+      expectedValue: percent * numbersetOdds,
+    });
+  }
+
+  // 期待値の降順
+  return numbersetInfos
+    .sort((e1, e2) => {
+      if (e1.expectedValue > e2.expectedValue) {
+        return 1;
+      } else if (e1.expectedValue < e2.expectedValue) {
+        return -1;
+      } else {
+        return 0;
+      }
+    })
+    .reverse();
+}
+
+/**
+ * 指定された組番の組番情報を返す
+ *
+ * @param numberset 組番
+ * @param numbersetInfos 組番情報配列
+ * @return 組番情報
+ */
+export function pickupNumbersetInfo(
+  numberset: string,
+  numbersetInfos: NumbersetInfo[]
+): NumbersetInfo | undefined {
+  for (let i = 0; i < numbersetInfos.length; i++) {
+    if (numberset === numbersetInfos[i].numberset) {
+      return numbersetInfos[i];
+    }
+  }
+
+  return undefined;
+}
