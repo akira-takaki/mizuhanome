@@ -193,7 +193,7 @@ export function generateNumbersetInfo(
       powers: pickupPowers(percents[i].numberset, predictsAll),
       percent: percent,
       odds: numbersetOdds,
-      expectedValue: percent * numbersetOdds,
+      expectedValue: isNaN(numbersetOdds) ? 0 : percent * numbersetOdds,
     });
   }
 
