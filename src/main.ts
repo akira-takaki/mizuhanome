@@ -8,11 +8,9 @@ import {
   destroy,
   getOdds,
   getPredictsAll,
-  getPredictsTop6,
   getRaceCard,
   Odds,
   PredictsAll,
-  PredictsTop6,
   refresh,
   setupApi,
   Ticket,
@@ -26,16 +24,7 @@ import {
   tabulateBetDayResult,
   updateBetRaceResult,
 } from "#/betResult";
-import {
-  filteredTypePercent,
-  generateNumbersetInfo,
-  pickupOdds,
-  pickupPercent,
-  roundBet,
-  sleep,
-  TicketType,
-} from "#/myUtil";
-import { calc2tBet, updateStore2t } from "#/store2t";
+import { generateNumbersetInfo, roundBet, sleep, TicketType } from "#/myUtil";
 import { Config, readConfig, writeConfig } from "#/config";
 
 log4js.configure("./config/LogConfig.json");
@@ -67,13 +56,13 @@ function addTicket3t(
       util.inspect(numbersetInfos.slice(0, 15), { depth: null })
   );
 
-  for (let i = 0; i < numbersetInfos.length; i++) {
-    const numbersetInfo = numbersetInfos[i];
+  // 期待値が 1 以上のものに絞り込む
+  const filteredNumbersetInfos = numbersetInfos.filter(
+    (value) => value.expectedValue >= 1
+  );
 
-    if (numbersetInfo.expectedValue < 1) {
-      // 期待値が 1 未満ならば賭けない
-      continue;
-    }
+  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
+    const numbersetInfo = numbersetInfos[i];
 
     if (betDayResult.assumed3t.raceDividend !== null) {
       // 賭け金
@@ -100,55 +89,153 @@ function addTicket3t(
 }
 
 /**
- * 購入する二連単の舟券を追加する
+ * 購入する三連複の舟券を追加する
  *
- * @param dataid データID
- * @param jcd 場所番号
- * @param default2tBet デフォルトの二連単の賭け金
  * @param odds オッズ
- * @param predictsTop6 直前予想トップ6
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
  */
-async function addTicket2t(
-  dataid: number,
-  jcd: number,
-  default2tBet: number,
+function addTicket3f(
   odds: Odds,
-  predictsTop6: PredictsTop6,
   predictsAll: PredictsAll,
   tickets: Ticket[]
-): Promise<void> {
+): void {
+  const type: TicketType = "3f";
+  const ticket: Ticket = {
+    type: type,
+    numbers: [],
+  };
+
+  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
+  logger.debug(
+    "直前予想 三連複 期待値トップ15 : " +
+      util.inspect(numbersetInfos.slice(0, 15), { depth: null })
+  );
+
+  // 期待値が 1 以上のものに絞り込む
+  const filteredNumbersetInfos = numbersetInfos.filter(
+    (value) => value.expectedValue >= 1
+  );
+
+  // 賭け金は1レースで 1000円 を基準にする。
+  const defaultBet =
+    filteredNumbersetInfos.length === 0
+      ? 0
+      : 1000 / filteredNumbersetInfos.length;
+
+  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
+    const numbersetInfo = numbersetInfos[i];
+
+    // 賭け金
+    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent));
+
+    ticket.numbers.push({
+      numberset: numbersetInfo.numberset,
+      bet: bet,
+    });
+  }
+  if (ticket.numbers.length > 0) {
+    tickets.push(ticket);
+  }
+}
+
+/**
+ * 購入する二連単の舟券を追加する
+ *
+ * @param odds オッズ
+ * @param predictsAll 直前予想全確率
+ * @param tickets 舟券配列
+ */
+function addTicket2t(
+  odds: Odds,
+  predictsAll: PredictsAll,
+  tickets: Ticket[]
+): void {
   const type: TicketType = "2t";
   const ticket: Ticket = {
     type: type,
     numbers: [],
   };
 
+  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
   logger.debug(
-    "直前予想 二連単 トップ6 : " + util.inspect(predictsTop6.top6[type])
+    "直前予想 二連単 期待値トップ15 : " +
+      util.inspect(numbersetInfos.slice(0, 15), { depth: null })
   );
 
-  // 舟券の種類ごとの確率を取り出す
-  // 二連単の確率降順
-  const percents = filteredTypePercent(type, predictsAll);
-
-  const numberset = predictsTop6.top6[type][0];
-  const numbersetOdds = pickupOdds(type, numberset, odds);
-  const percent = pickupPercent(numberset, percents);
-  logger.debug(
-    `直前予想 二連単 トップ1 オッズ : numberset: ${numberset}, odds: ${numbersetOdds}, percent: ${percent}`
+  // 期待値が 1 以上のものに絞り込む
+  const filteredNumbersetInfos = numbersetInfos.filter(
+    (value) => value.expectedValue >= 1
   );
 
-  if (numbersetOdds >= 3.6 && numbersetOdds < 20 && percent >= 0.2) {
-    // 二連単の舟券追加
-    const bet = await calc2tBet(dataid, jcd, numberset, default2tBet);
+  // 賭け金は1レースで 1000円 を基準にする。
+  const defaultBet =
+    filteredNumbersetInfos.length === 0
+      ? 0
+      : 1000 / filteredNumbersetInfos.length;
+
+  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
+    const numbersetInfo = numbersetInfos[i];
+
+    // 賭け金
+    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent));
+
     ticket.numbers.push({
-      numberset: numberset,
+      numberset: numbersetInfo.numberset,
       bet: bet,
     });
   }
+  if (ticket.numbers.length > 0) {
+    tickets.push(ticket);
+  }
+}
 
+/**
+ * 購入する二連複の舟券を追加する
+ *
+ * @param odds オッズ
+ * @param predictsAll 直前予想全確率
+ * @param tickets 舟券配列
+ */
+function addTicket2f(
+  odds: Odds,
+  predictsAll: PredictsAll,
+  tickets: Ticket[]
+): void {
+  const type: TicketType = "2f";
+  const ticket: Ticket = {
+    type: type,
+    numbers: [],
+  };
+
+  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
+  logger.debug(
+    "直前予想 二連複 期待値トップ15 : " +
+      util.inspect(numbersetInfos.slice(0, 15), { depth: null })
+  );
+
+  // 期待値が 1 以上のものに絞り込む
+  const filteredNumbersetInfos = numbersetInfos.filter(
+    (value) => value.expectedValue >= 1
+  );
+
+  // 賭け金は1レースで 1000円 を基準にする。
+  const defaultBet =
+    filteredNumbersetInfos.length === 0
+      ? 0
+      : 1000 / filteredNumbersetInfos.length;
+
+  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
+    const numbersetInfo = numbersetInfos[i];
+
+    // 賭け金
+    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent));
+
+    ticket.numbers.push({
+      numberset: numbersetInfo.numberset,
+      bet: bet,
+    });
+  }
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
   }
@@ -181,7 +268,6 @@ async function boatRace(): Promise<void> {
 
   let sessionIntervalId: NodeJS.Timeout | null = null;
   let betResultIntervalId: NodeJS.Timeout | null = null;
-  let store2tIntervalId: NodeJS.Timeout | null = null;
   try {
     sessionIntervalId = setInterval(() => {
       // セッションの更新 50分ごと
@@ -233,11 +319,6 @@ async function boatRace(): Promise<void> {
       updateBetRaceResult(today, session);
     }, 10000);
 
-    store2tIntervalId = setInterval(() => {
-      // 二連単で賭けた履歴 の結果を更新する
-      updateStore2t(session);
-    }, 9000);
-
     // 各レースで舟券購入
     for (let i = 0; i < sortedRaceCards.length; i++) {
       const raceCard = sortedRaceCards[i];
@@ -287,13 +368,6 @@ async function boatRace(): Promise<void> {
         continue;
       }
 
-      // 直前予想トップ6取得
-      const predictsTop6 = await getPredictsTop6(session, raceCard.dataid);
-      if (predictsTop6 === undefined) {
-        continue;
-      }
-      logger.debug("player_powers=" + util.inspect(predictsTop6.player_powers));
-
       // 直前予想全確率取得
       const predictsAll = await getPredictsAll(session, raceCard.dataid);
       if (predictsAll === undefined) {
@@ -305,16 +379,14 @@ async function boatRace(): Promise<void> {
       // 購入する三連単の舟券を追加する
       addTicket3t(betDayResult, odds, predictsAll, tickets);
 
-      // // 購入する二連単の舟券を追加する
-      // await addTicket2t(
-      //   raceCard.dataid,
-      //   raceCard.jcd,
-      //   config.default2tBet,
-      //   odds,
-      //   predictsTop6,
-      //   predictsAll,
-      //   tickets
-      // );
+      // 購入する三連複の舟券を追加する
+      addTicket3f(odds, predictsAll, tickets);
+
+      // 購入する二連単の舟券を追加する
+      addTicket2t(odds, predictsAll, tickets);
+
+      // 購入する二連複の舟券を追加する
+      addTicket2f(odds, predictsAll, tickets);
 
       if (tickets.length > 0) {
         logger.debug(`tickets=${util.inspect(tickets, { depth: null })}`);
@@ -353,10 +425,6 @@ async function boatRace(): Promise<void> {
 
     if (betResultIntervalId !== null) {
       clearInterval(betResultIntervalId);
-    }
-
-    if (store2tIntervalId !== null) {
-      clearInterval(store2tIntervalId);
     }
 
     // セッションの破棄
