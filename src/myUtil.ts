@@ -1,5 +1,7 @@
 import { Odds, PredictsAll } from "#/api";
 
+export type TicketType = "3t" | "3f" | "2t" | "2f";
+
 /**
  * スリープ
  *
@@ -18,7 +20,7 @@ export async function sleep(millisecond: number): Promise<void> {
  * @return オッズ
  */
 export function pickupOdds(
-  type: string,
+  type: TicketType,
   numberset: string,
   odds: Odds
 ): number {
@@ -62,7 +64,7 @@ export interface Percent {
  * @return 指定された舟券の種類の確率配列
  */
 export function filteredTypePercent(
-  type: string,
+  type: TicketType,
   predictsAll: PredictsAll
 ): Percent[] {
   return Object.keys(predictsAll.predict)
@@ -175,7 +177,7 @@ export interface NumbersetInfo {
  * @return 組番情報配列
  */
 export function generateNumbersetInfo(
-  type: string,
+  type: TicketType,
   predictsAll: PredictsAll,
   odds: Odds
 ): NumbersetInfo[] {

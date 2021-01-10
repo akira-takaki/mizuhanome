@@ -4,14 +4,18 @@ import { Mutex } from "await-semaphore/index";
 
 import { Config } from "#/config";
 import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
-import { generateNumbersetInfo, pickupNumbersetInfo } from "#/myUtil";
+import {
+  generateNumbersetInfo,
+  pickupNumbersetInfo,
+  TicketType,
+} from "#/myUtil";
 
 /**
  * 賭け結果
  */
 interface BetResult {
   /** 舟券種類 */
-  type: string;
+  type: TicketType;
 
   /** 組番 */
   numberset: string;
@@ -106,16 +110,22 @@ export interface BetDayResult {
   /** 実際(三連単) */
   actual3t: Parameter;
 
+  /** 実際(三連複) */
+  actual3f: Parameter;
+
   /** 実際(二連単) */
   actual2t: Parameter;
 
-  /** 実際の「回収金額率(パーセント)」(三連単 と 二連単 合わせたもの) */
+  /** 実際(二連複) */
+  actual2f: Parameter;
+
+  /** 実際の「回収金額率(パーセント)」(すべての券種を合わせたもの) */
   collectRateAll: number | null;
 
-  /** 実際に「購入した 金額」(三連単 と 二連単 合わせたもの) */
+  /** 実際に「購入した 金額」(すべての券種を合わせたもの) */
   amountPurchasedAll: number | null;
 
-  /** 実際の「回収金額」(三連単 と 二連単 合わせたもの) */
+  /** 実際の「回収金額」(すべての券種を合わせたもの) */
   collectAll: number | null;
 
   /** 『実際の「回収金額」』−『実際に「購入した金額」』の差額 */
@@ -169,6 +179,19 @@ function writeBetDayResult(
   fs.writeFileSync(fileName, JSON.stringify(betDayResult, null, 2));
 }
 
+function createEmptyParameter(): Parameter {
+  return {
+    hittingRate: null,
+    collectRate: null,
+    collect: null,
+    raceDividend: null,
+    amountPurchasedRate: null,
+    amountPurchased: null,
+    entryRaceCountRate: null,
+    entryRaceCount: null,
+  };
+}
+
 /**
  * 日単位の賭け結果をファイルから読み込む
  *
@@ -177,7 +200,24 @@ function writeBetDayResult(
  */
 function readBetDayResult(date: dayjs.Dayjs): BetDayResult {
   const fileName = makeFileName(date, false);
-  return JSON.parse(fs.readFileSync(fileName).toString());
+  const betDayResult: BetDayResult = JSON.parse(
+    fs.readFileSync(fileName).toString()
+  );
+
+  if (betDayResult.actual3t === undefined) {
+    betDayResult.actual3t = createEmptyParameter();
+  }
+  if (betDayResult.actual3f === undefined) {
+    betDayResult.actual3f = createEmptyParameter();
+  }
+  if (betDayResult.actual2t === undefined) {
+    betDayResult.actual2t = createEmptyParameter();
+  }
+  if (betDayResult.actual2f === undefined) {
+    betDayResult.actual2f = createEmptyParameter();
+  }
+
+  return betDayResult;
 }
 
 /**
@@ -262,26 +302,10 @@ export function makeBetDayResult(
       entryRaceCountRate: config.assumedEntryRaceCountRate,
       entryRaceCount: entryRaceCount,
     },
-    actual3t: {
-      hittingRate: null,
-      collectRate: null,
-      collect: null,
-      raceDividend: null,
-      amountPurchasedRate: null,
-      amountPurchased: null,
-      entryRaceCountRate: null,
-      entryRaceCount: null,
-    },
-    actual2t: {
-      hittingRate: null,
-      collectRate: null,
-      collect: null,
-      raceDividend: null,
-      amountPurchasedRate: null,
-      amountPurchased: null,
-      entryRaceCountRate: null,
-      entryRaceCount: null,
-    },
+    actual3t: createEmptyParameter(),
+    actual3f: createEmptyParameter(),
+    actual2t: createEmptyParameter(),
+    actual2f: createEmptyParameter(),
     collectRateAll: null,
     collectAll: null,
     amountPurchasedAll: null,
@@ -292,158 +316,169 @@ export function makeBetDayResult(
 }
 
 /**
+ * 日単位の券種ごとの賭け結果 の集計
+ *
+ * @param raceCount 1日のレース数
+ * @param capital 資金
+ * @param type 券種
+ * @param betRaceResults レースの賭け結果
+ * @param parameter 券種のパラメータ
+ */
+function tabulateBetDayResult3(
+  raceCount: number,
+  capital: number,
+  type: TicketType,
+  betRaceResults: BetRaceResult[],
+  parameter: Parameter
+): void {
+  // 回収金額
+  let collect = 0;
+
+  // 購入した金額
+  let amountPurchased = 0;
+
+  // 参加したレース数
+  let entryRaceCount = 0;
+
+  // 的中した数
+  let hitting = 0;
+
+  for (let i = 0; i < betRaceResults.length; i++) {
+    const betRaceResult = betRaceResults[i];
+
+    let hasType = false;
+    let isHitting = false;
+    for (let j = 0; j < betRaceResult.betResults.length; j++) {
+      const betResult = betRaceResult.betResults[j];
+
+      if (betResult.type === type) {
+        hasType = true;
+
+        // 「購入した金額」 に 「賭け金」 を加算
+        amountPurchased = amountPurchased + betResult.bet;
+
+        if (betResult.dividend !== null) {
+          // 「回収金額」 に 「配当金」 を加算
+          collect = collect + betResult.dividend;
+        }
+
+        if (betResult.odds !== null) {
+          isHitting = true;
+        }
+      }
+    }
+
+    if (hasType) {
+      // 参加したレース数 を加算
+      entryRaceCount++;
+    }
+    if (isHitting) {
+      // 的中した数 を加算
+      hitting++;
+    }
+  }
+
+  // 的中率(パーセント)
+  const hittingRate = entryRaceCount > 0 ? hitting / entryRaceCount : 0;
+
+  // 回収金額率(パーセント)
+  const collectRate = amountPurchased > 0 ? collect / amountPurchased : 0;
+
+  // 回収率を維持するための1レースの配当金
+  //   =  「回収金額」 ÷ ( 「参加したレース数」 X  「的中率(パーセント)」 )
+  const raceDividend =
+    entryRaceCount * hittingRate > 0
+      ? Math.round(collect / (entryRaceCount * hittingRate))
+      : 0;
+
+  // 購入した金額率(パーセント)
+  const amountPurchasedRate = amountPurchased / capital;
+
+  // 参加したレース数率(パーセント)
+  const entryRaceCountRate = entryRaceCount / raceCount;
+
+  parameter.hittingRate = hittingRate;
+  parameter.collectRate = collectRate;
+  parameter.collect = collect;
+  parameter.raceDividend = raceDividend;
+  parameter.amountPurchasedRate = amountPurchasedRate;
+  parameter.amountPurchased = amountPurchased;
+  parameter.entryRaceCountRate = entryRaceCountRate;
+  parameter.entryRaceCount = entryRaceCount;
+}
+
+/**
  * 日単位の賭け結果 の集計
  *
  * @param betDayResult 日単位の賭け結果
  */
 function tabulateBetDayResult2(betDayResult: BetDayResult): void {
-  // ===== 三連単 =====
-  // 実際に「参加した レース数」(三連単)
-  let entryRaceCount3t = 0;
+  // 三連単の集計
+  tabulateBetDayResult3(
+    betDayResult.raceCount,
+    betDayResult.capital,
+    "3t",
+    betDayResult.betRaceResults,
+    betDayResult.actual3t
+  );
 
-  // 実際に「購入した 金額」(三連単)
-  let amountPurchased3t = 0;
+  // 三連複の集計
+  tabulateBetDayResult3(
+    betDayResult.raceCount,
+    betDayResult.capital,
+    "3f",
+    betDayResult.betRaceResults,
+    betDayResult.actual3f
+  );
 
-  // 実際の「回収金額」(三連単)
-  let collect3t = 0;
+  // 二連単の集計
+  tabulateBetDayResult3(
+    betDayResult.raceCount,
+    betDayResult.capital,
+    "2t",
+    betDayResult.betRaceResults,
+    betDayResult.actual2t
+  );
 
-  // 的中した数(三連単)
-  let hitting3t = 0;
+  // 二連複の集計
+  tabulateBetDayResult3(
+    betDayResult.raceCount,
+    betDayResult.capital,
+    "2f",
+    betDayResult.betRaceResults,
+    betDayResult.actual2f
+  );
 
-  // ===== 二連単 =====
-  // 実際に「参加した レース数」(二連単)
-  let entryRaceCount2t = 0;
-
-  // 実際に「購入した 金額」(二連単)
-  let amountPurchased2t = 0;
-
-  // 実際の「回収金額」(二連単)
-  let collect2t = 0;
-
-  // 的中した数(二連単)
-  let hitting2t = 0;
-
-  for (let i = 0; i < betDayResult.betRaceResults.length; i++) {
-    const betRaceResult = betDayResult.betRaceResults[i];
-
-    let has3t = false;
-    let isHitting3t = false;
-    let has2t = false;
-    let isHitting2t = false;
-    for (let j = 0; j < betRaceResult.betResults.length; j++) {
-      const betResult = betRaceResult.betResults[j];
-
-      if (betResult.type === "3t") {
-        // ===== 三連単 =====
-        has3t = true;
-
-        // 実際に「購入した 金額」 に 賭け金 を加算
-        amountPurchased3t = amountPurchased3t + betResult.bet;
-
-        if (betResult.dividend !== null) {
-          // 実際の「回収金額」 に 配当金 を加算
-          collect3t = collect3t + betResult.dividend;
-        }
-
-        if (betResult.odds !== null) {
-          isHitting3t = true;
-        }
-      } else if (betResult.type === "2t") {
-        // ===== 二連単 =====
-        has2t = true;
-
-        // 実際に「購入した 金額」 に 賭け金 を加算
-        amountPurchased2t = amountPurchased2t + betResult.bet;
-
-        if (betResult.dividend !== null) {
-          // 実際の「回収金額」 に 配当金 を加算
-          collect2t = collect2t + betResult.dividend;
-        }
-
-        if (betResult.odds !== null) {
-          isHitting2t = true;
-        }
-      }
-    }
-    // ===== 三連単 =====
-    if (has3t) {
-      // 「参加した レース数」を加算(三連単)
-      entryRaceCount3t++;
-    }
-    if (isHitting3t) {
-      // 的中した数 を加算
-      hitting3t++;
-    }
-
-    // ===== 二連単 =====
-    if (has2t) {
-      // 「参加した レース数」を加算(二連単)
-      entryRaceCount2t++;
-    }
-    if (isHitting2t) {
-      // 的中した数 を加算
-      hitting2t++;
-    }
-  }
-
-  // ===== 三連単 =====
-  // 実際に「参加した レース数率(パーセント)」(三連単)
-  const entryRaceCountRate3t = entryRaceCount3t / betDayResult.raceCount;
-
-  // 実際に「購入した 金額率(パーセント)」(三連単)
-  const amountPurchasedRate3t = amountPurchased3t / betDayResult.capital;
-
-  // 実際の「回収金額率(パーセント)」(三連単)
-  const collectRate3t =
-    amountPurchased3t > 0 ? collect3t / amountPurchased3t : 0;
-
-  // 実際の「的中率(パーセント)」(三連単)
-  const hittingRate3t = entryRaceCount3t > 0 ? hitting3t / entryRaceCount3t : 0;
-
-  // 回収率を維持するための1レースの配当金(三連単)
-  //   =  実際の「回収金額」 ÷ ( 実際に「参加したレース数」 X  実際の「的中率(パーセント)」 )
-  const raceDividend3t =
-    entryRaceCount3t * hittingRate3t > 0
-      ? Math.round(collect3t / (entryRaceCount3t * hittingRate3t))
-      : 0;
-
-  betDayResult.actual3t.entryRaceCount = entryRaceCount3t;
-  betDayResult.actual3t.entryRaceCountRate = entryRaceCountRate3t;
-  betDayResult.actual3t.amountPurchased = amountPurchased3t;
-  betDayResult.actual3t.amountPurchasedRate = amountPurchasedRate3t;
-  betDayResult.actual3t.collect = collect3t;
-  betDayResult.actual3t.collectRate = collectRate3t;
-  betDayResult.actual3t.hittingRate = hittingRate3t;
-  betDayResult.actual3t.raceDividend = raceDividend3t;
-
-  // ===== 二連単 =====
-  // 実際に「参加した レース数率(パーセント)」(二連単)
-  const entryRaceCountRate2t = entryRaceCount2t / betDayResult.raceCount;
-
-  // 実際に「購入した 金額率(パーセント)」(二連単)
-  const amountPurchasedRate2t = amountPurchased2t / betDayResult.capital;
-
-  // 実際の「回収金額率(パーセント)」(二連単)
-  const collectRate2t =
-    amountPurchased2t > 0 ? collect2t / amountPurchased2t : 0;
-
-  // 実際の「的中率(パーセント)」(二連単)
-  const hittingRate2t = entryRaceCount2t > 0 ? hitting2t / entryRaceCount2t : 0;
-
-  betDayResult.actual2t.entryRaceCount = entryRaceCount2t;
-  betDayResult.actual2t.entryRaceCountRate = entryRaceCountRate2t;
-  betDayResult.actual2t.amountPurchased = amountPurchased2t;
-  betDayResult.actual2t.amountPurchasedRate = amountPurchasedRate2t;
-  betDayResult.actual2t.collect = collect2t;
-  betDayResult.actual2t.collectRate = collectRate2t;
-  betDayResult.actual2t.hittingRate = hittingRate2t;
-
-  // ===== 三連単 と 二連単 合わせたもの =====
+  // すべての券種を合わせたもの
   // 実際に「購入した 金額」
-  betDayResult.amountPurchasedAll = amountPurchased3t + amountPurchased2t;
+  betDayResult.amountPurchasedAll =
+    (betDayResult.actual3t.amountPurchased === null
+      ? 0
+      : betDayResult.actual3t.amountPurchased) +
+    (betDayResult.actual3f.amountPurchased === null
+      ? 0
+      : betDayResult.actual3f.amountPurchased) +
+    (betDayResult.actual2t.amountPurchased === null
+      ? 0
+      : betDayResult.actual2t.amountPurchased) +
+    (betDayResult.actual2f.amountPurchased === null
+      ? 0
+      : betDayResult.actual2f.amountPurchased);
 
   // 実際の「回収金額」
-  betDayResult.collectAll = collect3t + collect2t;
+  betDayResult.collectAll =
+    (betDayResult.actual3t.collect === null
+      ? 0
+      : betDayResult.actual3t.collect) +
+    (betDayResult.actual3f.collect === null
+      ? 0
+      : betDayResult.actual3f.collect) +
+    (betDayResult.actual2t.collect === null
+      ? 0
+      : betDayResult.actual2t.collect) +
+    (betDayResult.actual2f.collect === null
+      ? 0
+      : betDayResult.actual2f.collect);
 
   // 実際の「回収金額率(パーセント)」
   betDayResult.collectRateAll =

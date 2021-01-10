@@ -5,6 +5,7 @@ import csvtojson from "csvtojson";
 
 import { logger } from "#/main";
 import { Config } from "#/config";
+import { TicketType } from "#/myUtil";
 
 let baseUrl: string;
 let email: string;
@@ -247,7 +248,7 @@ export interface TicketNumber {
  * 舟券種類
  */
 export interface Ticket {
-  type: string;
+  type: TicketType;
   numbers: TicketNumber[];
 }
 

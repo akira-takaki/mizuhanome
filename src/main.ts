@@ -33,6 +33,7 @@ import {
   pickupPercent,
   roundBet,
   sleep,
+  TicketType,
 } from "#/myUtil";
 import { calc2tBet, updateStore2t } from "#/store2t";
 import { Config, readConfig, writeConfig } from "#/config";
@@ -54,7 +55,7 @@ function addTicket3t(
   predictsAll: PredictsAll,
   tickets: Ticket[]
 ): void {
-  const type = "3t";
+  const type: TicketType = "3t";
   const ticket: Ticket = {
     type: type,
     numbers: [],
@@ -118,7 +119,7 @@ async function addTicket2t(
   predictsAll: PredictsAll,
   tickets: Ticket[]
 ): Promise<void> {
-  const type = "2t";
+  const type: TicketType = "2t";
   const ticket: Ticket = {
     type: type,
     numbers: [],
