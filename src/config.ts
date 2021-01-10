@@ -23,9 +23,6 @@ export interface Config {
 
   /** 仮定の「参加するレース数率(パーセント)」 */
   assumedEntryRaceCountRate: number;
-
-  /** 二連単の賭け金のデフォルト額 */
-  default2tBet: number;
 }
 
 const DIR = "./config";

@@ -5,7 +5,7 @@ import { Mutex } from "await-semaphore/index";
 import { Config } from "#/config";
 import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
 import {
-  generateNumbersetInfo,
+  generateNumbersetInfoOrderByExpectedValue,
   pickupNumbersetInfo,
   TicketType,
 } from "#/myUtil";
@@ -579,7 +579,11 @@ export async function addBetRaceResult(
       const ticket = tickets[i];
 
       const type = ticket.type;
-      const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
+      const numbersetInfos = generateNumbersetInfoOrderByExpectedValue(
+        type,
+        predictsAll,
+        odds
+      );
 
       for (let j = 0; j < ticket.numbers.length; j++) {
         const ticketNumber = ticket.numbers[j];

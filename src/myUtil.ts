@@ -58,6 +58,7 @@ export interface Percent {
 
 /**
  * 指定された舟券の種類の確率を取り出す
+ * 確率の降順
  *
  * @param type 舟券の種類
  * @param predictsAll 直前予想全確率
@@ -169,14 +170,13 @@ export interface NumbersetInfo {
 
 /**
  * 組番情報配列を生成する。
- * 期待値の降順になっている。
  *
  * @param type 舟券の種類
  * @param predictsAll 直前予想全確率
  * @param odds オッズ情報
  * @return 組番情報配列
  */
-export function generateNumbersetInfo(
+function generateNumbersetInfo(
   type: TicketType,
   predictsAll: PredictsAll,
   odds: Odds
@@ -199,12 +199,61 @@ export function generateNumbersetInfo(
     });
   }
 
+  return numbersetInfos;
+}
+
+/**
+ * 組番情報配列を生成する。
+ * 期待値の降順になっている。
+ *
+ * @param type 舟券の種類
+ * @param predictsAll 直前予想全確率
+ * @param odds オッズ情報
+ * @return 組番情報配列
+ */
+export function generateNumbersetInfoOrderByExpectedValue(
+  type: TicketType,
+  predictsAll: PredictsAll,
+  odds: Odds
+): NumbersetInfo[] {
+  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
+
   // 期待値の降順
   return numbersetInfos
     .sort((e1, e2) => {
       if (e1.expectedValue > e2.expectedValue) {
         return 1;
       } else if (e1.expectedValue < e2.expectedValue) {
+        return -1;
+      } else {
+        return 0;
+      }
+    })
+    .reverse();
+}
+
+/**
+ * 組番情報配列を生成する。
+ * 確率の降順になっている。
+ *
+ * @param type 舟券の種類
+ * @param predictsAll 直前予想全確率
+ * @param odds オッズ情報
+ * @return 組番情報配列
+ */
+export function generateNumbersetInfoOrderByPercent(
+  type: TicketType,
+  predictsAll: PredictsAll,
+  odds: Odds
+): NumbersetInfo[] {
+  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
+
+  // 確率の降順
+  return numbersetInfos
+    .sort((e1, e2) => {
+      if (e1.percent > e2.percent) {
+        return 1;
+      } else if (e1.percent < e2.percent) {
         return -1;
       } else {
         return 0;

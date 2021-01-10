@@ -24,7 +24,13 @@ import {
   tabulateBetDayResult,
   updateBetRaceResult,
 } from "#/betResult";
-import { generateNumbersetInfo, roundBet, sleep, TicketType } from "#/myUtil";
+import {
+  generateNumbersetInfoOrderByExpectedValue,
+  generateNumbersetInfoOrderByPercent,
+  roundBet,
+  sleep,
+  TicketType,
+} from "#/myUtil";
 import { Config, readConfig, writeConfig } from "#/config";
 
 log4js.configure("./config/LogConfig.json");
@@ -50,18 +56,34 @@ function addTicket3t(
     numbers: [],
   };
 
-  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
+  // 組番情報配列を生成する。
+  // 確率の降順になっている。
+  const numbersetInfos = generateNumbersetInfoOrderByPercent(
+    type,
+    predictsAll,
+    odds
+  );
   logger.debug(
-    "直前予想 三連単 期待値トップ15 : " +
-      util.inspect(numbersetInfos.slice(0, 15), { depth: null })
+    "直前予想 三連単 確率トップ10 : " +
+      util.inspect(numbersetInfos.slice(0, 10), { depth: null })
   );
 
-  // 期待値が 1 以上のものに絞り込む
-  const filteredNumbersetInfos = numbersetInfos.filter(
+  // 確率が高いトップN
+  const topN = 4;
+  const topNumbersetInfos = numbersetInfos.slice(0, topN);
+
+  // 確率が高いトップN の中で 期待値が 1 以上のものの数
+  const countOfOverExpectedValue = topNumbersetInfos.filter(
     (value) => value.expectedValue >= 1
-  );
+  ).length;
 
-  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
+  // 確率が高いトップN の中に期待値が 1 以上のものが無ければ
+  // このレースを賭けない
+  if (countOfOverExpectedValue <= 0) {
+    return;
+  }
+
+  for (let i = 0; i < topNumbersetInfos.length; i++) {
     const numbersetInfo = numbersetInfos[i];
 
     if (betDayResult.assumed3t.raceDividend !== null) {
@@ -106,7 +128,13 @@ function addTicket3f(
     numbers: [],
   };
 
-  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
+  // 組番情報配列を生成する。
+  // 期待値の降順になっている。
+  const numbersetInfos = generateNumbersetInfoOrderByExpectedValue(
+    type,
+    predictsAll,
+    odds
+  );
   logger.debug(
     "直前予想 三連複 期待値トップ15 : " +
       util.inspect(numbersetInfos.slice(0, 15), { depth: null })
@@ -127,7 +155,8 @@ function addTicket3f(
     const numbersetInfo = numbersetInfos[i];
 
     // 賭け金
-    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent));
+    // 賭け金のメリハリを付けるために 確率の2倍 を利用する
+    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent * 2));
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
@@ -157,28 +186,43 @@ function addTicket2t(
     numbers: [],
   };
 
-  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
+  // 組番情報配列を生成する。
+  // 確率の降順になっている。
+  const numbersetInfos = generateNumbersetInfoOrderByPercent(
+    type,
+    predictsAll,
+    odds
+  );
   logger.debug(
-    "直前予想 二連単 期待値トップ15 : " +
-      util.inspect(numbersetInfos.slice(0, 15), { depth: null })
+    "直前予想 二連単 確率トップ10 : " +
+      util.inspect(numbersetInfos.slice(0, 10), { depth: null })
   );
 
-  // 期待値が 1 以上のものに絞り込む
-  const filteredNumbersetInfos = numbersetInfos.filter(
+  // 確率が高いトップN
+  const topN = 4;
+  const topNumbersetInfos = numbersetInfos.slice(0, topN);
+
+  // 確率が高いトップN の中で 期待値が 1 以上のものの数
+  const countOfOverExpectedValue = topNumbersetInfos.filter(
     (value) => value.expectedValue >= 1
-  );
+  ).length;
+
+  // 確率が高いトップN の中に期待値が 1 以上のものが無ければ
+  // このレースを賭けない
+  if (countOfOverExpectedValue <= 0) {
+    return;
+  }
 
   // 賭け金は1レースで 1000円 を基準にする。
   const defaultBet =
-    filteredNumbersetInfos.length === 0
-      ? 0
-      : 1000 / filteredNumbersetInfos.length;
+    topNumbersetInfos.length === 0 ? 0 : 1000 / topNumbersetInfos.length;
 
-  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
+  for (let i = 0; i < topNumbersetInfos.length; i++) {
     const numbersetInfo = numbersetInfos[i];
 
     // 賭け金
-    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent));
+    // 賭け金のメリハリを付けるために 確率の2倍 を利用する
+    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent * 2));
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
@@ -208,10 +252,16 @@ function addTicket2f(
     numbers: [],
   };
 
-  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
+  // 組番情報配列を生成する。
+  // 期待値の降順になっている。
+  const numbersetInfos = generateNumbersetInfoOrderByExpectedValue(
+    type,
+    predictsAll,
+    odds
+  );
   logger.debug(
-    "直前予想 二連複 期待値トップ15 : " +
-      util.inspect(numbersetInfos.slice(0, 15), { depth: null })
+    "直前予想 二連複 期待値トップ10 : " +
+      util.inspect(numbersetInfos.slice(0, 10), { depth: null })
   );
 
   // 期待値が 1 以上のものに絞り込む
@@ -229,7 +279,8 @@ function addTicket2f(
     const numbersetInfo = numbersetInfos[i];
 
     // 賭け金
-    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent));
+    // 賭け金のメリハリを付けるために 確率の2倍 を利用する
+    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent * 2));
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
