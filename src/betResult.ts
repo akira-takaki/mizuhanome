@@ -48,7 +48,7 @@ interface BetResult {
 /**
  * レースの賭け結果
  */
-interface BetRaceResult {
+export interface BetRaceResult {
   /** データID */
   dataid: number;
 
@@ -62,7 +62,7 @@ interface BetRaceResult {
 /**
  * パラメータ
  */
-interface Parameter {
+export interface Parameter {
   /** 的中率(パーセント) */
   hittingRate: number | null;
 
@@ -198,7 +198,7 @@ function createEmptyParameter(): Parameter {
  * @param date 日付
  * @return 日単位の賭け結果
  */
-function readBetDayResult(date: dayjs.Dayjs): BetDayResult {
+export function readBetDayResult(date: dayjs.Dayjs): BetDayResult {
   const fileName = makeFileName(date, false);
   const betDayResult: BetDayResult = JSON.parse(
     fs.readFileSync(fileName).toString()

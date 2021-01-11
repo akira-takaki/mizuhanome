@@ -32,6 +32,7 @@ import {
   TicketType,
 } from "#/myUtil";
 import { Config, readConfig, writeConfig } from "#/config";
+import { report } from "#/report";
 
 log4js.configure("./config/LogConfig.json");
 export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
@@ -469,6 +470,9 @@ async function boatRace(): Promise<void> {
       config.capital = tabulatedBetDayResult.nextCapital;
       await writeConfig(config);
     }
+
+    // レポート作成
+    await report(today);
   } finally {
     if (sessionIntervalId !== null) {
       clearInterval(sessionIntervalId);
