@@ -11,7 +11,7 @@ import {
   decimalFormatter,
   percentFormatter,
 } from "#/myUtil";
-import { logger } from "#/main";
+import { logger } from "#/boatRace";
 
 const DIR = "./report";
 const PREFIX = `${DIR}/betDayResult`;
@@ -60,11 +60,6 @@ function createParameterHtmlRow(type: string, parameter: Parameter): string {
             ? percentFormatter.format(parameter.collectRate)
             : ""
         }</td>
-        <td class="raceDividend">${
-          parameter.raceDividend !== null
-            ? currencyFormatter.format(parameter.raceDividend)
-            : ""
-        }</td>
         <td class="amountPurchasedRate">${
           parameter.amountPurchasedRate !== null
             ? percentFormatter.format(parameter.amountPurchasedRate)
@@ -85,7 +80,6 @@ function createParameterHtml(betDayResult: BetDayResult): string {
         <th class="amountPurchased-header">購入金額</th>
         <th class="collect-header">回収金額</th>
         <th class="collectRate-header">回収率</th>
-        <th class="raceDividend-header">1レースの配当金</th>
         <th class="amountPurchasedRate-header">購入金額率</th>
       </tr>
     `;

@@ -3,7 +3,7 @@ import util from "util";
 import dayjs from "dayjs";
 import csvtojson from "csvtojson";
 
-import { logger } from "#/main";
+import { logger } from "#/boatRace";
 import { Config } from "#/config";
 import { TicketType } from "#/myUtil";
 

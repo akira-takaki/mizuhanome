@@ -13,7 +13,7 @@ import {
 /**
  * 賭け結果
  */
-interface BetResult {
+export interface BetResult {
   /** 舟券種類 */
   type: TicketType;
 
@@ -71,9 +71,6 @@ export interface Parameter {
 
   /** 回収金額 */
   collect: number | null;
-
-  /** 回収率を維持するための1レースの配当金 */
-  raceDividend: number | null;
 
   /** 購入する or 購入した 金額率(パーセント) */
   amountPurchasedRate: number | null;
@@ -169,7 +166,7 @@ function makeFileName(date: dayjs.Dayjs, isBackup: boolean): string {
  * @param betDayResult 日単位の賭け結果
  * @param isBackup バックアップかどうか
  */
-function writeBetDayResult(
+export function writeBetDayResult(
   date: dayjs.Dayjs,
   betDayResult: BetDayResult,
   isBackup = false
@@ -184,7 +181,6 @@ function createEmptyParameter(): Parameter {
     hittingRate: null,
     collectRate: null,
     collect: null,
-    raceDividend: null,
     amountPurchasedRate: null,
     amountPurchased: null,
     entryRaceCountRate: null,
@@ -281,12 +277,6 @@ export function makeBetDayResult(
     raceCount * config.assumedEntryRaceCountRate
   );
 
-  // 回収率を維持するための1レースの配当金
-  //   =  仮定の「回収金額」 ÷ ( 仮定の「参加するレース数」 X  仮定の「的中率(パーセント)」 )
-  const raceDividend = Math.round(
-    collect / (entryRaceCount * config.assumedHittingRate)
-  );
-
   return {
     date: date.format(DATE_FORMAT),
     dateFormat: DATE_FORMAT,
@@ -296,7 +286,6 @@ export function makeBetDayResult(
       hittingRate: config.assumedHittingRate,
       collectRate: config.assumedCollectRate,
       collect: collect,
-      raceDividend: raceDividend,
       amountPurchasedRate: config.assumedAmountPurchasedRate,
       amountPurchased: amountPurchased,
       entryRaceCountRate: config.assumedEntryRaceCountRate,
@@ -384,13 +373,6 @@ function tabulateBetDayResult3(
   // 回収金額率(パーセント)
   const collectRate = amountPurchased > 0 ? collect / amountPurchased : 0;
 
-  // 回収率を維持するための1レースの配当金
-  //   =  「回収金額」 ÷ ( 「参加したレース数」 X  「的中率(パーセント)」 )
-  const raceDividend =
-    entryRaceCount * hittingRate > 0
-      ? Math.round(collect / (entryRaceCount * hittingRate))
-      : 0;
-
   // 購入した金額率(パーセント)
   const amountPurchasedRate = amountPurchased / capital;
 
@@ -400,7 +382,6 @@ function tabulateBetDayResult3(
   parameter.hittingRate = hittingRate;
   parameter.collectRate = collectRate;
   parameter.collect = collect;
-  parameter.raceDividend = raceDividend;
   parameter.amountPurchasedRate = amountPurchasedRate;
   parameter.amountPurchased = amountPurchased;
   parameter.entryRaceCountRate = entryRaceCountRate;
