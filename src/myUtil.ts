@@ -33,6 +33,17 @@ export const currencyFormatter = new Intl.NumberFormat("ja-JP", {
   currency: "JPY",
 });
 
+export const percentFormatter = new Intl.NumberFormat("ja-JP", {
+  style: "percent",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+export const decimalFormatter = new Intl.NumberFormat("ja-JP", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 /**
  * 賭け金を100円単位にする
  *

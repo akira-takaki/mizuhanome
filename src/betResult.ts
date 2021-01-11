@@ -362,7 +362,7 @@ function tabulateBetDayResult3(
           collect = collect + betResult.dividend;
         }
 
-        if (betResult.odds !== null) {
+        if (betResult.odds !== null && betResult.bet !== betResult.dividend) {
           isHitting = true;
         }
       }
