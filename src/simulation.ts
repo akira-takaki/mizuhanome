@@ -10,8 +10,9 @@ import {
   writeBetDayResult,
 } from "#/betResult";
 import { report } from "#/report";
-import { NumbersetInfo } from "#/myUtil";
-import { calc3tBet } from "#/boatRace";
+import { NumbersetInfo, TicketType } from "#/myUtil";
+import { Ticket } from "#/api";
+import { addTicket3t2 } from "#/boatRace";
 
 async function simulation(): Promise<void> {
   const DATE_FORMAT = "YYYY/MM/DD";
@@ -23,8 +24,8 @@ async function simulation(): Promise<void> {
     capital: 1000000,
     assumedHittingRate: 0.25,
     assumedCollectRate: 1.1,
-    assumedAmountPurchasedRate: 0.3,
-    assumedEntryRaceCountRate: 0.6,
+    assumedAmountPurchasedRate: 0.25,
+    assumedEntryRaceCountRate: 0.2,
   };
 
   // シミュレーションの元になるレースの日付
@@ -66,6 +67,19 @@ async function simulation(): Promise<void> {
       });
     }
 
+    const type: TicketType = "3t";
+    const ticket: Ticket = {
+      type: type,
+      numbers: [],
+    };
+
+    // 購入する三連単の舟券を追加する
+    addTicket3t2(simulationBetDayResult, numbersetInfos, ticket);
+
+    if (ticket.numbers.length <= 0) {
+      continue;
+    }
+
     for (let j = 0; j < originalBetRaceResult.betResults.length; j++) {
       const originalBetResult = originalBetRaceResult.betResults[j];
 
@@ -73,12 +87,13 @@ async function simulation(): Promise<void> {
         continue;
       }
 
-      // シミュレーション用の賭け金を計算
-      const bet = calc3tBet(
-        numbersetInfos.length,
-        numbersetInfos[j],
-        simulationBetDayResult
-      );
+      // 賭け金を取り出す
+      let bet = 0;
+      for (let k = 0; k < ticket.numbers.length; k++) {
+        if (originalBetResult.numberset === ticket.numbers[k].numberset) {
+          bet = ticket.numbers[k].bet;
+        }
+      }
 
       // レース結果を反映
       const simulationBetResult: BetResult = {

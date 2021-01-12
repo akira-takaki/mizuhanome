@@ -38,31 +38,57 @@ log4js.configure("./config/LogConfig.json");
 export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
 
 /**
- * 三連単の賭け金を計算
+ * 購入する三連単の舟券を追加する
  *
- * @param topN 同じレースで賭ける数
- * @param numbersetInfo 計算対象の組番情報
- * @param betDayResult
- * @return 三連単の賭け金
+ * @param betDayResult 日単位の賭け結果
+ * @param numbersetInfos 1レースの 3t 組番情報
+ * @param ticket 舟券
  */
-export function calc3tBet(
-  topN: number,
-  numbersetInfo: NumbersetInfo,
-  betDayResult: BetDayResult
-): number {
+export function addTicket3t2(
+  betDayResult: BetDayResult,
+  numbersetInfos: NumbersetInfo[],
+  ticket: Ticket
+): void {
   if (
-    betDayResult.assumed3t.amountPurchasedRate !== null &&
-    betDayResult.assumed3t.entryRaceCountRate !== null
+    betDayResult.assumed3t.amountPurchasedRate === null ||
+    betDayResult.assumed3t.entryRaceCountRate === null
   ) {
+    return;
+  }
+
+  // 確率が高いトップN
+  const topN = 4;
+  const topNumbersetInfos = numbersetInfos.slice(0, topN);
+
+  // 確率が高いトップN の中で 期待値が 1.2 以上のものの数
+  const countOfOverExpectedValue = topNumbersetInfos.filter(
+    (value) => value.expectedValue >= 1.2
+  ).length;
+
+  // 確率が高いトップN の中に期待値が 1.2 以上のものが 2個未満 のときは
+  // このレースを賭けない
+  if (countOfOverExpectedValue < 2) {
+    return;
+  }
+
+  for (let i = 0; i < topNumbersetInfos.length; i++) {
+    const numbersetInfo = numbersetInfos[i];
+
     // 賭け金
-    return roundBet(
+    // 三連単の賭け金を計算
+    const bet = roundBet(
       ((betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
         (betDayResult.raceCount * betDayResult.assumed3t.entryRaceCountRate) /
         topN) *
         numbersetInfo.expectedValue
     );
-  } else {
-    return 0;
+
+    if (bet > 0) {
+      ticket.numbers.push({
+        numberset: numbersetInfo.numberset,
+        bet: bet,
+      });
+    }
   }
 }
 
@@ -98,37 +124,9 @@ function addTicket3t(
       util.inspect(numbersetInfos.slice(0, 10), { depth: null })
   );
 
-  // 確率が高いトップN
-  const topN = 4;
-  const topNumbersetInfos = numbersetInfos.slice(0, topN);
+  // 購入する三連単の舟券を追加する
+  addTicket3t2(betDayResult, numbersetInfos, ticket);
 
-  // 確率が高いトップN の中で 期待値が 1 以上のものの数
-  const countOfOverExpectedValue = topNumbersetInfos.filter(
-    (value) => value.expectedValue >= 1
-  ).length;
-
-  // 確率が高いトップN の中に期待値が 1 以上のものが無ければ
-  // このレースを賭けない
-  if (countOfOverExpectedValue <= 0) {
-    return;
-  }
-
-  for (let i = 0; i < topNumbersetInfos.length; i++) {
-    const numbersetInfo = numbersetInfos[i];
-
-    // 三連単の賭け金を計算
-    const bet = calc3tBet(
-      topNumbersetInfos.length,
-      numbersetInfo,
-      betDayResult
-    );
-    if (bet > 0) {
-      ticket.numbers.push({
-        numberset: numbersetInfo.numberset,
-        bet: bet,
-      });
-    }
-  }
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
   }
@@ -164,9 +162,9 @@ function addTicket3f(
       util.inspect(numbersetInfos.slice(0, 15), { depth: null })
   );
 
-  // 期待値が 1 以上のものに絞り込む
+  // 期待値が 1.2 以上のものに絞り込む
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= 1
+    (value) => value.expectedValue >= 1.2
   );
 
   // 賭け金は1レースで 1000円 を基準にする。
@@ -179,8 +177,7 @@ function addTicket3f(
     const numbersetInfo = numbersetInfos[i];
 
     // 賭け金
-    // 賭け金のメリハリを付けるために 確率の2倍 を利用する
-    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent * 2));
+    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
@@ -226,14 +223,14 @@ function addTicket2t(
   const topN = 4;
   const topNumbersetInfos = numbersetInfos.slice(0, topN);
 
-  // 確率が高いトップN の中で 期待値が 1 以上のものの数
+  // 確率が高いトップN の中で 期待値が 1.2 以上のものの数
   const countOfOverExpectedValue = topNumbersetInfos.filter(
-    (value) => value.expectedValue >= 1
+    (value) => value.expectedValue >= 1.2
   ).length;
 
-  // 確率が高いトップN の中に期待値が 1 以上のものが無ければ
+  // 確率が高いトップN の中に期待値が 1.2 以上のものが 2個未満 のときは
   // このレースを賭けない
-  if (countOfOverExpectedValue <= 0) {
+  if (countOfOverExpectedValue < 2) {
     return;
   }
 
@@ -245,8 +242,7 @@ function addTicket2t(
     const numbersetInfo = numbersetInfos[i];
 
     // 賭け金
-    // 賭け金のメリハリを付けるために 確率の2倍 を利用する
-    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent * 2));
+    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
@@ -288,9 +284,9 @@ function addTicket2f(
       util.inspect(numbersetInfos.slice(0, 10), { depth: null })
   );
 
-  // 期待値が 1 以上のものに絞り込む
+  // 期待値が 1.2 以上のものに絞り込む
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= 1
+    (value) => value.expectedValue >= 1.2
   );
 
   // 賭け金は1レースで 1000円 を基準にする。
@@ -303,8 +299,7 @@ function addTicket2f(
     const numbersetInfo = numbersetInfos[i];
 
     // 賭け金
-    // 賭け金のメリハリを付けるために 確率の2倍 を利用する
-    const bet = roundBet(defaultBet * (1 + numbersetInfo.percent * 2));
+    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
