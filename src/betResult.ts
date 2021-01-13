@@ -6,7 +6,6 @@ import { Config } from "#/config";
 import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
 import {
   generateNumbersetInfoOrderByExpectedValue,
-  pickupNumbersetInfo,
   TicketType,
 } from "#/myUtil";
 

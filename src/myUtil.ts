@@ -99,25 +99,6 @@ export function filteredTypePercent(
     .reverse();
 }
 
-/**
- * 指定された組番の確率を返す
- *
- * @param numberset 組番
- * @param percents 確率配列
- * @return 確率
- */
-export function pickupPercent(numberset: string, percents: Percent[]): number {
-  for (let i = 0; i < percents.length; i++) {
-    const percent = percents[i];
-
-    if (numberset === percent.numberset) {
-      return parseFloat(percent.percent);
-    }
-  }
-
-  return 0;
-}
-
 interface Power {
   numberStr: string;
   power: number;
@@ -271,24 +252,4 @@ export function generateNumbersetInfoOrderByPercent(
       }
     })
     .reverse();
-}
-
-/**
- * 指定された組番の組番情報を返す
- *
- * @param numberset 組番
- * @param numbersetInfos 組番情報配列
- * @return 組番情報
- */
-export function pickupNumbersetInfo(
-  numberset: string,
-  numbersetInfos: NumbersetInfo[]
-): NumbersetInfo | undefined {
-  for (let i = 0; i < numbersetInfos.length; i++) {
-    if (numberset === numbersetInfos[i].numberset) {
-      return numbersetInfos[i];
-    }
-  }
-
-  return undefined;
 }
