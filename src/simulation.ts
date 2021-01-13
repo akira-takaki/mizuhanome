@@ -10,9 +10,14 @@ import {
   writeBetDayResult,
 } from "#/betResult";
 import { report } from "#/report";
-import { NumbersetInfo, TicketType } from "#/myUtil";
+import { NumbersetInfo } from "#/myUtil";
 import { Ticket } from "#/api";
-import { addTicket3t2 } from "#/boatRace";
+import {
+  addTicket2f2,
+  addTicket2t2,
+  addTicket3f2,
+  addTicket3t2,
+} from "#/boatRace";
 
 async function simulation(): Promise<void> {
   const DATE_FORMAT = "YYYY/MM/DD";
@@ -29,7 +34,7 @@ async function simulation(): Promise<void> {
   };
 
   // シミュレーションの元になるレースの日付
-  const originalDate = dayjs("2021/01/11", DATE_FORMAT);
+  const originalDate = dayjs("2021/01/13", DATE_FORMAT);
   const originalBetDayResult = readBetDayResult(originalDate);
 
   // シミュレーションで書き出すレースの日付
@@ -50,48 +55,107 @@ async function simulation(): Promise<void> {
     simulationBetDayResult.betRaceResults.push(simulationBetRaceResult);
 
     // シミュレーション用の組番情報を作成
-    const numbersetInfos: NumbersetInfo[] = [];
+    const numbersetInfos3t: NumbersetInfo[] = [];
+    const numbersetInfos3f: NumbersetInfo[] = [];
+    const numbersetInfos2t: NumbersetInfo[] = [];
+    const numbersetInfos2f: NumbersetInfo[] = [];
     for (let j = 0; j < originalBetRaceResult.betResults.length; j++) {
       const originalBetResult = originalBetRaceResult.betResults[j];
 
-      if (originalBetResult.type !== "3t") {
-        continue;
+      if (originalBetResult.type === "3t") {
+        numbersetInfos3t.push({
+          numberset: originalBetResult.numberset,
+          powers: originalBetResult.powers,
+          percent: originalBetResult.percent,
+          odds: originalBetResult.preOdds,
+          expectedValue: originalBetResult.expectedValue,
+        });
+      } else if (originalBetResult.type === "3f") {
+        numbersetInfos3f.push({
+          numberset: originalBetResult.numberset,
+          powers: originalBetResult.powers,
+          percent: originalBetResult.percent,
+          odds: originalBetResult.preOdds,
+          expectedValue: originalBetResult.expectedValue,
+        });
+      } else if (originalBetResult.type === "2t") {
+        numbersetInfos2t.push({
+          numberset: originalBetResult.numberset,
+          powers: originalBetResult.powers,
+          percent: originalBetResult.percent,
+          odds: originalBetResult.preOdds,
+          expectedValue: originalBetResult.expectedValue,
+        });
+      } else if (originalBetResult.type === "2f") {
+        numbersetInfos2f.push({
+          numberset: originalBetResult.numberset,
+          powers: originalBetResult.powers,
+          percent: originalBetResult.percent,
+          odds: originalBetResult.preOdds,
+          expectedValue: originalBetResult.expectedValue,
+        });
       }
-
-      numbersetInfos.push({
-        numberset: originalBetResult.numberset,
-        powers: originalBetResult.powers,
-        percent: originalBetResult.percent,
-        odds: originalBetResult.preOdds,
-        expectedValue: originalBetResult.expectedValue,
-      });
     }
-
-    const type: TicketType = "3t";
-    const ticket: Ticket = {
-      type: type,
-      numbers: [],
-    };
 
     // 購入する三連単の舟券を追加する
-    addTicket3t2(simulationBetDayResult, numbersetInfos, ticket);
+    const ticket3t: Ticket = {
+      type: "3t",
+      numbers: [],
+    };
+    addTicket3t2(simulationBetDayResult, numbersetInfos3t, ticket3t);
 
-    if (ticket.numbers.length <= 0) {
-      continue;
-    }
+    // 購入する三連複の舟券を追加する
+    const ticket3f: Ticket = {
+      type: "3f",
+      numbers: [],
+    };
+    addTicket3f2(numbersetInfos3f, ticket3f);
+
+    // 購入する二連単の舟券を追加する
+    const ticket2t: Ticket = {
+      type: "2t",
+      numbers: [],
+    };
+    addTicket2t2(numbersetInfos2t, ticket2t);
+
+    // 購入する二連複の舟券を追加する
+    const ticket2f: Ticket = {
+      type: "2f",
+      numbers: [],
+    };
+    addTicket2f2(numbersetInfos2f, ticket2f);
 
     for (let j = 0; j < originalBetRaceResult.betResults.length; j++) {
       const originalBetResult = originalBetRaceResult.betResults[j];
 
-      if (originalBetResult.type !== "3t") {
-        continue;
-      }
-
-      // 賭け金を取り出す
       let bet = 0;
-      for (let k = 0; k < ticket.numbers.length; k++) {
-        if (originalBetResult.numberset === ticket.numbers[k].numberset) {
-          bet = ticket.numbers[k].bet;
+      if (originalBetResult.type === "3t") {
+        // 賭け金を取り出す
+        for (let k = 0; k < ticket3t.numbers.length; k++) {
+          if (originalBetResult.numberset === ticket3t.numbers[k].numberset) {
+            bet = ticket3t.numbers[k].bet;
+          }
+        }
+      } else if (originalBetResult.type === "3f") {
+        // 賭け金を取り出す
+        for (let k = 0; k < ticket3f.numbers.length; k++) {
+          if (originalBetResult.numberset === ticket3f.numbers[k].numberset) {
+            bet = ticket3f.numbers[k].bet;
+          }
+        }
+      } else if (originalBetResult.type === "2t") {
+        // 賭け金を取り出す
+        for (let k = 0; k < ticket2t.numbers.length; k++) {
+          if (originalBetResult.numberset === ticket2t.numbers[k].numberset) {
+            bet = ticket2t.numbers[k].bet;
+          }
+        }
+      } else if (originalBetResult.type === "2f") {
+        // 賭け金を取り出す
+        for (let k = 0; k < ticket2f.numbers.length; k++) {
+          if (originalBetResult.numberset === ticket2f.numbers[k].numberset) {
+            bet = ticket2f.numbers[k].bet;
+          }
         }
       }
 

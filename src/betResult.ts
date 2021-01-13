@@ -536,6 +536,7 @@ export async function initBetDayResult(
 
 /**
  * 日単位の賭け結果 に レースの賭け結果 を追加する
+ * シミュレーション用に賭けてない組番情報も保存する
  *
  * @param date 日付
  * @param dataid データID
@@ -556,39 +557,51 @@ export async function addBetRaceResult(
     const betDayResult = readBetDayResult(date);
 
     const betResults: BetResult[] = [];
-    for (let i = 0; i < tickets.length; i++) {
-      const ticket = tickets[i];
+    const types: TicketType[] = ["3t", "3f", "2t", "2f"];
+    for (let i = 0; i < types.length; i++) {
+      const type = types[i];
 
-      const type = ticket.type;
+      let ticket: Ticket = {
+        type: type,
+        numbers: [],
+      };
+      for (let j = 0; j < tickets.length; j++) {
+        if (type === tickets[j].type) {
+          ticket = tickets[j];
+        }
+      }
+
       const numbersetInfos = generateNumbersetInfoOrderByExpectedValue(
         type,
         predictsAll,
         odds
       );
 
-      for (let j = 0; j < ticket.numbers.length; j++) {
-        const ticketNumber = ticket.numbers[j];
+      // シミュレーション用に賭けてない組番情報も保存する
+      for (let j = 0; j < numbersetInfos.length; j++) {
+        const numbersetInfo = numbersetInfos[j];
 
-        const numberset = ticketNumber.numberset;
-        const bet = ticketNumber.bet;
-
-        const numbersetInfo = pickupNumbersetInfo(numberset, numbersetInfos);
-        if (numbersetInfo !== undefined) {
-          const preDividend = bet * numbersetInfo.odds;
-
-          betResults.push({
-            type: type,
-            numberset: numberset,
-            powers: numbersetInfo.powers,
-            percent: numbersetInfo.percent,
-            bet: bet,
-            preOdds: numbersetInfo.odds,
-            expectedValue: numbersetInfo.expectedValue,
-            preDividend: preDividend,
-            odds: null,
-            dividend: null,
-          });
+        let bet = 0;
+        let preDividend = 0;
+        for (let k = 0; k < ticket.numbers.length; k++) {
+          if (numbersetInfo.numberset === ticket.numbers[k].numberset) {
+            bet = ticket.numbers[k].bet;
+            preDividend = bet * numbersetInfo.odds;
+          }
         }
+
+        betResults.push({
+          type: type,
+          numberset: numbersetInfo.numberset,
+          powers: numbersetInfo.powers,
+          percent: numbersetInfo.percent,
+          bet: bet,
+          preOdds: numbersetInfo.odds,
+          expectedValue: numbersetInfo.expectedValue,
+          preDividend: preDividend,
+          odds: null,
+          dividend: null,
+        });
       }
     }
 

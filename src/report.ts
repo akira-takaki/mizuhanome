@@ -119,6 +119,11 @@ function createBetRaceResult(betRaceResult: BetRaceResult): string {
   for (let j = 0; j < betRaceResult.betResults.length; j++) {
     const betResult = betRaceResult.betResults[j];
 
+    if (betResult.bet === 0) {
+      // 賭け金が無いものは除外
+      continue;
+    }
+
     const isHit =
       betResult.odds !== null && betResult.bet !== betResult.dividend;
 
