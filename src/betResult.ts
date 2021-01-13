@@ -339,7 +339,7 @@ function tabulateBetDayResult3(
     for (let j = 0; j < betRaceResult.betResults.length; j++) {
       const betResult = betRaceResult.betResults[j];
 
-      if (betResult.type === type) {
+      if (betResult.type === type && betResult.bet > 0) {
         hasType = true;
 
         // 「購入した金額」 に 「賭け金」 を加算
