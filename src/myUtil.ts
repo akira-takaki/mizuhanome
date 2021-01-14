@@ -168,7 +168,7 @@ export interface NumbersetInfo {
  * @param odds オッズ情報
  * @return 組番情報配列
  */
-function generateNumbersetInfo(
+export function generateNumbersetInfo(
   type: TicketType,
   predictsAll: PredictsAll,
   odds: Odds
@@ -195,6 +195,25 @@ function generateNumbersetInfo(
 }
 
 /**
+ * 組番情報の 期待値 で昇順ソート
+ *
+ * @param e1
+ * @param e2
+ */
+export function numbersetInfoOrderByExpectedValue(
+  e1: NumbersetInfo,
+  e2: NumbersetInfo
+): number {
+  if (e1.expectedValue > e2.expectedValue) {
+    return 1;
+  } else if (e1.expectedValue < e2.expectedValue) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
+/**
  * 組番情報配列を生成する。
  * 期待値の降順になっている。
  *
@@ -211,17 +230,27 @@ export function generateNumbersetInfoOrderByExpectedValue(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 期待値の降順
-  return numbersetInfos
-    .sort((e1, e2) => {
-      if (e1.expectedValue > e2.expectedValue) {
-        return 1;
-      } else if (e1.expectedValue < e2.expectedValue) {
-        return -1;
-      } else {
-        return 0;
-      }
-    })
-    .reverse();
+  return numbersetInfos.sort(numbersetInfoOrderByExpectedValue).reverse();
+}
+
+/**
+ * 組番情報の 確率 で昇順ソート
+ *
+ * @param e1
+ * @param e2
+ * @return number
+ */
+export function numbersetInfoOrderByPercent(
+  e1: NumbersetInfo,
+  e2: NumbersetInfo
+): number {
+  if (e1.percent > e2.percent) {
+    return 1;
+  } else if (e1.percent < e2.percent) {
+    return -1;
+  } else {
+    return 0;
+  }
 }
 
 /**
@@ -241,15 +270,5 @@ export function generateNumbersetInfoOrderByPercent(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 確率の降順
-  return numbersetInfos
-    .sort((e1, e2) => {
-      if (e1.percent > e2.percent) {
-        return 1;
-      } else if (e1.percent < e2.percent) {
-        return -1;
-      } else {
-        return 0;
-      }
-    })
-    .reverse();
+  return numbersetInfos.sort(numbersetInfoOrderByPercent).reverse();
 }

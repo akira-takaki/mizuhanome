@@ -24,9 +24,10 @@ import {
   updateBetRaceResult,
 } from "#/betResult";
 import {
-  generateNumbersetInfoOrderByExpectedValue,
-  generateNumbersetInfoOrderByPercent,
+  generateNumbersetInfo,
   NumbersetInfo,
+  numbersetInfoOrderByExpectedValue,
+  numbersetInfoOrderByPercent,
   roundBet,
   sleep,
   TicketType,
@@ -39,12 +40,14 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
 
 /**
  * 購入する三連単の舟券を追加する
+ * 確率のトップ4 を賭ける。
+ * ただし、期待値が 1.2 を超えるものが 2個以上 のときのみ賭ける。
  *
  * @param betDayResult 日単位の賭け結果
  * @param numbersetInfos 1レースの 3t 組番情報
  * @param ticket 舟券
  */
-export function addTicket3t2(
+export function addTicket3t2A(
   betDayResult: BetDayResult,
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
@@ -57,29 +60,74 @@ export function addTicket3t2(
   }
 
   // 確率が高いトップN
+  numbersetInfos.sort(numbersetInfoOrderByPercent).reverse();
   const topN = 4;
   const topNumbersetInfos = numbersetInfos.slice(0, topN);
 
-  // 確率が高いトップN の中で 期待値が 1.2 以上のものの数
+  // 確率が高いトップN の中で 期待値が thresholdExpectedValue 以上のものの数
+  const thresholdExpectedValue = 1.2;
   const countOfOverExpectedValue = topNumbersetInfos.filter(
-    (value) => value.expectedValue >= 1.2
+    (value) => value.expectedValue >= thresholdExpectedValue
   ).length;
 
-  // 確率が高いトップN の中に期待値が 1.2 以上のものが 2個未満 のときは
+  // 期待値が thresholdExpectedValue 以上のものが 2個未満 のときは
   // このレースを賭けない
   if (countOfOverExpectedValue < 2) {
     return;
   }
 
   for (let i = 0; i < topNumbersetInfos.length; i++) {
-    const numbersetInfo = numbersetInfos[i];
+    const numbersetInfo = topNumbersetInfos[i];
 
     // 賭け金
     // 三連単の賭け金を計算
     const bet = roundBet(
       ((betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
         (betDayResult.raceCount * betDayResult.assumed3t.entryRaceCountRate) /
-        topN) *
+        topNumbersetInfos.length) *
+        numbersetInfo.expectedValue
+    );
+
+    ticket.numbers.push({
+      numberset: numbersetInfo.numberset,
+      bet: bet,
+    });
+  }
+}
+
+/**
+ * 購入する三連単の舟券を追加する
+ * 期待値が 1.4以上 かつ 2.0以下 のものを賭ける。
+ *
+ * @param betDayResult 日単位の賭け結果
+ * @param numbersetInfos 1レースの 3t 組番情報
+ * @param ticket 舟券
+ */
+export function addTicket3t2B(
+  betDayResult: BetDayResult,
+  numbersetInfos: NumbersetInfo[],
+  ticket: Ticket
+): void {
+  if (
+    betDayResult.assumed3t.amountPurchasedRate === null ||
+    betDayResult.assumed3t.entryRaceCountRate === null
+  ) {
+    return;
+  }
+
+  const filteredNumbersetInfos = numbersetInfos.filter(
+    (value) => value.expectedValue >= 1.4 && value.expectedValue <= 2.0
+  );
+
+  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
+    const numbersetInfo = filteredNumbersetInfos[i];
+
+    // 賭け金
+    // 三連単の賭け金を計算
+    const bet = roundBet(
+      ((betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
+        (betDayResult.raceCount * betDayResult.assumed3t.entryRaceCountRate) /
+        filteredNumbersetInfos.length) *
         numbersetInfo.expectedValue
     );
 
@@ -111,15 +159,10 @@ function addTicket3t(
   };
 
   // 組番情報配列を生成する。
-  // 確率の降順になっている。
-  const numbersetInfos = generateNumbersetInfoOrderByPercent(
-    type,
-    predictsAll,
-    odds
-  );
+  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する三連単の舟券を追加する
-  addTicket3t2(betDayResult, numbersetInfos, ticket);
+  addTicket3t2B(betDayResult, numbersetInfos, ticket);
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -136,9 +179,10 @@ export function addTicket3f2(
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
 ): void {
-  // 期待値が 1.2 以上のものに絞り込む
+  // 期待値が thresholdExpectedValue 以上のものに絞り込む
+  const thresholdExpectedValue = 1.2;
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= 1.2
+    (value) => value.expectedValue >= thresholdExpectedValue
   );
 
   // 賭け金は1レースで 1000円 を基準にする。
@@ -148,7 +192,7 @@ export function addTicket3f2(
       : 1000 / filteredNumbersetInfos.length;
 
   for (let i = 0; i < filteredNumbersetInfos.length; i++) {
-    const numbersetInfo = numbersetInfos[i];
+    const numbersetInfo = filteredNumbersetInfos[i];
 
     // 賭け金
     const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
@@ -179,12 +223,7 @@ function addTicket3f(
   };
 
   // 組番情報配列を生成する。
-  // 期待値の降順になっている。
-  const numbersetInfos = generateNumbersetInfoOrderByExpectedValue(
-    type,
-    predictsAll,
-    odds
-  );
+  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する三連複の舟券を追加する
   addTicket3f2(numbersetInfos, ticket);
@@ -205,15 +244,17 @@ export function addTicket2t2(
   ticket: Ticket
 ): void {
   // 確率が高いトップN
+  numbersetInfos.sort(numbersetInfoOrderByPercent).reverse();
   const topN = 4;
   const topNumbersetInfos = numbersetInfos.slice(0, topN);
 
-  // 確率が高いトップN の中で 期待値が 1.2 以上のものの数
+  // 確率が高いトップN の中で 期待値が thresholdExpectedValue 以上のものの数
+  const thresholdExpectedValue = 1.2;
   const countOfOverExpectedValue = topNumbersetInfos.filter(
-    (value) => value.expectedValue >= 1.2
+    (value) => value.expectedValue >= thresholdExpectedValue
   ).length;
 
-  // 確率が高いトップN の中に期待値が 1.2 以上のものが 2個未満 のときは
+  // 期待値が thresholdExpectedValue 以上のものが 2個未満 のときは
   // このレースを賭けない
   if (countOfOverExpectedValue < 2) {
     return;
@@ -224,7 +265,7 @@ export function addTicket2t2(
     topNumbersetInfos.length === 0 ? 0 : 1000 / topNumbersetInfos.length;
 
   for (let i = 0; i < topNumbersetInfos.length; i++) {
-    const numbersetInfo = numbersetInfos[i];
+    const numbersetInfo = topNumbersetInfos[i];
 
     // 賭け金
     const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
@@ -255,12 +296,7 @@ function addTicket2t(
   };
 
   // 組番情報配列を生成する。
-  // 確率の降順になっている。
-  const numbersetInfos = generateNumbersetInfoOrderByPercent(
-    type,
-    predictsAll,
-    odds
-  );
+  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する二連単の舟券を追加する
   addTicket2t2(numbersetInfos, ticket);
@@ -280,9 +316,10 @@ export function addTicket2f2(
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
 ): void {
-  // 期待値が 1.2 以上のものに絞り込む
+  // 期待値が thresholdExpectedValue 以上のものに絞り込む
+  const thresholdExpectedValue = 1.2;
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= 1.2
+    (value) => value.expectedValue >= thresholdExpectedValue
   );
 
   // 賭け金は1レースで 1000円 を基準にする。
@@ -292,7 +329,7 @@ export function addTicket2f2(
       : 1000 / filteredNumbersetInfos.length;
 
   for (let i = 0; i < filteredNumbersetInfos.length; i++) {
-    const numbersetInfo = numbersetInfos[i];
+    const numbersetInfo = filteredNumbersetInfos[i];
 
     // 賭け金
     const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
@@ -323,12 +360,7 @@ function addTicket2f(
   };
 
   // 組番情報配列を生成する。
-  // 期待値の降順になっている。
-  const numbersetInfos = generateNumbersetInfoOrderByExpectedValue(
-    type,
-    predictsAll,
-    odds
-  );
+  const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する二連複の舟券を追加する
   addTicket2f2(numbersetInfos, ticket);

@@ -4,11 +4,7 @@ import { Mutex } from "await-semaphore/index";
 
 import { Config } from "#/config";
 import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
-import {
-  generateNumbersetInfoOrderByExpectedValue,
-  generateNumbersetInfoOrderByPercent,
-  TicketType,
-} from "#/myUtil";
+import { generateNumbersetInfoOrderByPercent, TicketType } from "#/myUtil";
 
 /**
  * 賭け結果
