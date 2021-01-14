@@ -6,6 +6,7 @@ import { Config } from "#/config";
 import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
 import {
   generateNumbersetInfoOrderByExpectedValue,
+  generateNumbersetInfoOrderByPercent,
   TicketType,
 } from "#/myUtil";
 
@@ -570,7 +571,7 @@ export async function addBetRaceResult(
         }
       }
 
-      const numbersetInfos = generateNumbersetInfoOrderByExpectedValue(
+      const numbersetInfos = generateNumbersetInfoOrderByPercent(
         type,
         predictsAll,
         odds
