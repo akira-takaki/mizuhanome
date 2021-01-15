@@ -5,6 +5,7 @@ import { Mutex } from "await-semaphore/index";
 import { Config } from "#/config";
 import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
 import { generateNumbersetInfoOrderByPercent, TicketType } from "#/myUtil";
+import path from "path";
 
 /**
  * 賭け結果
@@ -132,27 +133,57 @@ export interface BetDayResult {
 }
 
 const DIR = "./store";
-const PREFIX = `${DIR}/betDayResult`;
+const PREFIX = `betDayResult`;
 const SUFFIX = `json`;
 const DATE_FORMAT = "YYYY/MM/DD";
 const FILE_NAME_DATE_FORMAT = "YYYYMMDD";
-const BACKUP_FILE_NAME_DATE_FORMAT = "YYYYMMDD_HHmm";
 const mutex: Mutex = new Mutex();
+
+const BET_DAY_RESULT_FILE_REGEXP = new RegExp(
+  PREFIX + "_([0-9]{8})\\." + SUFFIX
+);
+const BET_DAY_RESULT_SIM_FILE_REGEXP = new RegExp(
+  PREFIX + "_([0-9]{8})_sim\\." + SUFFIX
+);
+
+/**
+ * ファイルに保存してある「日単位の賭け結果」の日付配列を返す
+ */
+export function storedBetDayResultDates(isSim: boolean): dayjs.Dayjs[] {
+  const regExp = isSim
+    ? BET_DAY_RESULT_SIM_FILE_REGEXP
+    : BET_DAY_RESULT_FILE_REGEXP;
+
+  return fs
+    .readdirSync(DIR, { withFileTypes: true })
+    .filter((value) => value.isFile())
+    .filter((value) => regExp.test(value.name))
+    .map((value) => {
+      const array = regExp.exec(value.name);
+      if (array === null) {
+        return "";
+      } else {
+        return array[1];
+      }
+    })
+    .filter((value) => value !== "")
+    .sort()
+    .map((value) => dayjs(value, FILE_NAME_DATE_FORMAT));
+}
 
 /**
  * ファイル名を作って返す
  *
  * @param date 日付
- * @param isBackup バックアップかどうか
+ * @param isSim シミュレーションかどうか
  */
-function makeFileName(date: dayjs.Dayjs, isBackup: boolean): string {
-  let dateStr: string;
-  if (isBackup) {
-    dateStr = date.format(BACKUP_FILE_NAME_DATE_FORMAT);
+function makeFileName(date: dayjs.Dayjs, isSim: boolean): string {
+  const dateStr = date.format(FILE_NAME_DATE_FORMAT);
+  if (isSim) {
+    return path.join(DIR, `${PREFIX}_${dateStr}_sim.${SUFFIX}`);
   } else {
-    dateStr = date.format(FILE_NAME_DATE_FORMAT);
+    return path.join(DIR, `${PREFIX}_${dateStr}.${SUFFIX}`);
   }
-  return `${PREFIX}_${dateStr}.${SUFFIX}`;
 }
 
 /**
@@ -160,15 +191,15 @@ function makeFileName(date: dayjs.Dayjs, isBackup: boolean): string {
  *
  * @param date 日付
  * @param betDayResult 日単位の賭け結果
- * @param isBackup バックアップかどうか
+ * @param isSim シミュレーションかどうか
  */
 export function writeBetDayResult(
   date: dayjs.Dayjs,
   betDayResult: BetDayResult,
-  isBackup = false
+  isSim = false
 ): void {
   fs.mkdirpSync(DIR);
-  const fileName = makeFileName(date, isBackup);
+  const fileName = makeFileName(date, isSim);
   fs.writeFileSync(fileName, JSON.stringify(betDayResult, null, 2));
 }
 
@@ -188,10 +219,14 @@ function createEmptyParameter(): Parameter {
  * 日単位の賭け結果をファイルから読み込む
  *
  * @param date 日付
+ * @param isSim シミュレーションかどうか
  * @return 日単位の賭け結果
  */
-export function readBetDayResult(date: dayjs.Dayjs): BetDayResult {
-  const fileName = makeFileName(date, false);
+export function readBetDayResult(
+  date: dayjs.Dayjs,
+  isSim = false
+): BetDayResult {
+  const fileName = makeFileName(date, isSim);
   const betDayResult: BetDayResult = JSON.parse(
     fs.readFileSync(fileName).toString()
   );
@@ -475,17 +510,19 @@ function tabulateBetDayResult2(betDayResult: BetDayResult): void {
  * 日単位の賭け結果 の集計 (ファイルアクセス付き)
  *
  * @param date 日付
+ * @param isSim シミュレーションかどうか
  */
 export async function tabulateBetDayResult(
-  date: dayjs.Dayjs
+  date: dayjs.Dayjs,
+  isSim = false
 ): Promise<BetDayResult> {
   const release: () => void = await mutex.acquire();
 
   let betDayResult: BetDayResult;
   try {
-    betDayResult = readBetDayResult(date);
+    betDayResult = readBetDayResult(date, isSim);
     tabulateBetDayResult2(betDayResult);
-    writeBetDayResult(date, betDayResult);
+    writeBetDayResult(date, betDayResult, isSim);
   } finally {
     release();
   }
@@ -515,12 +552,7 @@ export async function initBetDayResult(
         // すでに存在するものを使うのでなにもしない
       } else {
         // 設定で指定した値が違う場合
-        // 集計してバックアップする
-        tabulateBetDayResult2(alreadyBetDayResult);
-        writeBetDayResult(date, alreadyBetDayResult, true);
-
-        // 新しい値で上書きする
-        writeBetDayResult(date, betDayResult);
+        throw new Error("設定値が違うファイルが存在します。");
       }
     } else {
       writeBetDayResult(date, betDayResult);

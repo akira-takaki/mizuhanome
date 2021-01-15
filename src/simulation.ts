@@ -2,10 +2,12 @@ import dayjs from "dayjs";
 
 import { Config } from "#/config";
 import {
+  BetDayResult,
   BetRaceResult,
   BetResult,
   makeBetDayResult,
   readBetDayResult,
+  storedBetDayResultDates,
   tabulateBetDayResult,
   writeBetDayResult,
 } from "#/betResult";
@@ -19,28 +21,16 @@ import {
   addTicket3t2B,
 } from "#/boatRace";
 
-async function simulation(): Promise<void> {
-  const DATE_FORMAT = "YYYY/MM/DD";
+async function simulation2(
+  config: Config,
+  date: dayjs.Dayjs
+): Promise<BetDayResult> {
+  // 「日単位の賭け結果」を読み込む
+  const originalBetDayResult = readBetDayResult(date);
 
-  const config: Config = {
-    baseUrl: "",
-    email: "",
-    accessKey: "",
-    capital: 1000000,
-    assumedHittingRate: 0.25,
-    assumedCollectRate: 1.1,
-    assumedAmountPurchasedRate: 0.25,
-    assumedEntryRaceCountRate: 0.9,
-  };
-
-  // シミュレーションの元になるレースの日付
-  const originalDate = dayjs("2021/01/14", DATE_FORMAT);
-  const originalBetDayResult = readBetDayResult(originalDate);
-
-  // シミュレーションで書き出すレースの日付
-  const simulationDate = dayjs("1999/12/31", DATE_FORMAT);
+  // シミュレーション用の「日単位の賭け結果」を作成
   const simulationBetDayResult = makeBetDayResult(
-    simulationDate,
+    date,
     config,
     originalBetDayResult.raceCount
   );
@@ -160,9 +150,36 @@ async function simulation(): Promise<void> {
     }
   }
 
-  writeBetDayResult(simulationDate, simulationBetDayResult);
-  await tabulateBetDayResult(simulationDate);
-  await report(simulationDate);
+  writeBetDayResult(date, simulationBetDayResult, true);
+  const tabulatedBetDayResult = await tabulateBetDayResult(date, true);
+  await report(date, true);
+
+  return tabulatedBetDayResult;
+}
+
+async function simulation(): Promise<void> {
+  const config: Config = {
+    baseUrl: "",
+    email: "",
+    accessKey: "",
+    capital: 1000000,
+    assumedHittingRate: 0.25,
+    assumedCollectRate: 1.1,
+    assumedAmountPurchasedRate: 0.25,
+    assumedEntryRaceCountRate: 0.2,
+  };
+
+  // ファイルに保存してある「日単位の賭け結果」の日付配列
+  const dateArray = storedBetDayResultDates(false);
+
+  for (let i = 0; i < dateArray.length; i++) {
+    const date = dateArray[i];
+    const betDayResult = await simulation2(config, date);
+
+    if (betDayResult.nextCapital !== null) {
+      config.capital = betDayResult.nextCapital;
+    }
+  }
 }
 
 simulation().catch((err) => {

@@ -26,7 +26,6 @@ import {
 import {
   generateNumbersetInfo,
   NumbersetInfo,
-  numbersetInfoOrderByExpectedValue,
   numbersetInfoOrderByPercent,
   roundBet,
   sleep,
@@ -551,6 +550,8 @@ export async function boatRace(): Promise<void> {
 
     // レポート作成
     await report(today);
+  } catch (err) {
+    logger.error(err);
   } finally {
     if (sessionIntervalId !== null) {
       clearInterval(sessionIntervalId);

@@ -22,10 +22,15 @@ const DATE_FORMAT = "YYYYMMDD";
  * ファイル名を作って返す
  *
  * @param date 日付
+ * @param isSim シミュレーションかどうか
  */
-function makeFileName(date: dayjs.Dayjs): string {
+function makeFileName(date: dayjs.Dayjs, isSim: boolean): string {
   const dateStr = date.format(DATE_FORMAT);
-  return `${PREFIX}_${dateStr}.${SUFFIX}`;
+  if (isSim) {
+    return `${PREFIX}_${dateStr}_sim.${SUFFIX}`;
+  } else {
+    return `${PREFIX}_${dateStr}.${SUFFIX}`;
+  }
 }
 
 function createParameterHtmlRow(type: string, parameter: Parameter): string {
@@ -168,21 +173,24 @@ function createBetRaceResult(betRaceResult: BetRaceResult): string {
  * 賭け結果 レポート作成
  *
  * @param date
+ * @param isSim シミュレーションかどうか
  */
-export async function report(date: dayjs.Dayjs): Promise<void> {
+export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
   let betDayResult: BetDayResult;
   try {
-    betDayResult = readBetDayResult(date);
+    betDayResult = readBetDayResult(date, isSim);
   } catch (err) {
     logger.error(err);
     return;
   }
 
+  const isSimStr = isSim ? "(シミュレーション)" : "";
+
   const htmlStart = `
   <!DOCTYPE html>
   <html lang="ja">
     <head>
-      <title>レポート ${betDayResult.date}</title>
+      <title>レポート ${betDayResult.date}${isSimStr}</title>
       <link rel="stylesheet" href="report.css">
     </head>
     <body>
@@ -190,7 +198,7 @@ export async function report(date: dayjs.Dayjs): Promise<void> {
 
   const htmlHeader = `
   <header>
-  日付 : ${betDayResult.date}<br>
+  日付 : ${betDayResult.date}${isSimStr}<br>
   資金 : ${currencyFormatter.format(betDayResult.capital)}<br>
   レース数 : ${betDayResult.raceCount}<br>
   回収率 : ${
@@ -235,6 +243,6 @@ export async function report(date: dayjs.Dayjs): Promise<void> {
   const html = htmlStart + htmlHeader + htmlParameters + htmlTable + htmlEnd;
 
   fs.mkdirpSync(DIR);
-  const fileName = makeFileName(date);
+  const fileName = makeFileName(date, isSim);
   fs.writeFileSync(fileName, html);
 }
