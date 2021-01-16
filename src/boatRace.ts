@@ -234,11 +234,13 @@ function addTicket3f(
 
 /**
  * 購入する二連単の舟券を追加する
+ * 確率のトップ4 を賭ける。
+ * ただし、期待値が 1.2 を超えるものが 2個以上 のときのみ賭ける。
  *
  * @param numbersetInfos 1レースの 2t 組番情報
  * @param ticket 舟券
  */
-export function addTicket2t2(
+export function addTicket2t2A(
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
 ): void {
@@ -278,6 +280,40 @@ export function addTicket2t2(
 
 /**
  * 購入する二連単の舟券を追加する
+ * 期待値が 1.4以上 かつ 2.0以下 のものを賭ける。
+ *
+ * @param numbersetInfos 1レースの 2t 組番情報
+ * @param ticket 舟券
+ */
+export function addTicket2t2B(
+  numbersetInfos: NumbersetInfo[],
+  ticket: Ticket
+): void {
+  const filteredNumbersetInfos = numbersetInfos.filter(
+    (value) => value.expectedValue >= 1.4 && value.expectedValue <= 2.0
+  );
+
+  // 賭け金は1レースで 1000円 を基準にする。
+  const defaultBet =
+    filteredNumbersetInfos.length === 0
+      ? 0
+      : 1000 / filteredNumbersetInfos.length;
+
+  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
+    const numbersetInfo = filteredNumbersetInfos[i];
+
+    // 賭け金
+    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
+
+    ticket.numbers.push({
+      numberset: numbersetInfo.numberset,
+      bet: bet,
+    });
+  }
+}
+
+/**
+ * 購入する二連単の舟券を追加する
  *
  * @param odds オッズ
  * @param predictsAll 直前予想全確率
@@ -298,7 +334,7 @@ function addTicket2t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する二連単の舟券を追加する
-  addTicket2t2(numbersetInfos, ticket);
+  addTicket2t2A(numbersetInfos, ticket);
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);

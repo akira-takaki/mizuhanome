@@ -16,7 +16,7 @@ import { NumbersetInfo } from "#/myUtil";
 import { Ticket } from "#/api";
 import {
   addTicket2f2,
-  addTicket2t2,
+  addTicket2t2B,
   addTicket3f2,
   addTicket3t2B,
 } from "#/boatRace";
@@ -89,7 +89,7 @@ async function simulation2(
       type: "2t",
       numbers: [],
     };
-    addTicket2t2(numbersetInfos2t, ticket2t);
+    addTicket2t2B(numbersetInfos2t, ticket2t);
 
     // 購入する二連複の舟券を追加する
     const ticket2f: Ticket = {
@@ -150,9 +150,10 @@ async function simulation2(
     }
   }
 
-  writeBetDayResult(date, simulationBetDayResult, true);
-  const tabulatedBetDayResult = await tabulateBetDayResult(date, true);
-  await report(date, true);
+  const isSim = true;
+  writeBetDayResult(date, simulationBetDayResult, isSim);
+  const tabulatedBetDayResult = await tabulateBetDayResult(date, isSim);
+  await report(date, isSim);
 
   return tabulatedBetDayResult;
 }
@@ -170,7 +171,8 @@ async function simulation(): Promise<void> {
   };
 
   // ファイルに保存してある「日単位の賭け結果」の日付配列
-  const dateArray = storedBetDayResultDates(false);
+  const isSim = false;
+  const dateArray = storedBetDayResultDates(isSim);
 
   for (let i = 0; i < dateArray.length; i++) {
     const date = dateArray[i];
