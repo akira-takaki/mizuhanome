@@ -335,7 +335,7 @@ function addTicket2t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する二連単の舟券を追加する
-  addTicket2t2A(numbersetInfos, ticket);
+  addTicket2t2B(numbersetInfos, ticket);
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
