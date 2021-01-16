@@ -141,7 +141,10 @@ async function simulation2(
         bet: bet,
         preOdds: originalBetResult.preOdds,
         expectedValue: originalBetResult.expectedValue,
-        preDividend: bet * originalBetResult.preOdds,
+        preDividend:
+          originalBetResult.preOdds !== null
+            ? bet * originalBetResult.preOdds
+            : 0,
         odds: originalBetResult.odds,
         dividend:
           originalBetResult.odds !== null ? bet * originalBetResult.odds : 0,

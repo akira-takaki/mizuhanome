@@ -141,7 +141,7 @@ export async function getRaceCard(
  * オッズ
  */
 export interface Odds {
-  [key: string]: string;
+  [key: string]: string | null;
 }
 
 /**

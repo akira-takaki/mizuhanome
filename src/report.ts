@@ -155,7 +155,11 @@ function createBetRaceResult(betRaceResult: BetRaceResult): string {
         </td>
         <td class="numberset">${betResult.numberset}</td>
         <td class="percent">${percentFormatter.format(betResult.percent)}</td>
-        <td class="preOdds">${decimalFormatter.format(betResult.preOdds)}</td>
+        <td class="preOdds">${
+          betResult.preOdds !== null
+            ? decimalFormatter.format(betResult.preOdds)
+            : ""
+        }</td>
         <td class="expectedValue">${decimalFormatter.format(
           betResult.expectedValue
         )}</td>

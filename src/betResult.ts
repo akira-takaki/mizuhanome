@@ -27,7 +27,7 @@ export interface BetResult {
   bet: number;
 
   /** レース前オッズ */
-  preOdds: number;
+  preOdds: number | null;
 
   /** 期待値 */
   expectedValue: number;
@@ -614,7 +614,8 @@ export async function addBetRaceResult(
         for (let k = 0; k < ticket.numbers.length; k++) {
           if (numbersetInfo.numberset === ticket.numbers[k].numberset) {
             bet = ticket.numbers[k].bet;
-            preDividend = bet * numbersetInfo.odds;
+            preDividend =
+              numbersetInfo.odds !== null ? bet * numbersetInfo.odds : 0;
           }
         }
 
@@ -665,6 +666,16 @@ export async function updateBetRaceResult(
 
       if (betRaceResult.isDecision) {
         continue;
+      }
+
+      // 無効なレースかどうかチェック
+      if (betRaceResult.betResults.length > 0) {
+        if (betRaceResult.betResults[0].preOdds === null) {
+          // レース前のオッズが null の場合は無効なレース
+          // 結果を取得しないままレース結果を確定とする
+          betRaceResult.isDecision = true;
+          continue;
+        }
       }
 
       // 結果を取得

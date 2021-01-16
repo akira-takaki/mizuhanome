@@ -23,9 +23,14 @@ export function pickupOdds(
   type: TicketType,
   numberset: string,
   odds: Odds
-): number {
+): number | null {
   const oddsKey: string = "odds_" + type + numberset;
-  return parseFloat(odds[oddsKey]);
+  const oddsStr = odds[oddsKey];
+  if (oddsStr === undefined || oddsStr === null) {
+    return null;
+  } else {
+    return parseFloat(oddsStr);
+  }
 }
 
 export const currencyFormatter = new Intl.NumberFormat("ja-JP", {
@@ -152,7 +157,7 @@ export interface NumbersetInfo {
   percent: number;
 
   /** オッズ */
-  odds: number;
+  odds: number | null;
 
   /**
    * 期待値 = 確率 x オッズ
@@ -187,7 +192,7 @@ export function generateNumbersetInfo(
       powers: pickupPowers(percents[i].numberset, predictsAll),
       percent: percent,
       odds: numbersetOdds,
-      expectedValue: isNaN(numbersetOdds) ? 0 : percent * numbersetOdds,
+      expectedValue: numbersetOdds === null ? 0 : percent * numbersetOdds,
     });
   }
 
