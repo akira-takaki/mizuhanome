@@ -167,10 +167,10 @@ async function simulation(): Promise<void> {
     email: "",
     accessKey: "",
     capital: 1000000,
-    assumedHittingRate: 0.25,
+    assumedHittingRate: 0.08,
     assumedCollectRate: 1.1,
     assumedAmountPurchasedRate: 0.25,
-    assumedEntryRaceCountRate: 0.2,
+    assumedEntryRaceCountRate: 0.9,
   };
 
   // ファイルに保存してある「日単位の賭け結果」の日付配列
