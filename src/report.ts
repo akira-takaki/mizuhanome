@@ -221,6 +221,11 @@ export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
       ? currencyFormatter.format(betDayResult.differenceAll)
       : ""
   }<br>
+  次回の資金 : ${
+    betDayResult.nextCapital !== null
+      ? currencyFormatter.format(betDayResult.nextCapital)
+      : ""
+  }<br>
   </header>`;
 
   // パラメータ HTML
