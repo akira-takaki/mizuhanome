@@ -47,7 +47,7 @@ function makeSummaryFileName(isSim: boolean): string {
   }
 }
 
-function createParameterHtmlHeader(): string {
+function createParameterTableHtmlHeader(): string {
   return `
     <tr class="parameter-header">
       <th class="type-header">舟券種類</th>
@@ -62,7 +62,10 @@ function createParameterHtmlHeader(): string {
   `;
 }
 
-function createParameterHtmlRow(type: string, parameter: Parameter): string {
+function createParameterTableHtmlRow(
+  type: string,
+  parameter: Parameter
+): string {
   return `
       <tr class="parameter">
         <td class="type-${type}">${type}</td>
@@ -103,16 +106,20 @@ function createParameterHtmlRow(type: string, parameter: Parameter): string {
       `;
 }
 
-function createParameterHtml(betDayResult: BetDayResult): string {
-  const tableHeader = createParameterHtmlHeader();
+function createParameterTableHtml(betDayResult: BetDayResult): string {
+  const tableHeader = createParameterTableHtmlHeader();
 
   let tableRow = "";
   tableRow =
-    tableRow + createParameterHtmlRow("3t仮定", betDayResult.assumed3t);
-  tableRow = tableRow + createParameterHtmlRow("3t", betDayResult.actual3t);
-  tableRow = tableRow + createParameterHtmlRow("3f", betDayResult.actual3f);
-  tableRow = tableRow + createParameterHtmlRow("2t", betDayResult.actual2t);
-  tableRow = tableRow + createParameterHtmlRow("2f", betDayResult.actual2f);
+    tableRow + createParameterTableHtmlRow("3t仮定", betDayResult.assumed3t);
+  tableRow =
+    tableRow + createParameterTableHtmlRow("3t", betDayResult.actual3t);
+  tableRow =
+    tableRow + createParameterTableHtmlRow("3f", betDayResult.actual3f);
+  tableRow =
+    tableRow + createParameterTableHtmlRow("2t", betDayResult.actual2t);
+  tableRow =
+    tableRow + createParameterTableHtmlRow("2f", betDayResult.actual2f);
 
   return `<table class="parameter">` + tableHeader + tableRow + `</table>`;
 }
@@ -276,7 +283,7 @@ export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
   `;
 
   // パラメータ HTML
-  const htmlParameters = createParameterHtml(betDayResult);
+  const htmlParameters = createParameterTableHtml(betDayResult);
 
   // レースの賭け結果 HTML
   let htmlTable = "";
@@ -310,6 +317,20 @@ export async function reportSummary(
 ): Promise<void> {
   const isSimStr = isSim ? "(シミュレーション)" : "";
 
+  const betDayResults: BetDayResult[] = [];
+  for (let i = 0; i < dateArray.length; i++) {
+    const date = dateArray[i];
+
+    let betDayResult: BetDayResult;
+    try {
+      betDayResult = readBetDayResult(date, isSim);
+    } catch (err) {
+      logger.error(err);
+      return;
+    }
+    betDayResults.push(betDayResult);
+  }
+
   const htmlStart = `
   <!DOCTYPE html>
   <html lang="ja">
@@ -321,35 +342,36 @@ export async function reportSummary(
     ${isSimStr}<br>
   `;
 
-  let htmlTable = `
+  let htmlSummaryTable = `
     <table class="summary">
   `;
-  htmlTable = htmlTable + createSummaryTableHtmlHeader();
-  for (let i = 0; i < dateArray.length; i++) {
-    const date = dateArray[i];
+  htmlSummaryTable = htmlSummaryTable + createSummaryTableHtmlHeader();
+  for (let i = 0; i < betDayResults.length; i++) {
+    const betDayResult = betDayResults[i];
 
-    let betDayResult: BetDayResult;
-    try {
-      betDayResult = readBetDayResult(date, isSim);
-    } catch (err) {
-      logger.error(err);
-      return;
-    }
-
-    htmlTable = htmlTable + createSummaryTableHtmlRow(betDayResult);
+    htmlSummaryTable =
+      htmlSummaryTable + createSummaryTableHtmlRow(betDayResult);
   }
-  htmlTable =
-    htmlTable +
+  htmlSummaryTable =
+    htmlSummaryTable +
     `
     </table>
   `;
+
+  let htmlParameterTable = "";
+  for (let i = 0; i < betDayResults.length; i++) {
+    const betDayResult = betDayResults[i];
+
+    htmlParameterTable =
+      htmlParameterTable + createParameterTableHtml(betDayResult);
+  }
 
   const htmlEnd = `
     </body>
   </html>
   `;
 
-  const html = htmlStart + htmlTable + htmlEnd;
+  const html = htmlStart + htmlSummaryTable + htmlParameterTable + htmlEnd;
 
   fs.mkdirpSync(DIR);
   const fileName = makeSummaryFileName(isSim);
