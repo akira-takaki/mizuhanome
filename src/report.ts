@@ -12,10 +12,11 @@ import {
   percentFormatter,
 } from "#/myUtil";
 import { logger } from "#/boatRace";
+import path from "path";
 
 const DIR = "./report";
-const PREFIX = `${DIR}/betDayResult`;
-const SUFFIX = `html`;
+const PREFIX = "betDayResult";
+const SUFFIX = "html";
 const DATE_FORMAT = "YYYYMMDD";
 
 /**
@@ -27,10 +28,38 @@ const DATE_FORMAT = "YYYYMMDD";
 function makeFileName(date: dayjs.Dayjs, isSim: boolean): string {
   const dateStr = date.format(DATE_FORMAT);
   if (isSim) {
-    return `${PREFIX}_${dateStr}_sim.${SUFFIX}`;
+    return path.join(DIR, `${PREFIX}_${dateStr}_sim.${SUFFIX}`);
   } else {
-    return `${PREFIX}_${dateStr}.${SUFFIX}`;
+    return path.join(DIR, `${PREFIX}_${dateStr}.${SUFFIX}`);
   }
+}
+
+/**
+ * まとめファイル名を作って返す
+ *
+ * @param isSim シミュレーションかどうか
+ */
+function makeSummaryFileName(isSim: boolean): string {
+  if (isSim) {
+    return path.join(DIR, `${PREFIX}_sim.${SUFFIX}`);
+  } else {
+    return path.join(DIR, `${PREFIX}.${SUFFIX}`);
+  }
+}
+
+function createParameterHtmlHeader(): string {
+  return `
+    <tr class="parameter-header">
+      <th class="type-header">舟券種類</th>
+      <th class="entryRaceCountRate-header">参加レース率</th>
+      <th class="entryRaceCount-header">参加レース数</th>
+      <th class="hittingRate-header">的中率</th>
+      <th class="amountPurchased-header">購入金額</th>
+      <th class="collect-header">回収金額</th>
+      <th class="collectRate-header">回収率</th>
+      <th class="amountPurchasedRate-header">購入金額率</th>
+    </tr>
+  `;
 }
 
 function createParameterHtmlRow(type: string, parameter: Parameter): string {
@@ -75,19 +104,7 @@ function createParameterHtmlRow(type: string, parameter: Parameter): string {
 }
 
 function createParameterHtml(betDayResult: BetDayResult): string {
-  const tableHeader = `
-    <table class="parameter">
-      <tr class="parameter-header">
-        <th class="type-header">舟券種類</th>
-        <th class="entryRaceCountRate-header">参加レース率</th>
-        <th class="entryRaceCount-header">参加レース数</th>
-        <th class="hittingRate-header">的中率</th>
-        <th class="amountPurchased-header">購入金額</th>
-        <th class="collect-header">回収金額</th>
-        <th class="collectRate-header">回収率</th>
-        <th class="amountPurchasedRate-header">購入金額率</th>
-      </tr>
-    `;
+  const tableHeader = createParameterHtmlHeader();
 
   let tableRow = "";
   tableRow =
@@ -97,11 +114,7 @@ function createParameterHtml(betDayResult: BetDayResult): string {
   tableRow = tableRow + createParameterHtmlRow("2t", betDayResult.actual2t);
   tableRow = tableRow + createParameterHtmlRow("2f", betDayResult.actual2f);
 
-  const tableFooter = `
-    </table>
-    `;
-
-  return tableHeader + tableRow + tableFooter;
+  return `<table class="parameter">` + tableHeader + tableRow + `</table>`;
 }
 
 function createBetRaceResult(betRaceResult: BetRaceResult): string {
@@ -169,6 +182,58 @@ function createBetRaceResult(betRaceResult: BetRaceResult): string {
   return tableHeader + tableRow + tableFooter;
 }
 
+function createSummaryTableHtmlHeader(): string {
+  return `
+    <tr class="summary-header">
+      <th class="date-header">日付</th>
+      <th class="capital-header">資金</thcl>
+      <th class="raceCount-header">レース数</th>
+      <th class="collectRateAll-header">回収率</th>
+      <th class="amountPurchasedAll-header">購入金額</th>
+      <th class="collectAll-header">回収金額</th>
+      <th class="differenceAll-header">差額</th>
+      <th class="nextCapital-header">次回の資金</th>
+    </tr>
+  `;
+}
+
+function createSummaryTableHtmlRow(betDayResult: BetDayResult): string {
+  return `
+    <tr class="summary-row">
+      <td class="date-row">${betDayResult.date}</td>>
+      <td class="capital-row">${currencyFormatter.format(
+        betDayResult.capital
+      )}</td>>
+      <td class="raceCount-row">${betDayResult.raceCount}</tdc>>
+      <td class="collectRateAll-row">${
+        betDayResult.collectRateAll !== null
+          ? percentFormatter.format(betDayResult.collectRateAll)
+          : ""
+      }</td>>
+      <td class="amountPurchasedAll-row">${
+        betDayResult.amountPurchasedAll !== null
+          ? currencyFormatter.format(betDayResult.amountPurchasedAll)
+          : ""
+      }</td>>
+      <td class="collectAll-row">${
+        betDayResult.collectAll !== null
+          ? currencyFormatter.format(betDayResult.collectAll)
+          : ""
+      }</td>>
+      <td class="differenceAll-row">${
+        betDayResult.differenceAll !== null
+          ? currencyFormatter.format(betDayResult.differenceAll)
+          : ""
+      }</td>>
+      <td class="nextCapital-row">${
+        betDayResult.nextCapital !== null
+          ? currencyFormatter.format(betDayResult.nextCapital)
+          : ""
+      }</td>>
+    </tr>
+  `;
+}
+
 /**
  * 賭け結果 レポート作成
  *
@@ -197,46 +262,23 @@ export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
   `;
 
   const htmlHeader = `
-  <header>
-  日付 : ${betDayResult.date}${isSimStr}<br>
-  資金 : ${currencyFormatter.format(betDayResult.capital)}<br>
-  レース数 : ${betDayResult.raceCount}<br>
-  回収率 : ${
-    betDayResult.collectRateAll !== null
-      ? percentFormatter.format(betDayResult.collectRateAll)
-      : ""
-  }<br>
-  購入金額 : ${
-    betDayResult.amountPurchasedAll !== null
-      ? currencyFormatter.format(betDayResult.amountPurchasedAll)
-      : ""
-  }<br>
-  回収金額 : ${
-    betDayResult.collectAll !== null
-      ? currencyFormatter.format(betDayResult.collectAll)
-      : ""
-  }<br>
-  差額 : ${
-    betDayResult.differenceAll !== null
-      ? currencyFormatter.format(betDayResult.differenceAll)
-      : ""
-  }<br>
-  次回の資金 : ${
-    betDayResult.nextCapital !== null
-      ? currencyFormatter.format(betDayResult.nextCapital)
-      : ""
-  }<br>
-  </header>`;
+    <header>
+    ${isSimStr}<br>
+      <table>
+        ${createSummaryTableHtmlHeader()}
+        ${createSummaryTableHtmlRow(betDayResult)}
+      </table>
+    </header>
+  `;
 
   // パラメータ HTML
   const htmlParameters = createParameterHtml(betDayResult);
 
+  // レースの賭け結果 HTML
   let htmlTable = "";
-
   for (let i = 0; i < betDayResult.betRaceResults.length; i++) {
     const betRaceResult = betDayResult.betRaceResults[i];
 
-    // レースの賭け結果 HTML
     htmlTable = htmlTable + createBetRaceResult(betRaceResult);
   }
 
@@ -249,5 +291,63 @@ export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
 
   fs.mkdirpSync(DIR);
   const fileName = makeFileName(date, isSim);
+  fs.writeFileSync(fileName, html);
+}
+
+/**
+ * 賭け結果 まとめレポート作成
+ *
+ * @param dateArray
+ * @param isSim
+ */
+export async function reportSummary(
+  dateArray: dayjs.Dayjs[],
+  isSim = false
+): Promise<void> {
+  const isSimStr = isSim ? "(シミュレーション)" : "";
+
+  const htmlStart = `
+  <!DOCTYPE html>
+  <html lang="ja">
+    <head>
+      <title>まとめレポート${isSimStr}</title>
+      <link rel="stylesheet" href="report.css">
+    </head>
+    <body>
+    ${isSimStr}<br>
+  `;
+
+  let htmlTable = `
+    <table class="summary">
+  `;
+  htmlTable = htmlTable + createSummaryTableHtmlHeader();
+  for (let i = 0; i < dateArray.length; i++) {
+    const date = dateArray[i];
+
+    let betDayResult: BetDayResult;
+    try {
+      betDayResult = readBetDayResult(date, isSim);
+    } catch (err) {
+      logger.error(err);
+      return;
+    }
+
+    htmlTable = htmlTable + createSummaryTableHtmlRow(betDayResult);
+  }
+  htmlTable =
+    htmlTable +
+    `
+    </table>
+  `;
+
+  const htmlEnd = `
+    </body>
+  </html>
+  `;
+
+  const html = htmlStart + htmlTable + htmlEnd;
+
+  fs.mkdirpSync(DIR);
+  const fileName = makeSummaryFileName(isSim);
   fs.writeFileSync(fileName, html);
 }

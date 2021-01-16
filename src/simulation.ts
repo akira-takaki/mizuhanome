@@ -11,7 +11,7 @@ import {
   tabulateBetDayResult,
   writeBetDayResult,
 } from "#/betResult";
-import { report } from "#/report";
+import { report, reportSummary } from "#/report";
 import { NumbersetInfo } from "#/myUtil";
 import { Ticket } from "#/api";
 import {
@@ -171,8 +171,8 @@ async function simulation(): Promise<void> {
   };
 
   // ファイルに保存してある「日単位の賭け結果」の日付配列
-  const isSim = false;
-  const dateArray = storedBetDayResultDates(isSim);
+  let isSim = false;
+  let dateArray = storedBetDayResultDates(isSim);
 
   for (let i = 0; i < dateArray.length; i++) {
     const date = dateArray[i];
@@ -182,6 +182,10 @@ async function simulation(): Promise<void> {
       config.capital = betDayResult.nextCapital;
     }
   }
+
+  isSim = true;
+  dateArray = storedBetDayResultDates(isSim);
+  await reportSummary(dateArray, isSim);
 }
 
 simulation().catch((err) => {

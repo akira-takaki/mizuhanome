@@ -20,6 +20,7 @@ import {
   hasNotDecision,
   initBetDayResult,
   makeBetDayResult,
+  storedBetDayResultDates,
   tabulateBetDayResult,
   updateBetRaceResult,
 } from "#/betResult";
@@ -32,7 +33,7 @@ import {
   TicketType,
 } from "#/myUtil";
 import { Config, readConfig, writeConfig } from "#/config";
-import { report } from "#/report";
+import { report, reportSummary } from "#/report";
 
 log4js.configure("./config/LogConfig.json");
 export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
@@ -586,6 +587,9 @@ export async function boatRace(): Promise<void> {
 
     // レポート作成
     await report(today);
+    const isSim = false;
+    const dateArray = storedBetDayResultDates(isSim);
+    await reportSummary(dateArray, isSim);
   } catch (err) {
     logger.error(err);
   } finally {
