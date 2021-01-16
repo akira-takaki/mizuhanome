@@ -123,12 +123,10 @@ export function addTicket3t2B(
     const numbersetInfo = filteredNumbersetInfos[i];
 
     // 賭け金
-    // 三連単の賭け金を計算
     const bet = roundBet(
-      ((betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
+      (betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
         (betDayResult.raceCount * betDayResult.assumed3t.entryRaceCountRate) /
-        filteredNumbersetInfos.length) *
-        numbersetInfo.expectedValue
+        filteredNumbersetInfos.length
     );
 
     ticket.numbers.push({
@@ -195,7 +193,7 @@ export function addTicket3f2(
     const numbersetInfo = filteredNumbersetInfos[i];
 
     // 賭け金
-    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
+    const bet = roundBet(defaultBet);
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
@@ -304,7 +302,7 @@ export function addTicket2t2B(
     const numbersetInfo = filteredNumbersetInfos[i];
 
     // 賭け金
-    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
+    const bet = roundBet(defaultBet);
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
@@ -368,7 +366,7 @@ export function addTicket2f2(
     const numbersetInfo = filteredNumbersetInfos[i];
 
     // 賭け金
-    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
+    const bet = roundBet(defaultBet);
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
