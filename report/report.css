@@ -13,6 +13,34 @@ tr {
     border: solid 1px black;
 }
 
+td.capital-row {
+    text-align: right;
+}
+
+td.raceCount-row {
+    text-align: right;
+}
+
+td.collectRateAll-row {
+    text-align: right;
+}
+
+td.amountPurchasedAll-row {
+    text-align: right;
+}
+
+td.collectAll-row {
+    text-align: right;
+}
+
+td.differenceAll-row {
+    text-align: right;
+}
+
+td.nextCapital-row {
+    text-align: right;
+}
+
 td.hittingRate {
     text-align: right;
 }

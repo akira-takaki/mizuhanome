@@ -200,36 +200,36 @@ function createSummaryTableHtmlHeader(): string {
 function createSummaryTableHtmlRow(betDayResult: BetDayResult): string {
   return `
     <tr class="summary-row">
-      <td class="date-row">${betDayResult.date}</td>>
+      <td class="date-row">${betDayResult.date}</td>
       <td class="capital-row">${currencyFormatter.format(
         betDayResult.capital
-      )}</td>>
-      <td class="raceCount-row">${betDayResult.raceCount}</tdc>>
+      )}</td>
+      <td class="raceCount-row">${betDayResult.raceCount}</td>
       <td class="collectRateAll-row">${
         betDayResult.collectRateAll !== null
           ? percentFormatter.format(betDayResult.collectRateAll)
           : ""
-      }</td>>
+      }</td>
       <td class="amountPurchasedAll-row">${
         betDayResult.amountPurchasedAll !== null
           ? currencyFormatter.format(betDayResult.amountPurchasedAll)
           : ""
-      }</td>>
+      }</td>
       <td class="collectAll-row">${
         betDayResult.collectAll !== null
           ? currencyFormatter.format(betDayResult.collectAll)
           : ""
-      }</td>>
+      }</td>
       <td class="differenceAll-row">${
         betDayResult.differenceAll !== null
           ? currencyFormatter.format(betDayResult.differenceAll)
           : ""
-      }</td>>
+      }</td>
       <td class="nextCapital-row">${
         betDayResult.nextCapital !== null
           ? currencyFormatter.format(betDayResult.nextCapital)
           : ""
-      }</td>>
+      }</td>
     </tr>
   `;
 }
