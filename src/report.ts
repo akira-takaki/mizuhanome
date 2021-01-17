@@ -186,10 +186,11 @@ function createBetRaceResultTableHtmlRow(
     `;
 
   if (rowspan !== null && difference !== null) {
+    const plus = difference > 0 ? "plus" : "minus";
     td =
       td +
       `
-      <td class="difference" rowspan="${rowspan}">${currencyFormatter.format(
+      <td class="difference-${plus}" rowspan="${rowspan}">${currencyFormatter.format(
         difference
       )}</td>
       `;

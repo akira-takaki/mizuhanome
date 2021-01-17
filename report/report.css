@@ -13,6 +13,10 @@ tr {
     border: solid 1px black;
 }
 
+td.date-row {
+    text-align: center;
+}
+
 td.capital-row {
     text-align: right;
 }
@@ -111,6 +115,10 @@ th.preDividend-header {
 }
 
 th.odds-header {
+    width: 6%;
+}
+
+th.dividend-header {
     width: 10%;
 }
 
@@ -175,4 +183,16 @@ td.odds {
 
 td.dividend {
     text-align: right;
+}
+
+td.difference-plus {
+    text-align: right;
+    color: green;
+    background-color: white;
+}
+
+td.difference-minus {
+    text-align: right;
+    color: red;
+    background-color: white;
 }
