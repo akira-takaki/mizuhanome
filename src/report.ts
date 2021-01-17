@@ -294,12 +294,12 @@ function createSummaryTableHtmlHeader(): string {
     <tr class="summary-header">
       <th class="date-header">日付</th>
       <th class="capital-header">資金</thcl>
-      <th class="raceCount-header">レース数</th>
-      <th class="collectRateAll-header">回収率</th>
+      <th class="nextCapital-header">次回の資金</th>
+      <th class="raceCount-header">参加レース数</th>
       <th class="amountPurchasedAll-header">購入金額</th>
       <th class="collectAll-header">回収金額</th>
+      <th class="collectRateAll-header">回収率</th>
       <th class="differenceAll-header">差額</th>
-      <th class="nextCapital-header">次回の資金</th>
     </tr>
   `;
 }
@@ -311,12 +311,12 @@ function createSummaryTableHtmlRow(betDayResult: BetDayResult): string {
       <td class="capital-row">${currencyFormatter.format(
         betDayResult.capital
       )}</td>
-      <td class="raceCount-row">${betDayResult.raceCount}</td>
-      <td class="collectRateAll-row">${
-        betDayResult.collectRateAll !== null
-          ? percentFormatter.format(betDayResult.collectRateAll)
+      <td class="nextCapital-row">${
+        betDayResult.nextCapital !== null
+          ? currencyFormatter.format(betDayResult.nextCapital)
           : ""
       }</td>
+      <td class="raceCount-row">${betDayResult.raceCount}</td>
       <td class="amountPurchasedAll-row">${
         betDayResult.amountPurchasedAll !== null
           ? currencyFormatter.format(betDayResult.amountPurchasedAll)
@@ -327,14 +327,14 @@ function createSummaryTableHtmlRow(betDayResult: BetDayResult): string {
           ? currencyFormatter.format(betDayResult.collectAll)
           : ""
       }</td>
+      <td class="collectRateAll-row">${
+        betDayResult.collectRateAll !== null
+          ? percentFormatter.format(betDayResult.collectRateAll)
+          : ""
+      }</td>
       <td class="differenceAll-row">${
         betDayResult.differenceAll !== null
           ? currencyFormatter.format(betDayResult.differenceAll)
-          : ""
-      }</td>
-      <td class="nextCapital-row">${
-        betDayResult.nextCapital !== null
-          ? currencyFormatter.format(betDayResult.nextCapital)
           : ""
       }</td>
     </tr>
