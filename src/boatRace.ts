@@ -97,7 +97,7 @@ export function addTicket3t2A(
 
 /**
  * 購入する三連単の舟券を追加する
- * 期待値が 1.4以上 かつ 2.0以下 のものを賭ける。
+ * 期待値が 1.4以上 のものを賭ける。
  *
  * @param betDayResult 日単位の賭け結果
  * @param numbersetInfos 1レースの 3t 組番情報
@@ -116,7 +116,7 @@ export function addTicket3t2B(
   }
 
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= 1.4 && value.expectedValue <= 2.0
+    (value) => value.expectedValue >= 1.4
   );
 
   for (let i = 0; i < filteredNumbersetInfos.length; i++) {
@@ -279,7 +279,7 @@ export function addTicket2t2A(
 
 /**
  * 購入する二連単の舟券を追加する
- * 期待値が 1.4以上 かつ 2.0以下 のものを賭ける。
+ * 期待値が 1.4以上 のものを賭ける。
  *
  * @param numbersetInfos 1レースの 2t 組番情報
  * @param ticket 舟券
@@ -289,7 +289,7 @@ export function addTicket2t2B(
   ticket: Ticket
 ): void {
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= 1.4 && value.expectedValue <= 2.0
+    (value) => value.expectedValue >= 1.4
   );
 
   // 賭け金は1レースで 1000円 を基準にする。
