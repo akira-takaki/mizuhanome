@@ -305,9 +305,12 @@ function createSummaryTableHtmlHeader(): string {
 }
 
 function createSummaryTableHtmlRow(betDayResult: BetDayResult): string {
+  const weekdayNames = ["日", "月", "火", "水", "木", "金", "土"];
   return `
     <tr class="summary-row">
-      <td class="date-row">${betDayResult.date}</td>
+      <td class="date-row">${betDayResult.date}(${
+    weekdayNames[dayjs(betDayResult.date, betDayResult.dateFormat).day()]
+  })</td>
       <td class="capital-row">${currencyFormatter.format(
         betDayResult.capital
       )}</td>
