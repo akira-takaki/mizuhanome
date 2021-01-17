@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import {
   BetDayResult,
   BetRaceResult,
+  BetResult,
   Parameter,
   readBetDayResult,
 } from "#/betResult";
@@ -124,73 +125,167 @@ function createParameterTableHtml(betDayResult: BetDayResult): string {
   return `<table class="parameter">` + tableHeader + tableRow + `</table>`;
 }
 
-function createBetRaceResult(betRaceResult: BetRaceResult): string {
-  const tableHeader = `
-    <table class="race">
-      <tr class="race-header">
-        <th class="type-header">舟券種類</th>
-        <th class="numberset-header">組番</th>
-        <th class="percent-header">確率</th>
-        <th class="preOdds-header">レース前オッズ</th>
-        <th class="expectedValue-header">期待値</th>
-        <th class="bet-header">賭け金</th>
-        <th class="preDividend-header">予想配当金</th>
-        <th class="odds-header">オッズ</th>
-        <th class="dividend-header">配当金</th>
-      </tr>
+function createBetRaceResultTableHtmlHeader(): string {
+  return `
+    <tr class="race-header">
+      <th class="type-header">舟券種類</th>
+      <th class="numberset-header">組番</th>
+      <th class="percent-header">確率</th>
+      <th class="preOdds-header">レース前オッズ</th>
+      <th class="expectedValue-header">期待値</th>
+      <th class="bet-header">賭け金</th>
+      <th class="preDividend-header">予想配当金</th>
+      <th class="odds-header">オッズ</th>
+      <th class="dividend-header">配当金</th>
+      <th class="difference-header">差額</th>
+    </tr>
+  `;
+}
+
+function createBetRaceResultTableHtmlRow(
+  betResult: BetResult,
+  rowspan: number | null,
+  difference: number | null
+): string {
+  const isHit = betResult.odds !== null && betResult.bet !== betResult.dividend;
+
+  const trStart = `
+    <tr class="bet-${isHit ? "hit" : "miss"}">
+  `;
+
+  let td = "";
+  td =
+    td +
+    `
+      <td class="type-${betResult.type}">
+        ${betResult.type}
+        ${isHit ? "当" : ""}
+      </td>
+      <td class="numberset">${betResult.numberset}</td>
+      <td class="percent">${percentFormatter.format(betResult.percent)}</td>
+      <td class="preOdds">${
+        betResult.preOdds !== null
+          ? decimalFormatter.format(betResult.preOdds)
+          : ""
+      }</td>
+      <td class="expectedValue">${decimalFormatter.format(
+        betResult.expectedValue
+      )}</td>
+      <td class="bet">${currencyFormatter.format(betResult.bet)}</td>
+      <td class="preDividend">${currencyFormatter.format(
+        betResult.preDividend
+      )}</td>
+      <td class="odds">${
+        betResult.odds !== null ? decimalFormatter.format(betResult.odds) : ""
+      }</td>
+      <td class="dividend">${
+        betResult.dividend !== null
+          ? currencyFormatter.format(betResult.dividend)
+          : ""
+      }</td>
     `;
 
-  let tableRow = "";
-  for (let j = 0; j < betRaceResult.betResults.length; j++) {
-    const betResult = betRaceResult.betResults[j];
-
-    if (betResult.bet === 0) {
-      // 賭け金が無いものは除外
-      continue;
-    }
-
-    const isHit =
-      betResult.odds !== null && betResult.bet !== betResult.dividend;
-
-    tableRow =
-      tableRow +
+  if (rowspan !== null && difference !== null) {
+    td =
+      td +
       `
-      <tr class="bet-${isHit ? "hit" : "miss"}">
-        <td class="type-${betResult.type}">
-          ${betResult.type}
-          ${isHit ? "当" : ""}
-        </td>
-        <td class="numberset">${betResult.numberset}</td>
-        <td class="percent">${percentFormatter.format(betResult.percent)}</td>
-        <td class="preOdds">${
-          betResult.preOdds !== null
-            ? decimalFormatter.format(betResult.preOdds)
-            : ""
-        }</td>
-        <td class="expectedValue">${decimalFormatter.format(
-          betResult.expectedValue
-        )}</td>
-        <td class="bet">${currencyFormatter.format(betResult.bet)}</td>
-        <td class="preDividend">${currencyFormatter.format(
-          betResult.preDividend
-        )}</td>
-        <td class="odds">${
-          betResult.odds !== null ? decimalFormatter.format(betResult.odds) : ""
-        }</td>
-        <td class="dividend">${
-          betResult.dividend !== null
-            ? currencyFormatter.format(betResult.dividend)
-            : ""
-        }</td>
-      </tr>
+      <td class="difference" rowspan="${rowspan}">${currencyFormatter.format(
+        difference
+      )}</td>
       `;
   }
 
-  const tableFooter = `
+  const trEnd = `
+    </tr>
+  `;
+
+  return trStart + td + trEnd;
+}
+
+function createBetRaceResultTableHtmlType(
+  betResults: BetResult[],
+  difference: number
+): string {
+  let tableRow = "";
+
+  for (let i = 0; i < betResults.length; i++) {
+    const betResult = betResults[i];
+
+    if (i === 0) {
+      tableRow =
+        tableRow +
+        createBetRaceResultTableHtmlRow(
+          betResult,
+          betResults.length,
+          difference
+        );
+    } else {
+      tableRow =
+        tableRow + createBetRaceResultTableHtmlRow(betResult, null, null);
+    }
+  }
+
+  return tableRow;
+}
+
+function createBetRaceResultTableHtml(betRaceResult: BetRaceResult): string {
+  const tableStart = `
+    <table class="race">
+  `;
+
+  const tableHeader = createBetRaceResultTableHtmlHeader();
+
+  // 賭け金が 0 のものは除外
+  const filteredBetResults = betRaceResult.betResults.filter(
+    (value) => value.bet > 0
+  );
+
+  let tableRow = "";
+  let prevType = "";
+  let typeBetResults: BetResult[] = [];
+  let typeBet = 0;
+  let typeDividend = 0;
+  for (let i = 0; i < filteredBetResults.length; i++) {
+    const betResult = filteredBetResults[i];
+
+    if (i === 0) {
+      prevType = betResult.type;
+    }
+
+    if (prevType !== betResult.type) {
+      // ブレイク処理
+      tableRow =
+        tableRow +
+        createBetRaceResultTableHtmlType(
+          typeBetResults,
+          typeDividend - typeBet
+        );
+
+      // 初期化
+      typeBetResults = [];
+      typeBet = 0;
+      typeDividend = 0;
+    }
+
+    typeBetResults.push(betResult);
+    typeBet = typeBet + betResult.bet;
+    if (betResult.dividend !== null) {
+      typeDividend = typeDividend + betResult.dividend;
+    }
+    prevType = betResult.type;
+  }
+  if (typeBetResults.length > 0) {
+    // ブレイク処理
+    tableRow =
+      tableRow +
+      createBetRaceResultTableHtmlType(typeBetResults, typeDividend - typeBet);
+  }
+
+  const tableEnd = `
     </table>
     `;
 
-  return tableHeader + tableRow + tableFooter;
+  return tableStart + tableHeader + tableRow + tableEnd;
 }
 
 function createSummaryTableHtmlHeader(): string {
@@ -290,7 +385,7 @@ export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
   for (let i = 0; i < betDayResult.betRaceResults.length; i++) {
     const betRaceResult = betDayResult.betRaceResults[i];
 
-    htmlTable = htmlTable + createBetRaceResult(betRaceResult);
+    htmlTable = htmlTable + createBetRaceResultTableHtml(betRaceResult);
   }
 
   const htmlEnd = `
