@@ -543,14 +543,14 @@ export async function boatRace(): Promise<void> {
       // 購入する三連単の舟券を追加する
       addTicket3t(betDayResult, odds, predictsAll, tickets);
 
-      // 購入する三連複の舟券を追加する
-      addTicket3f(odds, predictsAll, tickets);
-
-      // 購入する二連単の舟券を追加する
-      addTicket2t(odds, predictsAll, tickets);
-
-      // 購入する二連複の舟券を追加する
-      addTicket2f(odds, predictsAll, tickets);
+      // // 購入する三連複の舟券を追加する
+      // addTicket3f(odds, predictsAll, tickets);
+      //
+      // // 購入する二連単の舟券を追加する
+      // addTicket2t(odds, predictsAll, tickets);
+      //
+      // // 購入する二連複の舟券を追加する
+      // addTicket2f(odds, predictsAll, tickets);
 
       // 日単位の賭け結果 に レースの賭け結果 を追加する
       // シミュレーション用に賭けてない組番情報も保存する
