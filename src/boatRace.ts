@@ -97,7 +97,7 @@ export function addTicket3t2A(
 
 /**
  * 購入する三連単の舟券を追加する
- * 期待値が 1.3以上 のものを賭ける。
+ * 期待値が 1.3以上 の中で一番オッズが小さいものを賭ける。
  *
  * @param betDayResult 日単位の賭け結果
  * @param numbersetInfos 1レースの 3t 組番情報
@@ -119,16 +119,29 @@ export function addTicket3t2B(
     (value) => value.expectedValue >= 1.3
   );
 
-  const defaultBet =
-    (betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
-    (betDayResult.raceCount * betDayResult.assumed3t.entryRaceCountRate) /
-    filteredNumbersetInfos.length;
-
+  let minOdds = 10000;
   for (let i = 0; i < filteredNumbersetInfos.length; i++) {
     const numbersetInfo = filteredNumbersetInfos[i];
 
+    if (numbersetInfo.odds !== null && numbersetInfo.odds < minOdds) {
+      minOdds = numbersetInfo.odds;
+    }
+  }
+
+  const filteredNumbersetInfos2 = filteredNumbersetInfos.filter(
+    (value) => value.odds !== null && value.odds <= minOdds
+  );
+
+  const defaultBet =
+    (betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
+    (betDayResult.raceCount * betDayResult.assumed3t.entryRaceCountRate) /
+    filteredNumbersetInfos2.length;
+
+  for (let i = 0; i < filteredNumbersetInfos2.length; i++) {
+    const numbersetInfo = filteredNumbersetInfos2[i];
+
     // 賭け金
-    const bet = roundBet(defaultBet);
+    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
