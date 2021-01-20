@@ -166,6 +166,67 @@ export interface NumbersetInfo {
 }
 
 /**
+ * 組番情報の 期待値 で昇順ソート
+ *
+ * @param e1
+ * @param e2
+ */
+export function numbersetInfoOrderByExpectedValue(
+  e1: NumbersetInfo,
+  e2: NumbersetInfo
+): number {
+  if (e1.expectedValue > e2.expectedValue) {
+    return 1;
+  } else if (e1.expectedValue < e2.expectedValue) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
+/**
+ * 組番情報の 確率 で昇順ソート
+ *
+ * @param e1
+ * @param e2
+ * @return number
+ */
+export function numbersetInfoOrderByPercent(
+  e1: NumbersetInfo,
+  e2: NumbersetInfo
+): number {
+  if (e1.percent > e2.percent) {
+    return 1;
+  } else if (e1.percent < e2.percent) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
+/**
+ * 組番情報の オッズ で昇順ソート
+ *
+ * @param e1
+ * @param e2
+ * @return number
+ */
+export function numbersetInfoOrderByOdds(
+  e1: NumbersetInfo,
+  e2: NumbersetInfo
+): number {
+  const odds1 = e1.odds === null ? 0 : e1.odds;
+  const odds2 = e2.odds === null ? 0 : e2.odds;
+  if (odds1 > odds2) {
+    return 1;
+  } else if (odds1 < odds2) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
+/**
  * 組番情報配列を生成する。
  *
  * @param type 舟券の種類
@@ -200,25 +261,6 @@ export function generateNumbersetInfo(
 }
 
 /**
- * 組番情報の 期待値 で昇順ソート
- *
- * @param e1
- * @param e2
- */
-export function numbersetInfoOrderByExpectedValue(
-  e1: NumbersetInfo,
-  e2: NumbersetInfo
-): number {
-  if (e1.expectedValue > e2.expectedValue) {
-    return 1;
-  } else if (e1.expectedValue < e2.expectedValue) {
-    return -1;
-  } else {
-    return 0;
-  }
-}
-
-/**
  * 組番情報配列を生成する。
  * 期待値の降順になっている。
  *
@@ -236,26 +278,6 @@ export function generateNumbersetInfoOrderByExpectedValue(
 
   // 期待値の降順
   return numbersetInfos.sort(numbersetInfoOrderByExpectedValue).reverse();
-}
-
-/**
- * 組番情報の 確率 で昇順ソート
- *
- * @param e1
- * @param e2
- * @return number
- */
-export function numbersetInfoOrderByPercent(
-  e1: NumbersetInfo,
-  e2: NumbersetInfo
-): number {
-  if (e1.percent > e2.percent) {
-    return 1;
-  } else if (e1.percent < e2.percent) {
-    return -1;
-  } else {
-    return 0;
-  }
 }
 
 /**
