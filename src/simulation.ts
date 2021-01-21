@@ -166,10 +166,10 @@ async function simulation(): Promise<void> {
     baseUrl: "",
     email: "",
     accessKey: "",
-    capital: 500000,
-    assumedHittingRate: 0.08,
+    capital: 300000,
+    assumedHittingRate: 0.05,
     assumedCollectRate: 1.1,
-    assumedAmountPurchasedRate: 0.25,
+    assumedAmountPurchasedRate: 0.1,
     assumedEntryRaceCountRate: 0.9,
   };
 
