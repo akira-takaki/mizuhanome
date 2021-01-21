@@ -131,6 +131,11 @@ export function addTicket3t2B(
   // オッズが一番低い 1個 を取得
   const topNumbersetInfos = sortedNumbersetInfos.slice(0, 1);
 
+  // 一着予想の舟のパワーが 70未満 のときは賭けない
+  if (topNumbersetInfos[0].powers[0] < 70) {
+    return;
+  }
+
   const defaultBet =
     (betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
     (betDayResult.raceCount * betDayResult.assumed3t.entryRaceCountRate) /
