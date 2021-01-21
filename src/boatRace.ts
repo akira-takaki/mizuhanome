@@ -28,6 +28,7 @@ import {
 import {
   generateNumbersetInfo,
   NumbersetInfo,
+  numbersetInfoOrderByOdds,
   numbersetInfoOrderByPercent,
   roundBet,
   sleep,
@@ -118,30 +119,28 @@ export function addTicket3t2B(
   const filteredNumbersetInfos = numbersetInfos.filter(
     (value) => value.expectedValue >= 1.3
   );
-
-  let minOdds = 10000;
-  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
-    const numbersetInfo = filteredNumbersetInfos[i];
-
-    if (numbersetInfo.odds !== null && numbersetInfo.odds < minOdds) {
-      minOdds = numbersetInfo.odds;
-    }
+  if (filteredNumbersetInfos.length <= 0) {
+    return;
   }
 
-  const filteredNumbersetInfos2 = filteredNumbersetInfos.filter(
-    (value) => value.odds !== null && value.odds <= minOdds
+  // オッズの昇順にソート
+  const sortedNumbersetInfos = filteredNumbersetInfos.sort(
+    numbersetInfoOrderByOdds
   );
+
+  // オッズが一番低い 1個 を取得
+  const topNumbersetInfos = sortedNumbersetInfos.slice(0, 1);
 
   const defaultBet =
     (betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
     (betDayResult.raceCount * betDayResult.assumed3t.entryRaceCountRate) /
-    filteredNumbersetInfos2.length;
+    topNumbersetInfos.length;
 
-  for (let i = 0; i < filteredNumbersetInfos2.length; i++) {
-    const numbersetInfo = filteredNumbersetInfos2[i];
+  for (let i = 0; i < topNumbersetInfos.length; i++) {
+    const numbersetInfo = topNumbersetInfos[i];
 
     // 賭け金
-    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
+    const bet = roundBet(defaultBet);
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
