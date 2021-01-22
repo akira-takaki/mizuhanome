@@ -29,7 +29,6 @@ import {
   generateNumbersetInfo,
   NumbersetInfo,
   numbersetInfoOrderByOdds,
-  numbersetInfoOrderByPercent,
   roundBet,
   sleep,
   TicketType,
@@ -42,69 +41,13 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
 
 /**
  * 購入する三連単の舟券を追加する
- * 確率のトップ4 を賭ける。
- * ただし、期待値が 1.2 を超えるものが 2個以上 のときのみ賭ける。
- *
- * @param betDayResult 日単位の賭け結果
- * @param numbersetInfos 1レースの 3t 組番情報
- * @param ticket 舟券
- */
-export function addTicket3t2A(
-  betDayResult: BetDayResult,
-  numbersetInfos: NumbersetInfo[],
-  ticket: Ticket
-): void {
-  if (
-    betDayResult.assumed3t.amountPurchasedRate === null ||
-    betDayResult.assumed3t.entryRaceCountRate === null
-  ) {
-    return;
-  }
-
-  // 確率が高いトップN
-  numbersetInfos.sort(numbersetInfoOrderByPercent).reverse();
-  const topN = 4;
-  const topNumbersetInfos = numbersetInfos.slice(0, topN);
-
-  // 確率が高いトップN の中で 期待値が thresholdExpectedValue 以上のものの数
-  const thresholdExpectedValue = 1.2;
-  const countOfOverExpectedValue = topNumbersetInfos.filter(
-    (value) => value.expectedValue >= thresholdExpectedValue
-  ).length;
-
-  // 期待値が thresholdExpectedValue 以上のものが 2個未満 のときは
-  // このレースを賭けない
-  if (countOfOverExpectedValue < 2) {
-    return;
-  }
-
-  const defaultBet =
-    (betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
-    (betDayResult.raceCount * betDayResult.assumed3t.entryRaceCountRate) /
-    topNumbersetInfos.length;
-
-  for (let i = 0; i < topNumbersetInfos.length; i++) {
-    const numbersetInfo = topNumbersetInfos[i];
-
-    // 賭け金
-    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
-
-    ticket.numbers.push({
-      numberset: numbersetInfo.numberset,
-      bet: bet,
-    });
-  }
-}
-
-/**
- * 購入する三連単の舟券を追加する
  * 期待値が 1.3以上 の中で一番オッズが小さいものを賭ける。
  *
  * @param betDayResult 日単位の賭け結果
  * @param numbersetInfos 1レースの 3t 組番情報
  * @param ticket 舟券
  */
-export function addTicket3t2B(
+export function addTicket3t2(
   betDayResult: BetDayResult,
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
@@ -178,7 +121,7 @@ function addTicket3t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する三連単の舟券を追加する
-  addTicket3t2B(betDayResult, numbersetInfos, ticket);
+  addTicket3t2(betDayResult, numbersetInfos, ticket);
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -198,14 +141,15 @@ export function addTicket3f2(
   // 期待値が thresholdExpectedValue 以上のものに絞り込む
   const thresholdExpectedValue = 1.2;
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= thresholdExpectedValue
+    (value) =>
+      value.expectedValue >= thresholdExpectedValue && value.percent > 0.02
   );
+  if (filteredNumbersetInfos.length <= 0) {
+    return;
+  }
 
   // 賭け金は1レースで 1000円 を基準にする。
-  const defaultBet =
-    filteredNumbersetInfos.length === 0
-      ? 0
-      : 1000 / filteredNumbersetInfos.length;
+  const defaultBet = 1000 / filteredNumbersetInfos.length;
 
   for (let i = 0; i < filteredNumbersetInfos.length; i++) {
     const numbersetInfo = filteredNumbersetInfos[i];
@@ -251,70 +195,24 @@ function addTicket3f(
 
 /**
  * 購入する二連単の舟券を追加する
- * 確率のトップ4 を賭ける。
- * ただし、期待値が 1.2 を超えるものが 2個以上 のときのみ賭ける。
- *
- * @param numbersetInfos 1レースの 2t 組番情報
- * @param ticket 舟券
- */
-export function addTicket2t2A(
-  numbersetInfos: NumbersetInfo[],
-  ticket: Ticket
-): void {
-  // 確率が高いトップN
-  numbersetInfos.sort(numbersetInfoOrderByPercent).reverse();
-  const topN = 4;
-  const topNumbersetInfos = numbersetInfos.slice(0, topN);
-
-  // 確率が高いトップN の中で 期待値が thresholdExpectedValue 以上のものの数
-  const thresholdExpectedValue = 1.2;
-  const countOfOverExpectedValue = topNumbersetInfos.filter(
-    (value) => value.expectedValue >= thresholdExpectedValue
-  ).length;
-
-  // 期待値が thresholdExpectedValue 以上のものが 2個未満 のときは
-  // このレースを賭けない
-  if (countOfOverExpectedValue < 2) {
-    return;
-  }
-
-  // 賭け金は1レースで 1000円 を基準にする。
-  const defaultBet =
-    topNumbersetInfos.length === 0 ? 0 : 1000 / topNumbersetInfos.length;
-
-  for (let i = 0; i < topNumbersetInfos.length; i++) {
-    const numbersetInfo = topNumbersetInfos[i];
-
-    // 賭け金
-    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
-
-    ticket.numbers.push({
-      numberset: numbersetInfo.numberset,
-      bet: bet,
-    });
-  }
-}
-
-/**
- * 購入する二連単の舟券を追加する
  * 期待値が 1.3以上 のものを賭ける。
  *
  * @param numbersetInfos 1レースの 2t 組番情報
  * @param ticket 舟券
  */
-export function addTicket2t2B(
+export function addTicket2t2(
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
 ): void {
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= 1.3
+    (value) => value.expectedValue >= 1.3 && value.percent > 0.02
   );
+  if (filteredNumbersetInfos.length <= 0) {
+    return;
+  }
 
   // 賭け金は1レースで 1000円 を基準にする。
-  const defaultBet =
-    filteredNumbersetInfos.length === 0
-      ? 0
-      : 1000 / filteredNumbersetInfos.length;
+  const defaultBet = 1000 / filteredNumbersetInfos.length;
 
   for (let i = 0; i < filteredNumbersetInfos.length; i++) {
     const numbersetInfo = filteredNumbersetInfos[i];
@@ -351,7 +249,7 @@ function addTicket2t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する二連単の舟券を追加する
-  addTicket2t2B(numbersetInfos, ticket);
+  addTicket2t2(numbersetInfos, ticket);
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -371,14 +269,15 @@ export function addTicket2f2(
   // 期待値が thresholdExpectedValue 以上のものに絞り込む
   const thresholdExpectedValue = 1.2;
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= thresholdExpectedValue
+    (value) =>
+      value.expectedValue >= thresholdExpectedValue && value.percent > 0.2
   );
+  if (filteredNumbersetInfos.length <= 0) {
+    return;
+  }
 
   // 賭け金は1レースで 1000円 を基準にする。
-  const defaultBet =
-    filteredNumbersetInfos.length === 0
-      ? 0
-      : 1000 / filteredNumbersetInfos.length;
+  const defaultBet = 1000 / filteredNumbersetInfos.length;
 
   for (let i = 0; i < filteredNumbersetInfos.length; i++) {
     const numbersetInfo = filteredNumbersetInfos[i];

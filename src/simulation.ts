@@ -16,9 +16,9 @@ import { NumbersetInfo } from "#/myUtil";
 import { Ticket } from "#/api";
 import {
   addTicket2f2,
-  addTicket2t2B,
+  addTicket2t2,
   addTicket3f2,
-  addTicket3t2B,
+  addTicket3t2,
 } from "#/boatRace";
 
 async function simulation2(
@@ -75,7 +75,7 @@ async function simulation2(
       type: "3t",
       numbers: [],
     };
-    addTicket3t2B(simulationBetDayResult, numbersetInfos3t, ticket3t);
+    addTicket3t2(simulationBetDayResult, numbersetInfos3t, ticket3t);
 
     // 購入する三連複の舟券を追加する
     const ticket3f: Ticket = {
@@ -89,7 +89,7 @@ async function simulation2(
       type: "2t",
       numbers: [],
     };
-    addTicket2t2B(numbersetInfos2t, ticket2t);
+    addTicket2t2(numbersetInfos2t, ticket2t);
 
     // 購入する二連複の舟券を追加する
     const ticket2f: Ticket = {
