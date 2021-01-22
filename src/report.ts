@@ -11,6 +11,7 @@ import {
   currencyFormatter,
   decimalFormatter,
   percentFormatter,
+  TicketType,
 } from "#/myUtil";
 import { logger } from "#/boatRace";
 import path from "path";
@@ -121,6 +122,33 @@ function createParameterTableHtml(betDayResult: BetDayResult): string {
     tableRow + createParameterTableHtmlRow("2t", betDayResult.actual2t);
   tableRow =
     tableRow + createParameterTableHtmlRow("2f", betDayResult.actual2f);
+
+  return `<table class="parameter">` + tableHeader + tableRow + `</table>`;
+}
+
+function createTypeParameterTableHtml(
+  type: TicketType,
+  betDayResults: BetDayResult[]
+): string {
+  const tableHeader = createParameterTableHtmlHeader();
+
+  let tableRow = "";
+  for (let i = 0; i < betDayResults.length; i++) {
+    const betDayResult = betDayResults[i];
+    if (type === "3t") {
+      tableRow =
+        tableRow + createParameterTableHtmlRow("3t", betDayResult.actual3t);
+    } else if (type === "3f") {
+      tableRow =
+        tableRow + createParameterTableHtmlRow("3f", betDayResult.actual3f);
+    } else if (type === "2t") {
+      tableRow =
+        tableRow + createParameterTableHtmlRow("2t", betDayResult.actual2t);
+    } else if (type === "2f") {
+      tableRow =
+        tableRow + createParameterTableHtmlRow("2f", betDayResult.actual2f);
+    }
+  }
 
   return `<table class="parameter">` + tableHeader + tableRow + `</table>`;
 }
@@ -458,11 +486,12 @@ export async function reportSummary(
   `;
 
   let htmlParameterTable = "";
-  for (let i = 0; i < betDayResults.length; i++) {
-    const betDayResult = betDayResults[i];
+  const types: TicketType[] = ["3t", "3f", "2t", "2f"];
+  for (let i = 0; i < types.length; i++) {
+    const type = types[i];
 
     htmlParameterTable =
-      htmlParameterTable + createParameterTableHtml(betDayResult);
+      htmlParameterTable + createTypeParameterTableHtml(type, betDayResults);
   }
 
   const htmlEnd = `
