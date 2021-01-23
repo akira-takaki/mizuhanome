@@ -12,7 +12,7 @@ import {
   writeBetDayResult,
 } from "#/betResult";
 import { report, reportSummary } from "#/report";
-import { NumbersetInfo } from "#/myUtil";
+import { NumbersetInfo, playerPowersFromBetRaceResult } from "#/myUtil";
 import { Ticket } from "#/api";
 import {
   addTicket2f2,
@@ -43,6 +43,9 @@ async function simulation2(
       isDecision: true,
     };
     simulationBetDayResult.betRaceResults.push(simulationBetRaceResult);
+
+    // シミュレーション用のプレイヤーのパワー配列を作成
+    const powers = playerPowersFromBetRaceResult(originalBetRaceResult);
 
     // シミュレーション用の組番情報を作成
     const numbersetInfos3t: NumbersetInfo[] = [];
@@ -75,28 +78,28 @@ async function simulation2(
       type: "3t",
       numbers: [],
     };
-    addTicket3t2(simulationBetDayResult, numbersetInfos3t, ticket3t);
+    addTicket3t2(powers, simulationBetDayResult, numbersetInfos3t, ticket3t);
 
     // 購入する三連複の舟券を追加する
     const ticket3f: Ticket = {
       type: "3f",
       numbers: [],
     };
-    addTicket3f2(numbersetInfos3f, ticket3f);
+    addTicket3f2(powers, numbersetInfos3f, ticket3f);
 
     // 購入する二連単の舟券を追加する
     const ticket2t: Ticket = {
       type: "2t",
       numbers: [],
     };
-    addTicket2t2(numbersetInfos2t, ticket2t);
+    addTicket2t2(powers, numbersetInfos2t, ticket2t);
 
     // 購入する二連複の舟券を追加する
     const ticket2f: Ticket = {
       type: "2f",
       numbers: [],
     };
-    addTicket2f2(numbersetInfos2f, ticket2f);
+    addTicket2f2(powers, numbersetInfos2f, ticket2f);
 
     for (let j = 0; j < originalBetRaceResult.betResults.length; j++) {
       const originalBetResult = originalBetRaceResult.betResults[j];

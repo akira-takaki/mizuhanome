@@ -1,4 +1,5 @@
 import { Odds, PredictsAll } from "#/api";
+import { BetRaceResult } from "#/betResult";
 
 export type TicketType = "3t" | "3f" | "2t" | "2f";
 
@@ -104,9 +105,81 @@ export function filteredTypePercent(
     .reverse();
 }
 
-interface Power {
+export interface Power {
   numberStr: string;
   power: number;
+}
+
+export interface Rough {
+  isRough: boolean;
+  numberStr: string | null;
+}
+
+/**
+ * 荒れたレースになりやすいかどうか
+ *
+ * @param powers
+ * @return Rough
+ */
+export function isRough(powers: Power[]): Rough {
+  let is700upCount = 0;
+  let is700upNumberStr: string | null = null;
+  let is475downCount = 0;
+  for (let i = 0; i < powers.length; i++) {
+    if (powers[i].power >= 70) {
+      is700upCount++;
+      is700upNumberStr = powers[i].numberStr;
+    } else if (powers[i].power < 47.5) {
+      is475downCount++;
+    }
+  }
+  return {
+    isRough: is700upCount === 1 && is475downCount === 5,
+    numberStr: is700upNumberStr,
+  };
+}
+
+/**
+ * プレイヤーのパワー配列を返す
+ * シミュレーション用
+ *
+ * @param betRaceResult
+ * @return プレイヤーのパワー配列
+ */
+export function playerPowersFromBetRaceResult(
+  betRaceResult: BetRaceResult
+): Power[] {
+  const powersMap = new Map<string, number>();
+  for (let i = 0; i < betRaceResult.betResults.length; i++) {
+    const betResult = betRaceResult.betResults[i];
+
+    for (let j = 0; j < betResult.numberset.length; j++) {
+      const numberStr = betResult.numberset.substring(j, j + 1);
+      powersMap.set(numberStr, betResult.powers[j]);
+    }
+  }
+  const powers: Power[] = [];
+  powersMap.forEach((value, key) =>
+    powers.push({ numberStr: key, power: value })
+  );
+  return powers;
+}
+
+/**
+ * プレイヤーのパワー配列を返す
+ *
+ * @param predictsAll 直前予想全確率
+ * @return プレイヤーのパワー配列
+ */
+export function playerPowers(predictsAll: PredictsAll): Power[] {
+  return Object.keys(predictsAll.predict)
+    .filter((key) => key.startsWith("player"))
+    .map(
+      (key): Power => ({
+        numberStr: key.substring("player".length, "player".length + 1),
+        power: parseFloat(predictsAll.predict[key].toString()),
+      })
+    );
 }
 
 /**
@@ -122,14 +195,7 @@ export function pickupPowers(
 ): number[] {
   const powers: number[] = [];
 
-  const allPowers: Power[] = Object.keys(predictsAll.predict)
-    .filter((key) => key.startsWith("player"))
-    .map(
-      (key): Power => ({
-        numberStr: key.substring("player".length, "player".length + 1),
-        power: parseFloat(predictsAll.predict[key].toString()),
-      })
-    );
+  const allPowers: Power[] = playerPowers(predictsAll);
 
   for (let i = 0; i < numberset.length; i++) {
     const numberStr = numberset.substring(i, i + 1);

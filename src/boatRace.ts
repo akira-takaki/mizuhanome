@@ -27,8 +27,11 @@ import {
 } from "#/betResult";
 import {
   generateNumbersetInfo,
+  isRough,
   NumbersetInfo,
   numbersetInfoOrderByOdds,
+  playerPowers,
+  Power,
   roundBet,
   sleep,
   TicketType,
@@ -41,13 +44,14 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
 
 /**
  * 購入する三連単の舟券を追加する
- * 期待値が 1.3以上 の中で一番オッズが小さいものを賭ける。
  *
+ * @param powers プレイヤーのパワー配列
  * @param betDayResult 日単位の賭け結果
  * @param numbersetInfos 1レースの 3t 組番情報
  * @param ticket 舟券
  */
 export function addTicket3t2(
+  powers: Power[],
   betDayResult: BetDayResult,
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
@@ -100,12 +104,14 @@ export function addTicket3t2(
 /**
  * 購入する三連単の舟券を追加する
  *
+ * @param powers プレイヤーのパワー配列
  * @param betDayResult 日単位の賭け結果
  * @param odds オッズ
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
  */
 function addTicket3t(
+  powers: Power[],
   betDayResult: BetDayResult,
   odds: Odds,
   predictsAll: PredictsAll,
@@ -121,8 +127,7 @@ function addTicket3t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する三連単の舟券を追加する
-  addTicket3t2(betDayResult, numbersetInfos, ticket);
-
+  addTicket3t2(powers, betDayResult, numbersetInfos, ticket);
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
   }
@@ -131,19 +136,34 @@ function addTicket3t(
 /**
  * 購入する三連複の舟券を追加する
  *
+ * @param powers プレイヤーのパワー配列
  * @param numbersetInfos 1レースの 3f 組番情報
  * @param ticket 舟券
  */
 export function addTicket3f2(
+  powers: Power[],
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
 ): void {
+  const rough = isRough(powers);
+
   // 期待値が thresholdExpectedValue 以上のものに絞り込む
   const thresholdExpectedValue = 1.2;
-  const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) =>
-      value.expectedValue >= thresholdExpectedValue && value.percent > 0.02
-  );
+  let filteredNumbersetInfos: NumbersetInfo[];
+  if (rough.isRough && rough.numberStr !== null && rough.numberStr !== "1") {
+    filteredNumbersetInfos = numbersetInfos.filter(
+      (value) =>
+        value.expectedValue >= thresholdExpectedValue &&
+        value.numberset.includes(
+          rough.numberStr === null ? "X" : rough.numberStr
+        )
+    );
+  } else {
+    filteredNumbersetInfos = numbersetInfos.filter(
+      (value) =>
+        value.expectedValue >= thresholdExpectedValue && value.percent > 0.02
+    );
+  }
   if (filteredNumbersetInfos.length <= 0) {
     return;
   }
@@ -167,11 +187,13 @@ export function addTicket3f2(
 /**
  * 購入する三連複の舟券を追加する
  *
+ * @param powers プレイヤーのパワー配列
  * @param odds オッズ
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
  */
 function addTicket3f(
+  powers: Power[],
   odds: Odds,
   predictsAll: PredictsAll,
   tickets: Ticket[]
@@ -186,7 +208,7 @@ function addTicket3f(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する三連複の舟券を追加する
-  addTicket3f2(numbersetInfos, ticket);
+  addTicket3f2(powers, numbersetInfos, ticket);
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -195,18 +217,34 @@ function addTicket3f(
 
 /**
  * 購入する二連単の舟券を追加する
- * 期待値が 1.3以上 のものを賭ける。
  *
+ * @param powers プレイヤーのパワー配列
  * @param numbersetInfos 1レースの 2t 組番情報
  * @param ticket 舟券
  */
 export function addTicket2t2(
+  powers: Power[],
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
 ): void {
-  const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= 1.3 && value.percent > 0.02
-  );
+  const rough = isRough(powers);
+
+  const thresholdExpectedValue = 1.3;
+  let filteredNumbersetInfos: NumbersetInfo[];
+  if (rough.isRough && rough.numberStr !== null && rough.numberStr !== "1") {
+    filteredNumbersetInfos = numbersetInfos.filter(
+      (value) =>
+        value.expectedValue >= thresholdExpectedValue &&
+        value.numberset.startsWith(
+          rough.numberStr === null ? "X" : rough.numberStr
+        )
+    );
+  } else {
+    filteredNumbersetInfos = numbersetInfos.filter(
+      (value) =>
+        value.expectedValue >= thresholdExpectedValue && value.percent > 0.02
+    );
+  }
   if (filteredNumbersetInfos.length <= 0) {
     return;
   }
@@ -230,11 +268,13 @@ export function addTicket2t2(
 /**
  * 購入する二連単の舟券を追加する
  *
+ * @param powers プレイヤーのパワー配列
  * @param odds オッズ
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
  */
 function addTicket2t(
+  powers: Power[],
   odds: Odds,
   predictsAll: PredictsAll,
   tickets: Ticket[]
@@ -249,7 +289,7 @@ function addTicket2t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する二連単の舟券を追加する
-  addTicket2t2(numbersetInfos, ticket);
+  addTicket2t2(powers, numbersetInfos, ticket);
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -259,10 +299,12 @@ function addTicket2t(
 /**
  * 購入する二連複の舟券を追加する
  *
+ * @param powers プレイヤーのパワー配列
  * @param numbersetInfos 1レースの 2f 組番情報
  * @param ticket 舟券
  */
 export function addTicket2f2(
+  powers: Power[],
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
 ): void {
@@ -295,11 +337,13 @@ export function addTicket2f2(
 /**
  * 購入する二連複の舟券を追加する
  *
+ * @param powers プレイヤーのパワー配列
  * @param odds オッズ
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
  */
 function addTicket2f(
+  powers: Power[],
   odds: Odds,
   predictsAll: PredictsAll,
   tickets: Ticket[]
@@ -314,7 +358,7 @@ function addTicket2f(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する二連複の舟券を追加する
-  addTicket2f2(numbersetInfos, ticket);
+  addTicket2f2(powers, numbersetInfos, ticket);
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -454,19 +498,22 @@ export async function boatRace(): Promise<void> {
         continue;
       }
 
+      // プレイヤーのパワー配列
+      const powers: Power[] = playerPowers(predictsAll);
+
       const tickets: Ticket[] = [];
 
       // 購入する三連単の舟券を追加する
-      addTicket3t(betDayResult, odds, predictsAll, tickets);
+      addTicket3t(powers, betDayResult, odds, predictsAll, tickets);
 
-      // // 購入する三連複の舟券を追加する
-      // addTicket3f(odds, predictsAll, tickets);
-      //
-      // // 購入する二連単の舟券を追加する
-      // addTicket2t(odds, predictsAll, tickets);
-      //
-      // // 購入する二連複の舟券を追加する
-      // addTicket2f(odds, predictsAll, tickets);
+      // 購入する三連複の舟券を追加する
+      addTicket3f(powers, odds, predictsAll, tickets);
+
+      // 購入する二連単の舟券を追加する
+      addTicket2t(powers, odds, predictsAll, tickets);
+
+      // 購入する二連複の舟券を追加する
+      addTicket2f(powers, odds, predictsAll, tickets);
 
       // 日単位の賭け結果 に レースの賭け結果 を追加する
       // シミュレーション用に賭けてない組番情報も保存する
