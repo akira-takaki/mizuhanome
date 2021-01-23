@@ -308,12 +308,25 @@ export function addTicket2f2(
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
 ): void {
+  const rough = isRough(powers);
+
   // 期待値が thresholdExpectedValue 以上のものに絞り込む
   const thresholdExpectedValue = 1.2;
-  const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) =>
-      value.expectedValue >= thresholdExpectedValue && value.percent > 0.2
-  );
+  let filteredNumbersetInfos: NumbersetInfo[];
+  if (rough.isRough && rough.numberStr !== null && rough.numberStr !== "1") {
+    filteredNumbersetInfos = numbersetInfos.filter(
+      (value) =>
+        value.expectedValue >= thresholdExpectedValue &&
+        value.numberset.includes(
+          rough.numberStr === null ? "X" : rough.numberStr
+        )
+    );
+  } else {
+    filteredNumbersetInfos = numbersetInfos.filter(
+      (value) =>
+        value.expectedValue >= thresholdExpectedValue && value.percent > 0.2
+    );
+  }
   if (filteredNumbersetInfos.length <= 0) {
     return;
   }
