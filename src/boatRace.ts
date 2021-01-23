@@ -29,7 +29,6 @@ import {
   generateNumbersetInfo,
   isRough,
   NumbersetInfo,
-  numbersetInfoOrderByOdds,
   playerPowers,
   Power,
   roundBet,
@@ -64,32 +63,19 @@ export function addTicket3t2(
   }
 
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= 1.3
+    (value) => value.expectedValue >= 1.4
   );
   if (filteredNumbersetInfos.length <= 0) {
-    return;
-  }
-
-  // オッズの昇順にソート
-  const sortedNumbersetInfos = filteredNumbersetInfos.sort(
-    numbersetInfoOrderByOdds
-  );
-
-  // オッズが一番低い 1個 を取得
-  const topNumbersetInfos = sortedNumbersetInfos.slice(0, 1);
-
-  // 一着予想の舟のパワーが 70未満 のときは賭けない
-  if (topNumbersetInfos[0].powers[0] < 70) {
     return;
   }
 
   const defaultBet =
     (betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
     (betDayResult.raceCount * betDayResult.assumed3t.entryRaceCountRate) /
-    topNumbersetInfos.length;
+    filteredNumbersetInfos.length;
 
-  for (let i = 0; i < topNumbersetInfos.length; i++) {
-    const numbersetInfo = topNumbersetInfos[i];
+  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
+    const numbersetInfo = filteredNumbersetInfos[i];
 
     // 賭け金
     const bet = roundBet(defaultBet);
@@ -520,13 +506,13 @@ export async function boatRace(): Promise<void> {
       addTicket3t(powers, betDayResult, odds, predictsAll, tickets);
 
       // 購入する三連複の舟券を追加する
-      addTicket3f(powers, odds, predictsAll, tickets);
+      // addTicket3f(powers, odds, predictsAll, tickets);
 
       // 購入する二連単の舟券を追加する
-      addTicket2t(powers, odds, predictsAll, tickets);
+      // addTicket2t(powers, odds, predictsAll, tickets);
 
       // 購入する二連複の舟券を追加する
-      addTicket2f(powers, odds, predictsAll, tickets);
+      // addTicket2f(powers, odds, predictsAll, tickets);
 
       // 日単位の賭け結果 に レースの賭け結果 を追加する
       // シミュレーション用に賭けてない組番情報も保存する

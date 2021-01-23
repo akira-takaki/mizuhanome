@@ -85,21 +85,21 @@ async function simulation2(
       type: "3f",
       numbers: [],
     };
-    addTicket3f2(powers, numbersetInfos3f, ticket3f);
+    // addTicket3f2(powers, numbersetInfos3f, ticket3f);
 
     // 購入する二連単の舟券を追加する
     const ticket2t: Ticket = {
       type: "2t",
       numbers: [],
     };
-    addTicket2t2(powers, numbersetInfos2t, ticket2t);
+    // addTicket2t2(powers, numbersetInfos2t, ticket2t);
 
     // 購入する二連複の舟券を追加する
     const ticket2f: Ticket = {
       type: "2f",
       numbers: [],
     };
-    addTicket2f2(powers, numbersetInfos2f, ticket2f);
+    // addTicket2f2(powers, numbersetInfos2f, ticket2f);
 
     for (let j = 0; j < originalBetRaceResult.betResults.length; j++) {
       const originalBetResult = originalBetRaceResult.betResults[j];
@@ -173,7 +173,7 @@ async function simulation(): Promise<void> {
     assumedHittingRate: 0.07,
     assumedCollectRate: 1.1,
     assumedAmountPurchasedRate: 0.1,
-    assumedEntryRaceCountRate: 0.25,
+    assumedEntryRaceCountRate: 0.8,
   };
 
   // ファイルに保存してある「日単位の賭け結果」の日付配列
