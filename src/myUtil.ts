@@ -140,6 +140,22 @@ export function isRough(powers: Power[]): Rough {
 }
 
 /**
+ * プライヤーのパワー配列の 舟番 で昇順ソート
+ *
+ * @param e1
+ * @param e2
+ */
+export function playerPowerOrderByNumber(e1: Power, e2: Power): number {
+  if (e1.numberStr > e2.numberStr) {
+    return 1;
+  } else if (e1.numberStr < e2.numberStr) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
+/**
  * プレイヤーのパワー配列を返す
  * シミュレーション用
  *
@@ -162,7 +178,7 @@ export function playerPowersFromBetRaceResult(
   powersMap.forEach((value, key) =>
     powers.push({ numberStr: key, power: value })
   );
-  return powers;
+  return powers.sort(playerPowerOrderByNumber);
 }
 
 /**
@@ -179,7 +195,8 @@ export function playerPowers(predictsAll: PredictsAll): Power[] {
         numberStr: key.substring("player".length, "player".length + 1),
         power: parseFloat(predictsAll.predict[key].toString()),
       })
-    );
+    )
+    .sort(playerPowerOrderByNumber);
 }
 
 /**

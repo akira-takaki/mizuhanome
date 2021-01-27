@@ -11,6 +11,8 @@ import {
   currencyFormatter,
   decimalFormatter,
   percentFormatter,
+  playerPowersFromBetRaceResult,
+  Power,
   TicketType,
 } from "#/myUtil";
 import { logger } from "#/boatRace";
@@ -372,6 +374,37 @@ function createSummaryTableHtmlRow(betDayResult: BetDayResult): string {
   `;
 }
 
+function createPlayerPowerTableHtml(powers: Power[]): string {
+  const tableStart = `
+    <table class="powers">
+  `;
+
+  const tableHeader = `
+      <tr>
+        <th>舟番</th>
+        <th>パワー</th>
+      </tr>
+  `;
+
+  let tableRow = "";
+  for (let i = 0; i < powers.length; i++) {
+    tableRow =
+      tableRow +
+      `
+      <tr>
+        <td class="number-row">${powers[i].numberStr}</td>
+        <td class="power-row">${decimalFormatter.format(powers[i].power)}</td>
+      </tr>
+    `;
+  }
+
+  const tableEnd = `
+    </table>
+    `;
+
+  return tableStart + tableHeader + tableRow + tableEnd;
+}
+
 /**
  * 賭け結果 レポート作成
  *
@@ -416,6 +449,9 @@ export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
   let htmlTable = "";
   for (let i = 0; i < betDayResult.betRaceResults.length; i++) {
     const betRaceResult = betDayResult.betRaceResults[i];
+
+    const powers = playerPowersFromBetRaceResult(betRaceResult);
+    htmlTable = htmlTable + createPlayerPowerTableHtml(powers);
 
     htmlTable = htmlTable + createBetRaceResultTableHtml(betRaceResult);
   }
