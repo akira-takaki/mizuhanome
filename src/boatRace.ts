@@ -17,7 +17,6 @@ import {
 } from "#/api";
 import {
   addBetRaceResult,
-  BetDayResult,
   hasNotDecision,
   initBetDayResult,
   makeBetDayResult,
@@ -45,7 +44,6 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
  * 購入する三連単の舟券を追加する
  *
  * @param powers プレイヤーのパワー配列
- * @param betDayResult 日単位の賭け結果
  * @param numbersetInfos 1レースの 3t 組番情報
  * @param ticket 舟券
  */
@@ -87,7 +85,6 @@ export function addTicket3t2(
  * 購入する三連単の舟券を追加する
  *
  * @param powers プレイヤーのパワー配列
- * @param betDayResult 日単位の賭け結果
  * @param odds オッズ
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
