@@ -51,15 +51,14 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
  */
 export function addTicket3t2(
   powers: Power[],
-  betDayResult: BetDayResult,
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
 ): void {
-  if (
-    betDayResult.assumed3t.amountPurchasedRate === null ||
-    betDayResult.assumed3t.entryRaceCountRate === null
-  ) {
-    return;
+  for (let i = 0; i < powers.length; i++) {
+    if (powers[i].numberStr === "1" && powers[i].power >= 70) {
+      // 1号艇がパワー70以上ならばこのレースに賭けない
+      return;
+    }
   }
 
   const filteredNumbersetInfos = numbersetInfos.filter(
@@ -69,16 +68,13 @@ export function addTicket3t2(
     return;
   }
 
-  const defaultBet =
-    (betDayResult.capital * betDayResult.assumed3t.amountPurchasedRate) /
-    (betDayResult.raceCount * betDayResult.assumed3t.entryRaceCountRate) /
-    filteredNumbersetInfos.length;
+  const defaultBet = 100;
 
   for (let i = 0; i < filteredNumbersetInfos.length; i++) {
     const numbersetInfo = filteredNumbersetInfos[i];
 
     // 賭け金
-    const bet = roundBet(defaultBet);
+    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
@@ -98,7 +94,6 @@ export function addTicket3t2(
  */
 function addTicket3t(
   powers: Power[],
-  betDayResult: BetDayResult,
   odds: Odds,
   predictsAll: PredictsAll,
   tickets: Ticket[]
@@ -113,7 +108,7 @@ function addTicket3t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する三連単の舟券を追加する
-  addTicket3t2(powers, betDayResult, numbersetInfos, ticket);
+  addTicket3t2(powers, numbersetInfos, ticket);
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
   }
@@ -503,7 +498,7 @@ export async function boatRace(): Promise<void> {
       const tickets: Ticket[] = [];
 
       // 購入する三連単の舟券を追加する
-      addTicket3t(powers, betDayResult, odds, predictsAll, tickets);
+      addTicket3t(powers, odds, predictsAll, tickets);
 
       // 購入する三連複の舟券を追加する
       // addTicket3f(powers, odds, predictsAll, tickets);

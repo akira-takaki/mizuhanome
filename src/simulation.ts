@@ -78,7 +78,7 @@ async function simulation2(
       type: "3t",
       numbers: [],
     };
-    addTicket3t2(powers, simulationBetDayResult, numbersetInfos3t, ticket3t);
+    addTicket3t2(powers, numbersetInfos3t, ticket3t);
 
     // 購入する三連複の舟券を追加する
     const ticket3f: Ticket = {
@@ -173,7 +173,7 @@ async function simulation(): Promise<void> {
     assumedHittingRate: 0.07,
     assumedCollectRate: 1.1,
     assumedAmountPurchasedRate: 0.1,
-    assumedEntryRaceCountRate: 0.8,
+    assumedEntryRaceCountRate: 0.6,
   };
 
   // ファイルに保存してある「日単位の賭け結果」の日付配列
