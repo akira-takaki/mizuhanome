@@ -59,8 +59,10 @@ export function addTicket3t2(
     }
   }
 
+  // 期待値が thresholdExpectedValue 以上のものに絞り込む
+  const thresholdExpectedValue = 1.4;
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= 1.4
+    (value) => value.expectedValue >= thresholdExpectedValue
   );
   if (filteredNumbersetInfos.length <= 0) {
     return;
@@ -123,37 +125,29 @@ export function addTicket3f2(
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
 ): void {
-  const rough = isRough(powers);
+  for (let i = 0; i < powers.length; i++) {
+    if (powers[i].numberStr === "1" && powers[i].power >= 70) {
+      // 1号艇がパワー70以上ならばこのレースに賭けない
+      return;
+    }
+  }
 
   // 期待値が thresholdExpectedValue 以上のものに絞り込む
-  const thresholdExpectedValue = 1.2;
-  let filteredNumbersetInfos: NumbersetInfo[];
-  if (rough.isRough && rough.numberStr !== null && rough.numberStr !== "1") {
-    filteredNumbersetInfos = numbersetInfos.filter(
-      (value) =>
-        value.expectedValue >= thresholdExpectedValue &&
-        value.numberset.includes(
-          rough.numberStr === null ? "X" : rough.numberStr
-        )
-    );
-  } else {
-    filteredNumbersetInfos = numbersetInfos.filter(
-      (value) =>
-        value.expectedValue >= thresholdExpectedValue && value.percent > 0.02
-    );
-  }
+  const thresholdExpectedValue = 1.5;
+  const filteredNumbersetInfos = numbersetInfos.filter(
+    (value) => value.expectedValue >= thresholdExpectedValue
+  );
   if (filteredNumbersetInfos.length <= 0) {
     return;
   }
 
-  // 賭け金は1レースで 1000円 を基準にする。
-  const defaultBet = 1000 / filteredNumbersetInfos.length;
+  const defaultBet = 100;
 
   for (let i = 0; i < filteredNumbersetInfos.length; i++) {
     const numbersetInfo = filteredNumbersetInfos[i];
 
     // 賭け金
-    const bet = roundBet(defaultBet);
+    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
