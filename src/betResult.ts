@@ -132,6 +132,39 @@ export interface BetDayResult {
   betRaceResults: BetRaceResult[];
 }
 
+/**
+ * 賭け結果の 舟券種類 と 期待値 で昇順ソート
+ *
+ * @param e1
+ * @param e2
+ */
+export function betResultOrderByTypeAndExpectedValue(
+  e1: BetResult,
+  e2: BetResult
+): number {
+  const typeOrder: { [t: string]: number } = {};
+  typeOrder["3t"] = 1;
+  typeOrder["3f"] = 2;
+  typeOrder["2t"] = 3;
+  typeOrder["2f"] = 4;
+
+  const type1 = typeOrder[e1.type];
+  const type2 = typeOrder[e2.type];
+  if (type1 > type2) {
+    return 1;
+  } else if (type1 < type2) {
+    return -1;
+  } else {
+    if (e1.expectedValue > e2.expectedValue) {
+      return 1;
+    } else if (e1.expectedValue < e2.expectedValue) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
+}
+
 const DIR = "./store";
 const PREFIX = `betDayResult`;
 const SUFFIX = `json`;

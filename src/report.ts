@@ -4,6 +4,7 @@ import {
   BetDayResult,
   BetRaceResult,
   BetResult,
+  betResultOrderByTypeAndExpectedValue,
   Parameter,
   readBetDayResult,
 } from "#/betResult";
@@ -178,9 +179,22 @@ function createBetRaceResultTableHtmlRow(
   difference: number | null
 ): string {
   const isHit = betResult.odds !== null && betResult.bet !== betResult.dividend;
+  const isResult = betResult.odds !== null;
 
+  let classSuffix = "";
+  let statusStr = "";
+  if (isHit) {
+    classSuffix = "hit";
+    statusStr = "当";
+  } else if (isResult) {
+    classSuffix = "result";
+    statusStr = "結";
+  } else {
+    classSuffix = "miss";
+    statusStr = "";
+  }
   const trStart = `
-    <tr class="bet-${isHit ? "hit" : "miss"}">
+    <tr class="bet-${classSuffix}">
   `;
 
   let td = "";
@@ -189,7 +203,7 @@ function createBetRaceResultTableHtmlRow(
     `
       <td class="type-${betResult.type}">
         ${betResult.type}
-        ${isHit ? "当" : ""}
+        ${statusStr}
       </td>
       <td class="numberset">${betResult.numberset}</td>
       <td class="percent">${percentFormatter.format(betResult.percent)}</td>
@@ -216,7 +230,7 @@ function createBetRaceResultTableHtmlRow(
     `;
 
   if (rowspan !== null && difference !== null) {
-    const plus = difference > 0 ? "plus" : "minus";
+    const plus = difference >= 0 ? "plus" : "minus";
     td =
       td +
       `
@@ -267,9 +281,10 @@ function createBetRaceResultTableHtml(betRaceResult: BetRaceResult): string {
   const tableHeader = createBetRaceResultTableHtmlHeader();
 
   // 賭け金が 0 のものは除外
-  const filteredBetResults = betRaceResult.betResults.filter(
-    (value) => value.bet > 0
-  );
+  // ただし、レース結果(oddsが設定されているもの)は残す
+  const filteredBetResults = betRaceResult.betResults
+    .filter((value) => value.bet > 0 || (value.odds !== null && value.odds > 1))
+    .sort(betResultOrderByTypeAndExpectedValue);
 
   let tableRow = "";
   let prevType = "";
