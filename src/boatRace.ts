@@ -209,13 +209,20 @@ export function addTicket2t2(
   for (let i = 0; i < topNumbersetInfos.length; i++) {
     if (
       topNumbersetInfos[0].odds === null ||
-      (topNumbersetInfos[0].odds !== null && topNumbersetInfos[0].odds < 4)
+      (topNumbersetInfos[0].odds !== null && topNumbersetInfos[0].odds < 3.5)
     ) {
       isNG = true;
     }
   }
   if (isNG) {
     return;
+  }
+
+  const topNumberStr = topNumbersetInfos[0].numberset.substring(0, 1);
+  for (let i = 0; i < powers.length; i++) {
+    if (powers[i].numberStr === topNumberStr && powers[i].power < 70) {
+      return;
+    }
   }
 
   const defaultBet = 100;
