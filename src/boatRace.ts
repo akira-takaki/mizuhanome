@@ -28,6 +28,7 @@ import {
   generateNumbersetInfo,
   isRough,
   NumbersetInfo,
+  numbersetInfoOrderByPercent,
   playerPowers,
   Power,
   roundBet,
@@ -199,36 +200,31 @@ export function addTicket2t2(
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket
 ): void {
-  const rough = isRough(powers);
+  const topNumbersetInfos = numbersetInfos
+    .sort(numbersetInfoOrderByPercent)
+    .reverse()
+    .slice(0, 1);
 
-  const thresholdExpectedValue = 1.3;
-  let filteredNumbersetInfos: NumbersetInfo[];
-  if (rough.isRough && rough.numberStr !== null && rough.numberStr !== "1") {
-    filteredNumbersetInfos = numbersetInfos.filter(
-      (value) =>
-        value.expectedValue >= thresholdExpectedValue &&
-        value.numberset.startsWith(
-          rough.numberStr === null ? "X" : rough.numberStr
-        )
-    );
-  } else {
-    filteredNumbersetInfos = numbersetInfos.filter(
-      (value) =>
-        value.expectedValue >= thresholdExpectedValue && value.percent > 0.02
-    );
+  let isNG = false;
+  for (let i = 0; i < topNumbersetInfos.length; i++) {
+    if (
+      topNumbersetInfos[0].odds === null ||
+      (topNumbersetInfos[0].odds !== null && topNumbersetInfos[0].odds < 4)
+    ) {
+      isNG = true;
+    }
   }
-  if (filteredNumbersetInfos.length <= 0) {
+  if (isNG) {
     return;
   }
 
-  // 賭け金は1レースで 1000円 を基準にする。
-  const defaultBet = 1000 / filteredNumbersetInfos.length;
+  const defaultBet = 100;
 
-  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
-    const numbersetInfo = filteredNumbersetInfos[i];
+  for (let i = 0; i < topNumbersetInfos.length; i++) {
+    const numbersetInfo = topNumbersetInfos[i];
 
     // 賭け金
-    const bet = roundBet(defaultBet);
+    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
 
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
