@@ -20,6 +20,7 @@ import {
   addTicket3f2,
   addTicket3t2,
 } from "#/boatRace";
+import { initCocomo, updateCocomoSim } from "#/cocomo";
 
 async function simulation2(
   config: Config,
@@ -78,7 +79,7 @@ async function simulation2(
       type: "3t",
       numbers: [],
     };
-    addTicket3t2(powers, numbersetInfos3t, ticket3t);
+    // addTicket3t2(powers, numbersetInfos3t, ticket3t);
 
     // 購入する三連複の舟券を追加する
     const ticket3f: Ticket = {
@@ -92,7 +93,13 @@ async function simulation2(
       type: "2t",
       numbers: [],
     };
-    // addTicket2t2(powers, numbersetInfos2t, ticket2t);
+    await addTicket2t2(
+      simulationBetRaceResult.dataid,
+      powers,
+      numbersetInfos2t,
+      ticket2t,
+      true
+    );
 
     // 購入する二連複の舟券を追加する
     const ticket2f: Ticket = {
@@ -153,6 +160,15 @@ async function simulation2(
           originalBetResult.odds !== null ? bet * originalBetResult.odds : 0,
       };
       simulationBetRaceResult.betResults.push(simulationBetResult);
+
+      // ココモ法の更新
+      if (originalBetResult.type === "2t" && bet !== 0) {
+        await updateCocomoSim(
+          simulationBetRaceResult.dataid,
+          originalBetResult.numberset,
+          originalBetResult.odds
+        );
+      }
     }
   }
 
@@ -182,6 +198,10 @@ async function simulation(): Promise<void> {
 
   for (let i = 0; i < dateArray.length; i++) {
     const date = dateArray[i];
+
+    // ココモ法 初期化
+    await initCocomo(true);
+
     const betDayResult = await simulation2(config, date);
 
     if (betDayResult.nextCapital !== null) {

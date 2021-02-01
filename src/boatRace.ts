@@ -37,6 +37,7 @@ import {
 } from "#/myUtil";
 import { Config, readConfig, writeConfig } from "#/config";
 import { report, reportSummary } from "#/report";
+import { calcCocomoBet } from "#/cocomo";
 
 log4js.configure("./config/LogConfig.json");
 export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
@@ -191,48 +192,45 @@ function addTicket3f(
 /**
  * 購入する二連単の舟券を追加する
  *
+ * @param dataid データID
  * @param powers プレイヤーのパワー配列
  * @param numbersetInfos 1レースの 2t 組番情報
  * @param ticket 舟券
+ * @param isSim
  */
-export function addTicket2t2(
+export async function addTicket2t2(
+  dataid: number,
   powers: Power[],
   numbersetInfos: NumbersetInfo[],
-  ticket: Ticket
-): void {
-  const topNumbersetInfos = numbersetInfos
+  ticket: Ticket,
+  isSim: boolean
+): Promise<void> {
+  const sortedNumbersetInfos = numbersetInfos
     .sort(numbersetInfoOrderByPercent)
-    .reverse()
-    .slice(0, 1);
+    .reverse();
 
-  let isNG = false;
-  for (let i = 0; i < topNumbersetInfos.length; i++) {
-    if (
-      topNumbersetInfos[0].odds === null ||
-      (topNumbersetInfos[0].odds !== null && topNumbersetInfos[0].odds < 3.5)
-    ) {
-      isNG = true;
-    }
-  }
-  if (isNG) {
+  const numbersetInfo = sortedNumbersetInfos[0];
+
+  if (numbersetInfo.odds === null || numbersetInfo.odds < 2.9) {
     return;
   }
 
-  const topNumberStr = topNumbersetInfos[0].numberset.substring(0, 1);
+  const topNumberStr = numbersetInfo.numberset.substring(0, 1);
   for (let i = 0; i < powers.length; i++) {
     if (powers[i].numberStr === topNumberStr && powers[i].power < 70) {
       return;
     }
   }
 
-  const defaultBet = 100;
-
-  for (let i = 0; i < topNumbersetInfos.length; i++) {
-    const numbersetInfo = topNumbersetInfos[i];
-
-    // 賭け金
-    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
-
+  // 賭け金
+  const defaultBet = 200;
+  const bet = await calcCocomoBet(
+    dataid,
+    numbersetInfo.numberset,
+    defaultBet,
+    isSim
+  );
+  if (bet !== null) {
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
       bet: bet,
@@ -243,16 +241,20 @@ export function addTicket2t2(
 /**
  * 購入する二連単の舟券を追加する
  *
+ * @param dataid データID
  * @param powers プレイヤーのパワー配列
  * @param odds オッズ
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
+ * @param isSim
  */
 function addTicket2t(
+  dataid: number,
   powers: Power[],
   odds: Odds,
   predictsAll: PredictsAll,
-  tickets: Ticket[]
+  tickets: Ticket[],
+  isSim = false
 ): void {
   const type: TicketType = "2t";
   const ticket: Ticket = {
@@ -264,7 +266,7 @@ function addTicket2t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する二連単の舟券を追加する
-  addTicket2t2(powers, numbersetInfos, ticket);
+  addTicket2t2(dataid, powers, numbersetInfos, ticket, isSim);
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -498,7 +500,7 @@ export async function boatRace(): Promise<void> {
       // addTicket3f(powers, odds, predictsAll, tickets);
 
       // 購入する二連単の舟券を追加する
-      // addTicket2t(powers, odds, predictsAll, tickets);
+      // await addTicket2t(raceCard.dataid, powers, odds, predictsAll, tickets);
 
       // 購入する二連複の舟券を追加する
       // addTicket2f(powers, odds, predictsAll, tickets);
