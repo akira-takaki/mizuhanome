@@ -215,6 +215,10 @@ export async function addTicket2t2(
     return;
   }
 
+  if (numbersetInfo.percent < 0.15) {
+    return;
+  }
+
   const topNumberStr = numbersetInfo.numberset.substring(0, 1);
   for (let i = 0; i < powers.length; i++) {
     if (powers[i].numberStr === topNumberStr && powers[i].power < 70) {
@@ -223,7 +227,7 @@ export async function addTicket2t2(
   }
 
   // 賭け金
-  const defaultBet = 200;
+  const defaultBet = 100;
   const bet = await calcCocomoBet(
     dataid,
     numbersetInfo.numberset,
