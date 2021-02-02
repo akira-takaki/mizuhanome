@@ -37,7 +37,7 @@ import {
 } from "#/myUtil";
 import { Config, readConfig, writeConfig } from "#/config";
 import { report, reportSummary } from "#/report";
-import { calcCocomoBet } from "#/cocomo";
+import { calcCocomoBet, initCocomo, updateCocomo } from "#/cocomo";
 
 log4js.configure("./config/LogConfig.json");
 export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
@@ -384,8 +384,12 @@ export async function boatRace(): Promise<void> {
     return;
   }
 
+  // ココモ法 初期化
+  await initCocomo(false);
+
   let sessionIntervalId: NodeJS.Timeout | null = null;
   let betResultIntervalId: NodeJS.Timeout | null = null;
+  let cocomoIntervalId: NodeJS.Timeout | null = null;
   try {
     sessionIntervalId = setInterval(() => {
       // セッションの更新 50分ごと
@@ -436,6 +440,11 @@ export async function boatRace(): Promise<void> {
       // 日単位の賭け結果 の勝敗を更新する
       updateBetRaceResult(today, session);
     }, 10000);
+
+    cocomoIntervalId = setInterval(() => {
+      // 日単位の賭け結果 の勝敗を更新する
+      updateCocomo(session);
+    }, 9000);
 
     // 各レースで舟券購入
     for (let i = 0; i < sortedRaceCards.length; i++) {
@@ -504,7 +513,11 @@ export async function boatRace(): Promise<void> {
       // addTicket3f(powers, odds, predictsAll, tickets);
 
       // 購入する二連単の舟券を追加する
-      // await addTicket2t(raceCard.dataid, powers, odds, predictsAll, tickets);
+      const tickets2t: Ticket[] = [];
+      await addTicket2t(raceCard.dataid, powers, odds, predictsAll, tickets2t);
+      if (tickets2t.length > 0) {
+        logger.debug(`tickets2t=${util.inspect(tickets2t)}`);
+      }
 
       // 購入する二連複の舟券を追加する
       // addTicket2f(powers, odds, predictsAll, tickets);
@@ -555,6 +568,10 @@ export async function boatRace(): Promise<void> {
 
     if (betResultIntervalId !== null) {
       clearInterval(betResultIntervalId);
+    }
+
+    if (cocomoIntervalId !== null) {
+      clearInterval(cocomoIntervalId);
     }
 
     // セッションの破棄
