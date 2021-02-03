@@ -252,14 +252,14 @@ export async function addTicket2t2(
  * @param tickets 舟券配列
  * @param isSim
  */
-function addTicket2t(
+async function addTicket2t(
   dataid: number,
   powers: Power[],
   odds: Odds,
   predictsAll: PredictsAll,
   tickets: Ticket[],
   isSim = false
-): void {
+): Promise<void> {
   const type: TicketType = "2t";
   const ticket: Ticket = {
     type: type,
@@ -270,7 +270,7 @@ function addTicket2t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する二連単の舟券を追加する
-  addTicket2t2(dataid, powers, numbersetInfos, ticket, isSim);
+  await addTicket2t2(dataid, powers, numbersetInfos, ticket, isSim);
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
