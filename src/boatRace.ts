@@ -516,7 +516,7 @@ export async function boatRace(): Promise<void> {
       const tickets2t: Ticket[] = [];
       await addTicket2t(raceCard.dataid, powers, odds, predictsAll, tickets2t);
       if (tickets2t.length > 0) {
-        logger.debug(`tickets2t=${util.inspect(tickets2t)}`);
+        logger.debug(`tickets2t=${util.inspect(tickets2t, { depth: null })}`);
       }
 
       // 購入する二連複の舟券を追加する
