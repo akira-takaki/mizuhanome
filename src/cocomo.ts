@@ -68,13 +68,14 @@ export async function initCocomo(isSim: boolean): Promise<void> {
 export async function calcCocomoBet(
   dataid: number,
   numberset: string,
-  defaultBet: number,
   isSim: boolean
 ): Promise<number | null> {
   const release: () => void = await mutex.acquire();
 
   let bet: number | null = null;
   try {
+    const defaultBet = 300;
+
     const cocomo = readCocomo(isSim);
 
     let isAllDecisioned = true;
@@ -92,14 +93,13 @@ export async function calcCocomoBet(
         bet = defaultBet;
       } else if (cocomo.betHistories.length === 1) {
         bet = cocomo.betHistories[cocomo.betHistories.length - 1].bet;
+      } else if (cocomo.betHistories.length >= 9) {
+        bet = defaultBet;
+        cocomo.betHistories = [];
       } else {
         bet =
           cocomo.betHistories[cocomo.betHistories.length - 2].bet +
           cocomo.betHistories[cocomo.betHistories.length - 1].bet;
-        if (bet > 10000) {
-          bet = defaultBet;
-          cocomo.betHistories = [];
-        }
       }
 
       cocomo.betHistories.push({

@@ -223,13 +223,7 @@ export async function addTicket2t2(
   }
 
   // 賭け金
-  const defaultBet = 200;
-  const bet = await calcCocomoBet(
-    dataid,
-    numbersetInfo.numberset,
-    defaultBet,
-    isSim
-  );
+  const bet = await calcCocomoBet(dataid, numbersetInfo.numberset, isSim);
   if (bet !== null) {
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
