@@ -157,7 +157,6 @@ export async function getOdds(
     axiosResponse = await axios.get(url);
   } catch (err) {
     logger.error("オッズ 失敗");
-    logger.debug(err);
     return undefined;
   }
 
