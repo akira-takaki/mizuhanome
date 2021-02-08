@@ -19,6 +19,7 @@ import {
   addTicket2t2,
   addTicket3f2,
   addTicket3t2,
+  addTicket3t2Cocomo,
 } from "#/boatRace";
 import { initCocomo, updateCocomoSim } from "#/cocomo";
 
@@ -80,6 +81,13 @@ async function simulation2(
       numbers: [],
     };
     // addTicket3t2(powers, numbersetInfos3t, ticket3t);
+    await addTicket3t2Cocomo(
+      simulationBetRaceResult.dataid,
+      powers,
+      numbersetInfos3t,
+      ticket3t,
+      true
+    );
 
     // 購入する三連複の舟券を追加する
     const ticket3f: Ticket = {
@@ -93,13 +101,13 @@ async function simulation2(
       type: "2t",
       numbers: [],
     };
-    await addTicket2t2(
-      simulationBetRaceResult.dataid,
-      powers,
-      numbersetInfos2t,
-      ticket2t,
-      true
-    );
+    // await addTicket2t2(
+    //   simulationBetRaceResult.dataid,
+    //   powers,
+    //   numbersetInfos2t,
+    //   ticket2t,
+    //   true
+    // );
 
     // 購入する二連複の舟券を追加する
     const ticket2f: Ticket = {
@@ -162,7 +170,7 @@ async function simulation2(
       simulationBetRaceResult.betResults.push(simulationBetResult);
 
       // ココモ法の更新
-      if (originalBetResult.type === "2t" && bet !== 0) {
+      if (originalBetResult.type === "3t" && bet !== 0) {
         await updateCocomoSim(
           simulationBetRaceResult.dataid,
           originalBetResult.numberset,
@@ -185,12 +193,15 @@ async function simulation(): Promise<void> {
     baseUrl: "",
     email: "",
     accessKey: "",
-    capital: 300000,
-    assumedHittingRate: 0.07,
-    assumedCollectRate: 1.1,
+    capital: 0,
+    assumedHittingRate: 0.3,
+    assumedCollectRate: 1.5,
     assumedAmountPurchasedRate: 0.1,
-    assumedEntryRaceCountRate: 0.6,
+    assumedEntryRaceCountRate: 0.02,
   };
+
+  // ココモ法 初期化
+  await initCocomo(true);
 
   // ファイルに保存してある「日単位の賭け結果」の日付配列
   let isSim = false;
@@ -198,9 +209,6 @@ async function simulation(): Promise<void> {
 
   for (let i = 0; i < dateArray.length; i++) {
     const date = dateArray[i];
-
-    // ココモ法 初期化
-    await initCocomo(true);
 
     const betDayResult = await simulation2(config, date);
 

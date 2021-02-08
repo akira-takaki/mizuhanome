@@ -74,7 +74,7 @@ export async function calcCocomoBet(
 
   let bet: number | null = null;
   try {
-    const defaultBet = 300;
+    const defaultBet = 3000;
 
     const cocomo = readCocomo(isSim);
 
@@ -93,9 +93,6 @@ export async function calcCocomoBet(
         bet = defaultBet;
       } else if (cocomo.betHistories.length === 1) {
         bet = cocomo.betHistories[cocomo.betHistories.length - 1].bet;
-      } else if (cocomo.betHistories.length >= 9) {
-        bet = defaultBet;
-        cocomo.betHistories = [];
       } else {
         bet =
           cocomo.betHistories[cocomo.betHistories.length - 2].bet +
