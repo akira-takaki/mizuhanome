@@ -184,7 +184,7 @@ export async function updateCocomo(session: string): Promise<void> {
       const raceresult = await getRaceResult(session, betHistory.dataid);
       if (raceresult !== undefined) {
         const oddsStr: string | null =
-          raceresult[`odds_2t${betHistory.numberset}`];
+          raceresult[`odds_3t${betHistory.numberset}`];
         const odds: number | null =
           oddsStr === null ? null : parseInt(oddsStr, 10) / 100;
 
