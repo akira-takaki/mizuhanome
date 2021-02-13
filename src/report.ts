@@ -571,13 +571,17 @@ export async function reportSummary(
             datasets: [
               {
                 label: '差額',
-                backgroundColor: 'lightblue',
-                data: ${JSON.stringify(differenceAll)}
+                backgroundColor: 'red',
+                borderColor: 'red',
+                data: ${JSON.stringify(differenceAll)},
+                fill: false
               },
               {
                 label: '資金',
                 backgroundColor: 'lightgreen',
-                data: ${JSON.stringify(capital)}
+                borderColor: 'lightgreen',
+                data: ${JSON.stringify(capital)},
+                fill: true
               }
             ]
           }
