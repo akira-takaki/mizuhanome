@@ -52,8 +52,13 @@ td.collectAll-row {
     text-align: right;
 }
 
-td.differenceAll-row {
+td.differenceAll-row-plus {
     text-align: right;
+}
+
+td.differenceAll-row-minus {
+    text-align: right;
+    color: red;
 }
 
 td.nextCapital-row {

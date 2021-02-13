@@ -340,7 +340,7 @@ function createSummaryTableHtmlHeader(): string {
       <th class="date-header">日付</th>
       <th class="capital-header">資金</thcl>
       <th class="nextCapital-header">次回の資金</th>
-      <th class="raceCount-header">参加レース数</th>
+      <th class="raceCount-header">レース数</th>
       <th class="amountPurchasedAll-header">購入金額</th>
       <th class="collectAll-header">回収金額</th>
       <th class="collectRateAll-header">回収率</th>
@@ -351,6 +351,10 @@ function createSummaryTableHtmlHeader(): string {
 
 function createSummaryTableHtmlRow(betDayResult: BetDayResult): string {
   const weekdayNames = ["日", "月", "火", "水", "木", "金", "土"];
+  const plus =
+    betDayResult.differenceAll !== null && betDayResult.differenceAll >= 0
+      ? "plus"
+      : "minus";
   return `
     <tr class="summary-row">
       <td class="date-row">${betDayResult.date}(${
@@ -380,11 +384,11 @@ function createSummaryTableHtmlRow(betDayResult: BetDayResult): string {
           ? percentFormatter.format(betDayResult.collectRateAll)
           : ""
       }</td>
-      <td class="differenceAll-row">${
-        betDayResult.differenceAll !== null
-          ? currencyFormatter.format(betDayResult.differenceAll)
-          : ""
-      }</td>
+      <td class="differenceAll-row-${plus}">${
+    betDayResult.differenceAll !== null
+      ? currencyFormatter.format(betDayResult.differenceAll)
+      : ""
+  }</td>
     </tr>
   `;
 }
