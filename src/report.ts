@@ -338,7 +338,7 @@ function createSummaryTableHtmlHeader(): string {
   return `
     <tr class="summary-header">
       <th class="date-header">日付</th>
-      <th class="capital-header">資金</thcl>
+      <th class="capital-header">資金</th>
       <th class="nextCapital-header">次回の資金</th>
       <th class="raceCount-header">レース数</th>
       <th class="amountPurchasedAll-header">購入金額</th>
@@ -513,6 +513,10 @@ export async function reportSummary(
     betDayResults.push(betDayResult);
   }
 
+  const labels: string[] = [];
+  const differenceAll: number[] = [];
+  const capital: number[] = [];
+
   const htmlStart = `
   <!DOCTYPE html>
   <html lang="ja">
@@ -522,6 +526,7 @@ export async function reportSummary(
     </head>
     <body>
     ${isSimStr}<br>
+    <canvas id="charts"></canvas>
   `;
 
   let htmlSummaryTable = `
@@ -530,6 +535,12 @@ export async function reportSummary(
   htmlSummaryTable = htmlSummaryTable + createSummaryTableHtmlHeader();
   for (let i = 0; i < betDayResults.length; i++) {
     const betDayResult = betDayResults[i];
+
+    labels.push(betDayResult.date);
+    differenceAll.push(
+      betDayResult.differenceAll !== null ? betDayResult.differenceAll : 0
+    );
+    capital.push(betDayResult.capital);
 
     htmlSummaryTable =
       htmlSummaryTable + createSummaryTableHtmlRow(betDayResult);
@@ -550,6 +561,28 @@ export async function reportSummary(
   }
 
   const htmlEnd = `
+      <script src="../node_modules/chart.js/dist/Chart.js"></script>
+      <script>
+        var ctx = document.getElementById("charts");
+        var myChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ${JSON.stringify(labels)},
+            datasets: [
+              {
+                label: '差額',
+                backgroundColor: 'lightblue',
+                data: ${JSON.stringify(differenceAll)}
+              },
+              {
+                label: '資金',
+                backgroundColor: 'lightgreen',
+                data: ${JSON.stringify(capital)}
+              }
+            ]
+          }
+        });
+      </script>
     </body>
   </html>
   `;
