@@ -116,13 +116,6 @@ export async function addTicket3t2Cocomo(
     return;
   }
 
-  // const topNumberStr = numbersetInfo.numberset.substring(0, 1);
-  // for (let i = 0; i < powers.length; i++) {
-  //   if (powers[i].numberStr === topNumberStr && powers[i].power < 70) {
-  //     return;
-  //   }
-  // }
-
   // 賭け金
   const bet = await calcCocomoBet(dataid, numbersetInfo.numberset, isSim);
   if (bet !== null) {
