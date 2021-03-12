@@ -65,6 +65,14 @@ export async function initCocomo(isSim: boolean): Promise<void> {
   }
 }
 
+/**
+ * ココモ法での賭け金の計算
+ *
+ * @param dataid
+ * @param numberset
+ * @param isSim
+ * @return 賭け金 or null
+ */
 export async function calcCocomoBet(
   dataid: number,
   numberset: string,
@@ -79,9 +87,7 @@ export async function calcCocomoBet(
     const cocomo = readCocomo(isSim);
 
     let isAllDecisioned = true;
-    let allBet = 0;
     for (let i = 0; i < cocomo.betHistories.length; i++) {
-      allBet = allBet + cocomo.betHistories[i].bet;
       if (!cocomo.betHistories[i].isDecision) {
         isAllDecisioned = false;
       }
@@ -89,6 +95,13 @@ export async function calcCocomoBet(
 
     if (isAllDecisioned) {
       // すべてのレース結果が決定していれば
+
+      // 損切り
+      if (cocomo.betHistories.length >= 10) {
+        // すでに 10回 負けていたらリセット
+        cocomo.betHistories = [];
+      }
+
       if (cocomo.betHistories.length <= 0) {
         bet = defaultBet;
       } else if (cocomo.betHistories.length === 1) {
