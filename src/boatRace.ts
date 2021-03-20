@@ -61,16 +61,18 @@ export function addTicket3t2(
     }
   }
 
-  // 期待値が thresholdExpectedValue 以上のものに絞り込む
-  const thresholdExpectedValue = 1.4;
+  const thresholdExpectedValueFrom = 1.4;
+  const thresholdExpectedValueTo = 1.8;
   const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= thresholdExpectedValue
+    (value) =>
+      value.expectedValue >= thresholdExpectedValueFrom &&
+      value.expectedValue <= thresholdExpectedValueTo
   );
   if (filteredNumbersetInfos.length <= 0) {
     return;
   }
 
-  const defaultBet = 100;
+  const defaultBet = 300;
 
   for (let i = 0; i < filteredNumbersetInfos.length; i++) {
     const numbersetInfo = filteredNumbersetInfos[i];
