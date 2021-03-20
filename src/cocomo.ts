@@ -150,17 +150,21 @@ export function updateCocomo2(
   numberset: string,
   odds: number | null
 ): void {
-  if (odds !== null && odds >= 2.6) {
-    // 2.6倍以上で勝ち
-    cocomo.betHistories = [];
-  } else {
-    for (let i = 0; i < cocomo.betHistories.length; i++) {
-      const betHistory = cocomo.betHistories[i];
-      if (betHistory.dataid === dataid && betHistory.numberset === numberset) {
-        betHistory.odds = odds;
-        betHistory.isDecision = true;
+  let isWin = false;
+  for (let i = 0; i < cocomo.betHistories.length; i++) {
+    const betHistory = cocomo.betHistories[i];
+
+    if (betHistory.dataid === dataid && betHistory.numberset === numberset) {
+      betHistory.odds = odds;
+      betHistory.isDecision = true;
+      if (odds !== null && odds >= 2.6) {
+        // 2.6倍以上で勝ち
+        isWin = true;
       }
     }
+  }
+  if (isWin) {
+    cocomo.betHistories = [];
   }
 }
 
