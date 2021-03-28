@@ -181,8 +181,8 @@ function createBetRaceResultTableHtmlRow(
   const isHit = betResult.odds !== null && betResult.bet !== betResult.dividend;
   const isResult = betResult.odds !== null;
 
-  let classSuffix = "";
-  let statusStr = "";
+  let classSuffix: string;
+  let statusStr: string;
   if (isHit) {
     classSuffix = "hit";
     statusStr = "当";

@@ -36,7 +36,9 @@ export async function authenticate(): Promise<string | undefined> {
   const url = `${baseUrl}/authenticate?email=${email}&accessKey=${accessKey}`;
   let axiosResponse: AxiosResponse<SessionInfo>;
   try {
-    axiosResponse = await axios.post<SessionInfo>(url);
+    axiosResponse = await axios.post<SessionInfo, AxiosResponse<SessionInfo>>(
+      url
+    );
     logger.debug(util.inspect(axiosResponse.data));
   } catch (err) {
     logger.error("認証 失敗");
@@ -61,9 +63,11 @@ interface RefreshResponse {
 export async function refresh(session: string): Promise<void> {
   logger.debug("セッションの更新");
   const url = `${baseUrl}/refresh?session=${session}`;
-  let axiosResponse: AxiosResponse<RefreshResponse>;
   try {
-    axiosResponse = await axios.post<RefreshResponse>(url);
+    const axiosResponse = await axios.post<
+      RefreshResponse,
+      AxiosResponse<RefreshResponse>
+    >(url);
     logger.debug(util.inspect(axiosResponse.data));
   } catch (err) {
     throw new Error("セッションの更新 失敗");
@@ -148,9 +152,13 @@ export interface Odds {
  * オッズ取得
  */
 export async function getOdds(
-  session: string,
+  session: string | undefined,
   dataid: number
 ): Promise<Odds | undefined> {
+  if (session === undefined) {
+    return undefined;
+  }
+
   const url = `${baseUrl}/data/odds/${dataid}?session=${session}`;
   let axiosResponse: AxiosResponse;
   try {
@@ -189,9 +197,10 @@ export async function getPredictsTop6(
   const url = `${baseUrl}/predicts/${dataid}/top6?session=${session}&type=2`;
   let predicts: PredictsTop6;
   try {
-    const axiosResponse: AxiosResponse<PredictsTop6> = await axios.get<PredictsTop6>(
-      url
-    );
+    const axiosResponse: AxiosResponse<PredictsTop6> = await axios.get<
+      PredictsTop6,
+      AxiosResponse<PredictsTop6>
+    >(url);
     predicts = axiosResponse.data;
   } catch (err) {
     // 異常レスポンスのときは無視
@@ -216,15 +225,20 @@ export interface PredictsAll {
  * 直前予想全確率取得
  */
 export async function getPredictsAll(
-  session: string,
+  session: string | undefined,
   dataid: number
 ): Promise<PredictsAll | undefined> {
+  if (session === undefined) {
+    return undefined;
+  }
+
   const url = `${baseUrl}/predicts/${dataid}?session=${session}&type=2`;
   let predicts: PredictsAll;
   try {
-    const axiosResponse: AxiosResponse<PredictsAll> = await axios.get<PredictsAll>(
-      url
-    );
+    const axiosResponse: AxiosResponse<PredictsAll> = await axios.get<
+      PredictsAll,
+      AxiosResponse<PredictsAll>
+    >(url);
     predicts = axiosResponse.data;
   } catch (err) {
     // 異常レスポンスのときは無視
@@ -266,10 +280,15 @@ interface AutoBuyRequest {
  * 自動購入
  */
 export async function autoBuy(
-  session: string,
+  session: string | undefined,
   dataid: number,
   tickets: Ticket[]
 ): Promise<void> {
+  if (session === undefined) {
+    logger.error("舟券購入 失敗 : session is undefined");
+    return;
+  }
+
   logger.debug("舟券購入");
   const autoBuyRequest: AutoBuyRequest = {
     tickets: tickets,

@@ -422,9 +422,9 @@ export async function boatRace(): Promise<void> {
     return;
   }
 
-  let sessionIntervalId: NodeJS.Timeout | null = null;
-  let betResultIntervalId: NodeJS.Timeout | null = null;
-  let cocomoIntervalId: NodeJS.Timeout | null = null;
+  let sessionIntervalId: ReturnType<typeof setInterval> | null = null;
+  let betResultIntervalId: ReturnType<typeof setInterval> | null = null;
+  let cocomoIntervalId: ReturnType<typeof setInterval> | null = null;
   try {
     sessionIntervalId = setInterval(() => {
       // セッションの更新 50分ごと
