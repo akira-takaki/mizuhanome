@@ -104,17 +104,29 @@ export async function addTicket3t2Cocomo(
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
-  const sortedNumbersetInfos = numbersetInfos
-    .sort(numbersetInfoOrderByPercent)
-    .reverse();
+  // 確率の閾値 20%
+  const percent = 0.2;
 
-  const numbersetInfo = sortedNumbersetInfos[0];
-
-  if (numbersetInfo.percent < 0.2) {
+  const filteredNumbersetInfos = numbersetInfos.filter(
+    (value) => value.percent >= percent
+  );
+  if (
+    filteredNumbersetInfos.length >= 2 ||
+    filteredNumbersetInfos.length <= 0
+  ) {
+    // 確率の閾値以上のものが複数の場合、
+    // または、
+    // 確率の閾値以上のものが無い場合、
+    // 賭けない
     return;
   }
 
+  const numbersetInfo = filteredNumbersetInfos[0];
+
   if (numbersetInfo.odds === null || numbersetInfo.odds < 2.9) {
+    // オッズが 2.9倍 より低いものは、賭けない
+    // ココモ法としては 2.6倍 が最低ラインだが、
+    // レース前オッズは下がる可能性があるため 2.9倍 で判断する。
     return;
   }
 
