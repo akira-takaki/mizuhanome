@@ -97,8 +97,8 @@ export async function calcCocomoBet(
       // すべてのレース結果が決定していれば
 
       // 損切り
-      if (cocomo.betHistories.length >= 10) {
-        // すでに 10回 負けていたらリセット
+      if (cocomo.betHistories.length >= 11) {
+        // すでに 11回 負けていたらリセット
         cocomo.betHistories = [];
       }
 
