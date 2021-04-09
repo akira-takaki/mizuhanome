@@ -82,7 +82,7 @@ export async function calcCocomoBet(
 
   let bet: number | null = null;
   try {
-    const defaultBet = 5000;
+    const defaultBet = 2000;
 
     const cocomo = readCocomo(isSim);
 
@@ -97,8 +97,8 @@ export async function calcCocomoBet(
       // すべてのレース結果が決定していれば
 
       // 損切り
-      if (cocomo.betHistories.length >= 11) {
-        // すでに 11回 負けていたらリセット
+      if (cocomo.betHistories.length >= 14) {
+        // すでに 14回 負けていたらリセット
         cocomo.betHistories = [];
       }
 
