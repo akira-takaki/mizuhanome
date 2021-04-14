@@ -3,6 +3,7 @@ import { Mutex } from "await-semaphore";
 
 import path from "path";
 import { getRaceResult } from "#/api";
+import { TicketType } from "#/myUtil";
 
 interface BetHistory {
   /** データID */
@@ -30,28 +31,31 @@ const PREFIX = "cocomo";
 const SUFFIX = "json";
 const mutex: Mutex = new Mutex();
 
-function fileName(isSim: boolean): string {
+function fileName(type: TicketType, isSim: boolean): string {
   if (isSim) {
-    return path.join(DIR, `${PREFIX}_sim.${SUFFIX}`);
+    return path.join(DIR, `${PREFIX}_${type}_sim.${SUFFIX}`);
   } else {
-    return path.join(DIR, `${PREFIX}.${SUFFIX}`);
+    return path.join(DIR, `${PREFIX}_${type}.${SUFFIX}`);
   }
 }
 
-function writeCocomo(cocomo: Cocomo, isSim: boolean): void {
+function writeCocomo(cocomo: Cocomo, type: TicketType, isSim: boolean): void {
   fs.mkdirpSync(DIR);
-  fs.writeFileSync(fileName(isSim), JSON.stringify(cocomo, null, 2));
+  fs.writeFileSync(fileName(type, isSim), JSON.stringify(cocomo, null, 2));
 }
 
-function readCocomo(isSim: boolean): Cocomo {
-  if (fs.existsSync(fileName(isSim))) {
-    return JSON.parse(fs.readFileSync(fileName(isSim)).toString());
+function readCocomo(type: TicketType, isSim: boolean): Cocomo {
+  if (fs.existsSync(fileName(type, isSim))) {
+    return JSON.parse(fs.readFileSync(fileName(type, isSim)).toString());
   } else {
     return { betHistories: [] };
   }
 }
 
-export async function initCocomo(isSim: boolean): Promise<void> {
+export async function initCocomo(
+  type: TicketType,
+  isSim: boolean
+): Promise<void> {
   const release: () => void = await mutex.acquire();
 
   try {
@@ -59,7 +63,7 @@ export async function initCocomo(isSim: boolean): Promise<void> {
       betHistories: [],
     };
 
-    writeCocomo(cocomo, isSim);
+    writeCocomo(cocomo, type, isSim);
   } finally {
     release();
   }
@@ -70,12 +74,14 @@ export async function initCocomo(isSim: boolean): Promise<void> {
  *
  * @param dataid
  * @param numberset
+ * @param type
  * @param isSim
  * @return 賭け金 or null
  */
 export async function calcCocomoBet(
   dataid: number,
   numberset: string,
+  type: TicketType,
   isSim: boolean
 ): Promise<number | null> {
   const release: () => void = await mutex.acquire();
@@ -84,7 +90,7 @@ export async function calcCocomoBet(
   try {
     const defaultBet = 2000;
 
-    const cocomo = readCocomo(isSim);
+    const cocomo = readCocomo(type, isSim);
 
     let isAllDecisioned = true;
     for (let i = 0; i < cocomo.betHistories.length; i++) {
@@ -120,7 +126,7 @@ export async function calcCocomoBet(
         isDecision: false,
       });
 
-      writeCocomo(cocomo, isSim);
+      writeCocomo(cocomo, type, isSim);
     } else {
       // すべてのレース結果が決定していなければ
       bet = null;
@@ -171,28 +177,32 @@ export function updateCocomo2(
 export async function updateCocomoSim(
   dataid: number,
   numberset: string,
-  odds: number | null
+  odds: number | null,
+  type: TicketType
 ): Promise<void> {
   const release: () => void = await mutex.acquire();
 
   try {
     const isSim = true;
-    const cocomo = readCocomo(isSim);
+    const cocomo = readCocomo(type, isSim);
 
     updateCocomo2(cocomo, dataid, numberset, odds);
 
-    writeCocomo(cocomo, isSim);
+    writeCocomo(cocomo, type, isSim);
   } finally {
     release();
   }
 }
 
-export async function updateCocomo(session: string): Promise<void> {
+export async function updateCocomo(
+  session: string,
+  type: TicketType
+): Promise<void> {
   const release: () => void = await mutex.acquire();
 
   try {
     const isSim = false;
-    const cocomo = readCocomo(isSim);
+    const cocomo = readCocomo(type, isSim);
 
     const betHistory = pickupNotDecisionBetHistory(cocomo);
 
@@ -207,7 +217,7 @@ export async function updateCocomo(session: string): Promise<void> {
 
         updateCocomo2(cocomo, betHistory.dataid, betHistory.numberset, odds);
 
-        writeCocomo(cocomo, isSim);
+        writeCocomo(cocomo, type, isSim);
       }
     }
   } finally {

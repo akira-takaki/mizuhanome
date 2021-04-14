@@ -28,7 +28,6 @@ import {
   generateNumbersetInfo,
   isRough,
   NumbersetInfo,
-  numbersetInfoOrderByPercent,
   playerPowers,
   Power,
   roundBet,
@@ -131,7 +130,7 @@ export async function addTicket3t2Cocomo(
   }
 
   // 賭け金
-  const bet = await calcCocomoBet(dataid, numbersetInfo.numberset, isSim);
+  const bet = await calcCocomoBet(dataid, numbersetInfo.numberset, "3t", isSim);
   if (bet !== null) {
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
@@ -251,6 +250,7 @@ function addTicket3f(
 
 /**
  * 購入する二連単の舟券を追加する
+ * ココモ法
  *
  * @param dataid データID
  * @param powers プレイヤーのパワー配列
@@ -258,32 +258,41 @@ function addTicket3f(
  * @param ticket 舟券
  * @param isSim
  */
-export async function addTicket2t2(
+export async function addTicket2t2Cocomo(
   dataid: number,
   powers: Power[],
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
-  const sortedNumbersetInfos = numbersetInfos
-    .sort(numbersetInfoOrderByPercent)
-    .reverse();
+  // 確率の閾値 32%
+  const percent = 0.32;
 
-  const numbersetInfo = sortedNumbersetInfos[0];
-
-  if (numbersetInfo.odds === null || numbersetInfo.odds < 2.9) {
+  const filteredNumbersetInfos = numbersetInfos.filter(
+    (value) => value.percent >= percent
+  );
+  if (
+    filteredNumbersetInfos.length >= 2 ||
+    filteredNumbersetInfos.length <= 0
+  ) {
+    // 確率の閾値以上のものが複数の場合、
+    // または、
+    // 確率の閾値以上のものが無い場合、
+    // 賭けない
     return;
   }
 
-  const topNumberStr = numbersetInfo.numberset.substring(0, 1);
-  for (let i = 0; i < powers.length; i++) {
-    if (powers[i].numberStr === topNumberStr && powers[i].power < 70) {
-      return;
-    }
+  const numbersetInfo = filteredNumbersetInfos[0];
+
+  if (numbersetInfo.odds === null || numbersetInfo.odds < 3.4) {
+    // オッズが 3.4倍 より低いものは、賭けない
+    // ココモ法としては 2.6倍 が最低ラインだが、
+    // レース前オッズは下がる可能性があるため 3.4倍 で判断する。
+    return;
   }
 
   // 賭け金
-  const bet = await calcCocomoBet(dataid, numbersetInfo.numberset, isSim);
+  const bet = await calcCocomoBet(dataid, numbersetInfo.numberset, "2t", isSim);
   if (bet !== null) {
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
@@ -320,7 +329,7 @@ async function addTicket2t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する二連単の舟券を追加する
-  await addTicket2t2(dataid, powers, numbersetInfos, ticket, isSim);
+  await addTicket2t2Cocomo(dataid, powers, numbersetInfos, ticket, isSim);
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -490,7 +499,8 @@ export async function boatRace(): Promise<void> {
 
     cocomoIntervalId = setInterval(() => {
       // ココモ法の賭け結果 の勝敗を更新する
-      updateCocomo(session);
+      updateCocomo(session, "3t");
+      updateCocomo(session, "2t");
     }, 9000);
 
     // 各レースで舟券購入
@@ -562,7 +572,7 @@ export async function boatRace(): Promise<void> {
       // addTicket3f(powers, odds, predictsAll, tickets);
 
       // 購入する二連単の舟券を追加する
-      // await addTicket2t(raceCard.dataid, powers, odds, predictsAll, tickets);
+      await addTicket2t(raceCard.dataid, powers, odds, predictsAll, tickets);
 
       // 購入する二連複の舟券を追加する
       // addTicket2f(powers, odds, predictsAll, tickets);
