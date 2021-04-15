@@ -447,9 +447,9 @@ export async function boatRace(): Promise<void> {
   let betResultIntervalId: ReturnType<typeof setInterval> | null = null;
   let cocomoIntervalId: ReturnType<typeof setInterval> | null = null;
   try {
-    sessionIntervalId = setInterval(() => {
+    sessionIntervalId = setInterval(async () => {
       // セッションの更新 50分ごと
-      refresh(session);
+      await refresh(session);
     }, 50 * 60 * 1000);
 
     // 出走表 (当月分)
@@ -492,15 +492,15 @@ export async function boatRace(): Promise<void> {
     // 設定値確認
     logger.info(util.inspect(betDayResult));
 
-    betResultIntervalId = setInterval(() => {
+    betResultIntervalId = setInterval(async () => {
       // 日単位の賭け結果 の勝敗を更新する
-      updateBetRaceResult(today, session);
+      await updateBetRaceResult(today, session);
     }, 10000);
 
-    cocomoIntervalId = setInterval(() => {
+    cocomoIntervalId = setInterval(async () => {
       // ココモ法の賭け結果 の勝敗を更新する
-      updateCocomo(session, "3t");
-      updateCocomo(session, "2t");
+      await updateCocomo(session, "3t");
+      await updateCocomo(session, "2t");
     }, 9000);
 
     // 各レースで舟券購入
