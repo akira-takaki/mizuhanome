@@ -208,10 +208,10 @@ export async function updateCocomo(
 
     if (betHistory !== null) {
       // 結果を取得
-      const raceresult = await getRaceResult(session, betHistory.dataid);
-      if (raceresult !== undefined) {
+      const raceResult = await getRaceResult(session, betHistory.dataid);
+      if (raceResult !== undefined) {
         const oddsStr: string | null =
-          raceresult[`odds_3t${betHistory.numberset}`];
+          raceResult[`odds_${type}${betHistory.numberset}`];
         const odds: number | null =
           oddsStr === null ? null : parseInt(oddsStr, 10) / 100;
 
