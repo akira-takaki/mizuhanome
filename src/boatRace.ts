@@ -122,10 +122,10 @@ export async function addTicket3t2Cocomo(
 
   const numbersetInfo = filteredNumbersetInfos[0];
 
-  if (numbersetInfo.odds === null || numbersetInfo.odds < 2.9) {
-    // オッズが 2.9倍 より低いものは、賭けない
+  if (numbersetInfo.odds === null || numbersetInfo.odds < 2.8) {
+    // オッズが 指定倍 より低いものは、賭けない
     // ココモ法としては 2.6倍 が最低ラインだが、
-    // レース前オッズは下がる可能性があるため 2.9倍 で判断する。
+    // レース前オッズは下がる可能性があるため 指定倍 で判断する。
     return;
   }
 
@@ -500,7 +500,6 @@ export async function boatRace(): Promise<void> {
     cocomoIntervalId = setInterval(async () => {
       // ココモ法の賭け結果 の勝敗を更新する
       await updateCocomo(session, "3t");
-      await updateCocomo(session, "2t");
     }, 9000);
 
     // 各レースで舟券購入
@@ -572,7 +571,7 @@ export async function boatRace(): Promise<void> {
       // addTicket3f(powers, odds, predictsAll, tickets);
 
       // 購入する二連単の舟券を追加する
-      await addTicket2t(raceCard.dataid, powers, odds, predictsAll, tickets);
+      // await addTicket2t(raceCard.dataid, powers, odds, predictsAll, tickets);
 
       // 購入する二連複の舟券を追加する
       // addTicket2f(powers, odds, predictsAll, tickets);

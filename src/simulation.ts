@@ -101,13 +101,13 @@ async function simulation2(
       type: "2t",
       numbers: [],
     };
-    await addTicket2t2Cocomo(
-      simulationBetRaceResult.dataid,
-      powers,
-      numbersetInfos2t,
-      ticket2t,
-      true
-    );
+    // await addTicket2t2Cocomo(
+    //   simulationBetRaceResult.dataid,
+    //   powers,
+    //   numbersetInfos2t,
+    //   ticket2t,
+    //   true
+    // );
 
     // 購入する二連複の舟券を追加する
     const ticket2f: Ticket = {
@@ -177,13 +177,6 @@ async function simulation2(
           originalBetResult.odds,
           "3t"
         );
-      } else if (originalBetResult.type === "2t" && bet !== 0) {
-        await updateCocomoSim(
-          simulationBetRaceResult.dataid,
-          originalBetResult.numberset,
-          originalBetResult.odds,
-          "2t"
-        );
       }
     }
   }
@@ -210,7 +203,6 @@ async function simulation(): Promise<void> {
 
   // ココモ法 初期化
   await initCocomo("3t", true);
-  await initCocomo("2t", true);
 
   // ファイルに保存してある「日単位の賭け結果」の日付配列
   let isSim = false;
