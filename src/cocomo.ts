@@ -88,7 +88,7 @@ export async function calcCocomoBet(
 
   let bet: number | null = null;
   try {
-    const defaultBet = 1000;
+    const defaultBet = 1300;
 
     const cocomo = readCocomo(type, isSim);
 
