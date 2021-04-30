@@ -28,6 +28,7 @@ import {
   generateNumbersetInfo,
   isRough,
   NumbersetInfo,
+  numbersetInfoOrderByPercent,
   playerPowers,
   Power,
   roundBet,
@@ -116,6 +117,19 @@ export async function addTicket3t2Cocomo(
     // 確率の閾値以上のものが複数の場合、
     // または、
     // 確率の閾値以上のものが無い場合、
+    // 賭けない
+    return;
+  }
+
+  // 確率が大きい順にソート
+  const sortedNumbersetInfos = numbersetInfos
+    .sort(numbersetInfoOrderByPercent)
+    .reverse();
+  const top1NumbersetInfo = sortedNumbersetInfos[0];
+  const top2NumbersetInfo = sortedNumbersetInfos[1];
+  if (top1NumbersetInfo.percent - top2NumbersetInfo.percent < 0.04) {
+    // 確率が1番目に大きいものと、
+    // 2番目に大きいものとの差が 4% より小さい場合、
     // 賭けない
     return;
   }
