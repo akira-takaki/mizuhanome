@@ -75,6 +75,8 @@ export async function initCocomo(
  * @param dataid
  * @param numberset
  * @param type
+ * @param defaultBet
+ * @param maxCount
  * @param isSim
  * @return 賭け金 or null
  */
@@ -82,14 +84,14 @@ export async function calcCocomoBet(
   dataid: number,
   numberset: string,
   type: TicketType,
+  defaultBet: number,
+  maxCount: number,
   isSim: boolean
 ): Promise<number | null> {
   const release: () => void = await mutex.acquire();
 
   let bet: number | null = null;
   try {
-    const defaultBet = 1000;
-
     const cocomo = readCocomo(type, isSim);
 
     let isAllDecisioned = true;
@@ -103,7 +105,7 @@ export async function calcCocomoBet(
       // すべてのレース結果が決定していれば
 
       // 損切り
-      if (cocomo.betHistories.length >= 15) {
+      if (cocomo.betHistories.length >= maxCount) {
         // すでに 指定回数 負けていたらリセット
         cocomo.betHistories = [];
       }

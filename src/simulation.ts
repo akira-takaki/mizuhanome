@@ -18,7 +18,6 @@ import {
   addTicket2f2,
   addTicket2t2Cocomo,
   addTicket3f2,
-  addTicket3t2,
   addTicket3t2Cocomo,
 } from "#/boatRace";
 import { initCocomo, updateCocomoSim } from "#/cocomo";
@@ -80,7 +79,6 @@ async function simulation2(
       type: "3t",
       numbers: [],
     };
-    // addTicket3t2(powers, numbersetInfos3t, ticket3t);
     await addTicket3t2Cocomo(
       simulationBetRaceResult.dataid,
       powers,

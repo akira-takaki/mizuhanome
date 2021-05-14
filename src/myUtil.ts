@@ -156,6 +156,22 @@ export function playerPowerOrderByNumber(e1: Power, e2: Power): number {
 }
 
 /**
+ * プライヤーのパワー配列の パワー で昇順ソート
+ *
+ * @param e1
+ * @param e2
+ */
+export function playerPowerOrderByPower(e1: Power, e2: Power): number {
+  if (e1.power > e2.power) {
+    return 1;
+  } else if (e1.power < e2.power) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
+/**
  * プレイヤーのパワー配列を返す
  * シミュレーション用
  *
