@@ -105,7 +105,7 @@ export async function addTicket3t2Cocomo(
     numbersetInfo.numberset,
     "3t",
     1000,
-    15,
+    12,
     isSim
   );
   if (bet !== null) {
