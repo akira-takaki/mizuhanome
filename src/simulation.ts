@@ -26,6 +26,8 @@ async function simulation2(
   config: Config,
   date: dayjs.Dayjs
 ): Promise<BetDayResult> {
+  const yyyymmdd = date.format("YYYY-MM-DD");
+
   // 「日単位の賭け結果」を読み込む
   const originalBetDayResult = readBetDayResult(date);
 
@@ -80,6 +82,7 @@ async function simulation2(
       numbers: [],
     };
     await addTicket3t2Cocomo(
+      yyyymmdd,
       simulationBetRaceResult.dataid,
       powers,
       numbersetInfos3t,
@@ -100,6 +103,7 @@ async function simulation2(
       numbers: [],
     };
     // await addTicket2t2Cocomo(
+    //   yyyymmdd,
     //   simulationBetRaceResult.dataid,
     //   powers,
     //   numbersetInfos2t,

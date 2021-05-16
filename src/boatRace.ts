@@ -47,6 +47,7 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
  * 確率が一番高いものを1点賭ける
  * ココモ法
  *
+ * @param yyyymmdd 当日
  * @param dataid データID
  * @param powers プレイヤーのパワー配列
  * @param numbersetInfos 1レースの 3t 組番情報
@@ -54,6 +55,7 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
  * @param isSim
  */
 export async function addTicket3t2Cocomo(
+  yyyymmdd: string,
   dataid: number,
   powers: Power[],
   numbersetInfos: NumbersetInfo[],
@@ -101,11 +103,12 @@ export async function addTicket3t2Cocomo(
 
   // 賭け金
   const bet = await calcCocomoBet(
+    yyyymmdd,
     dataid,
     numbersetInfo.numberset,
     "3t",
     1000,
-    12,
+    15,
     isSim
   );
   if (bet !== null) {
@@ -119,6 +122,7 @@ export async function addTicket3t2Cocomo(
 /**
  * 購入する三連単の舟券を追加する
  *
+ * @param yyyymmdd 当日
  * @param dataid データID
  * @param powers プレイヤーのパワー配列
  * @param odds オッズ
@@ -127,6 +131,7 @@ export async function addTicket3t2Cocomo(
  * @param isSim
  */
 async function addTicket3t(
+  yyyymmdd: string,
   dataid: number,
   powers: Power[],
   odds: Odds,
@@ -144,7 +149,14 @@ async function addTicket3t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する三連単の舟券を追加する
-  await addTicket3t2Cocomo(dataid, powers, numbersetInfos, ticket, isSim);
+  await addTicket3t2Cocomo(
+    yyyymmdd,
+    dataid,
+    powers,
+    numbersetInfos,
+    ticket,
+    isSim
+  );
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -229,6 +241,7 @@ function addTicket3f(
  * 購入する二連単の舟券を追加する
  * ココモ法
  *
+ * @param yyyymmdd
  * @param dataid データID
  * @param powers プレイヤーのパワー配列
  * @param numbersetInfos 1レースの 2t 組番情報
@@ -236,6 +249,7 @@ function addTicket3f(
  * @param isSim
  */
 export async function addTicket2t2Cocomo(
+  yyyymmdd: string,
   dataid: number,
   powers: Power[],
   numbersetInfos: NumbersetInfo[],
@@ -270,6 +284,7 @@ export async function addTicket2t2Cocomo(
 
   // 賭け金
   const bet = await calcCocomoBet(
+    yyyymmdd,
     dataid,
     numbersetInfo.numberset,
     "2t",
@@ -288,6 +303,7 @@ export async function addTicket2t2Cocomo(
 /**
  * 購入する二連単の舟券を追加する
  *
+ * @param yyyymmdd
  * @param dataid データID
  * @param powers プレイヤーのパワー配列
  * @param odds オッズ
@@ -296,6 +312,7 @@ export async function addTicket2t2Cocomo(
  * @param isSim
  */
 async function addTicket2t(
+  yyyymmdd: string,
   dataid: number,
   powers: Power[],
   odds: Odds,
@@ -313,7 +330,14 @@ async function addTicket2t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する二連単の舟券を追加する
-  await addTicket2t2Cocomo(dataid, powers, numbersetInfos, ticket, isSim);
+  await addTicket2t2Cocomo(
+    yyyymmdd,
+    dataid,
+    powers,
+    numbersetInfos,
+    ticket,
+    isSim
+  );
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -549,13 +573,27 @@ export async function boatRace(): Promise<void> {
       const tickets: Ticket[] = [];
 
       // 購入する三連単の舟券を追加する
-      await addTicket3t(raceCard.dataid, powers, odds, predictsAll, tickets);
+      await addTicket3t(
+        yyyymmdd,
+        raceCard.dataid,
+        powers,
+        odds,
+        predictsAll,
+        tickets
+      );
 
       // 購入する三連複の舟券を追加する
       // addTicket3f(powers, odds, predictsAll, tickets);
 
       // 購入する二連単の舟券を追加する
-      // await addTicket2t(raceCard.dataid, powers, odds, predictsAll, tickets);
+      // await addTicket2t(
+      //   yyyymmdd,
+      //   raceCard.dataid,
+      //   powers,
+      //   odds,
+      //   predictsAll,
+      //   tickets
+      // );
 
       // 購入する二連複の舟券を追加する
       // addTicket2f(powers, odds, predictsAll, tickets);

@@ -6,6 +6,9 @@ import { getRaceResult } from "#/api";
 import { TicketType } from "#/myUtil";
 
 interface BetHistory {
+  /** 日付 */
+  yyyymmdd: string;
+
   /** データID */
   dataid: number;
 
@@ -72,6 +75,7 @@ export async function initCocomo(
 /**
  * ココモ法での賭け金の計算
  *
+ * @param yyyymmdd
  * @param dataid
  * @param numberset
  * @param type
@@ -81,6 +85,7 @@ export async function initCocomo(
  * @return 賭け金 or null
  */
 export async function calcCocomoBet(
+  yyyymmdd: string,
   dataid: number,
   numberset: string,
   type: TicketType,
@@ -94,41 +99,60 @@ export async function calcCocomoBet(
   try {
     const cocomo = readCocomo(type, isSim);
 
+    // すべてのレース結果が決定しているか
     let isAllDecisioned = true;
+
+    // 当日の負けた回数
+    let todayLossCount = 0;
+
     for (let i = 0; i < cocomo.betHistories.length; i++) {
-      if (!cocomo.betHistories[i].isDecision) {
+      const betHistory: BetHistory = cocomo.betHistories[i];
+
+      if (!betHistory.isDecision) {
+        // すべてのレース結果が決定していない
         isAllDecisioned = false;
+      }
+
+      if (betHistory.yyyymmdd === yyyymmdd) {
+        // 当日の負けた回数をカウントアップ
+        todayLossCount++;
       }
     }
 
     if (isAllDecisioned) {
       // すべてのレース結果が決定していれば
 
-      // 損切り
-      if (cocomo.betHistories.length >= maxCount) {
-        // すでに 指定回数 負けていたらリセット
-        cocomo.betHistories = [];
-      }
-
-      if (cocomo.betHistories.length <= 0) {
-        bet = defaultBet;
-      } else if (cocomo.betHistories.length === 1) {
-        bet = cocomo.betHistories[cocomo.betHistories.length - 1].bet;
+      if (todayLossCount >= 5) {
+        // 当日の負けた回数が閾値を超えていたら賭けない
+        bet = null;
       } else {
-        bet =
-          cocomo.betHistories[cocomo.betHistories.length - 2].bet +
-          cocomo.betHistories[cocomo.betHistories.length - 1].bet;
+        // 損切り
+        if (cocomo.betHistories.length >= maxCount) {
+          // すでに 指定回数 負けていたらリセット
+          cocomo.betHistories = [];
+        }
+
+        if (cocomo.betHistories.length <= 0) {
+          bet = defaultBet;
+        } else if (cocomo.betHistories.length === 1) {
+          bet = cocomo.betHistories[cocomo.betHistories.length - 1].bet;
+        } else {
+          bet =
+            cocomo.betHistories[cocomo.betHistories.length - 2].bet +
+            cocomo.betHistories[cocomo.betHistories.length - 1].bet;
+        }
+
+        cocomo.betHistories.push({
+          yyyymmdd: yyyymmdd,
+          dataid: dataid,
+          numberset: numberset,
+          bet: bet,
+          odds: null,
+          isDecision: false,
+        });
+
+        writeCocomo(cocomo, type, isSim);
       }
-
-      cocomo.betHistories.push({
-        dataid: dataid,
-        numberset: numberset,
-        bet: bet,
-        odds: null,
-        isDecision: false,
-      });
-
-      writeCocomo(cocomo, type, isSim);
     } else {
       // すべてのレース結果が決定していなければ
       bet = null;
