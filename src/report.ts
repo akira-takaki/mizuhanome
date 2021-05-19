@@ -52,10 +52,14 @@ function makeSummaryFileName(isSim: boolean): string {
   }
 }
 
+/**
+ * パラメータ表 ヘッダー 作成
+ */
 function createParameterTableHtmlHeader(): string {
   return `
     <tr class="parameter-header">
       <th class="type-header">舟券種類</th>
+      <th class="date-header">日付</th>
       <th class="entryRaceCountRate-header">参加レース率</th>
       <th class="entryRaceCount-header">参加レース数</th>
       <th class="hittingRate-header">的中率</th>
@@ -67,13 +71,25 @@ function createParameterTableHtmlHeader(): string {
   `;
 }
 
+/**
+ * パラメータ表 行 作成
+ *
+ * @param type
+ * @param date
+ * @param parameter
+ */
 function createParameterTableHtmlRow(
   type: string,
+  date: string,
   parameter: Parameter
 ): string {
+  const weekdayNames = ["日", "月", "火", "水", "木", "金", "土"];
   return `
       <tr class="parameter">
         <td class="type-${type}">${type}</td>
+        <td class="date-row">${date}(${
+    weekdayNames[dayjs(date, "YYYY/MM/DD").day()]
+  })</td>
         <td class="entryRaceCountRate">${
           parameter.entryRaceCountRate !== null
             ? percentFormatter.format(parameter.entryRaceCountRate)
@@ -115,20 +131,41 @@ function createParameterTableHtml(betDayResult: BetDayResult): string {
   const tableHeader = createParameterTableHtmlHeader();
 
   let tableRow = "";
-  tableRow =
-    tableRow + createParameterTableHtmlRow("3t仮定", betDayResult.assumed3t);
-  tableRow =
-    tableRow + createParameterTableHtmlRow("3t", betDayResult.actual3t);
-  tableRow =
-    tableRow + createParameterTableHtmlRow("3f", betDayResult.actual3f);
-  tableRow =
-    tableRow + createParameterTableHtmlRow("2t", betDayResult.actual2t);
-  tableRow =
-    tableRow + createParameterTableHtmlRow("2f", betDayResult.actual2f);
+  tableRow += createParameterTableHtmlRow(
+    "3t仮定",
+    betDayResult.date,
+    betDayResult.assumed3t
+  );
+  tableRow += createParameterTableHtmlRow(
+    "3t",
+    betDayResult.date,
+    betDayResult.actual3t
+  );
+  tableRow += createParameterTableHtmlRow(
+    "3f",
+    betDayResult.date,
+    betDayResult.actual3f
+  );
+  tableRow += createParameterTableHtmlRow(
+    "2t",
+    betDayResult.date,
+    betDayResult.actual2t
+  );
+  tableRow += createParameterTableHtmlRow(
+    "2f",
+    betDayResult.date,
+    betDayResult.actual2f
+  );
 
   return `<table class="parameter">` + tableHeader + tableRow + `</table>`;
 }
 
+/**
+ * 舟券種類別 パラメータ表 作成
+ *
+ * @param type
+ * @param betDayResults
+ */
 function createTypeParameterTableHtml(
   type: TicketType,
   betDayResults: BetDayResult[]
@@ -138,18 +175,31 @@ function createTypeParameterTableHtml(
   let tableRow = "";
   for (let i = 0; i < betDayResults.length; i++) {
     const betDayResult = betDayResults[i];
+
     if (type === "3t") {
-      tableRow =
-        tableRow + createParameterTableHtmlRow("3t", betDayResult.actual3t);
+      tableRow += createParameterTableHtmlRow(
+        "3t",
+        betDayResult.date,
+        betDayResult.actual3t
+      );
     } else if (type === "3f") {
-      tableRow =
-        tableRow + createParameterTableHtmlRow("3f", betDayResult.actual3f);
+      tableRow += createParameterTableHtmlRow(
+        "3f",
+        betDayResult.date,
+        betDayResult.actual3f
+      );
     } else if (type === "2t") {
-      tableRow =
-        tableRow + createParameterTableHtmlRow("2t", betDayResult.actual2t);
+      tableRow += createParameterTableHtmlRow(
+        "2t",
+        betDayResult.date,
+        betDayResult.actual2t
+      );
     } else if (type === "2f") {
-      tableRow =
-        tableRow + createParameterTableHtmlRow("2f", betDayResult.actual2f);
+      tableRow += createParameterTableHtmlRow(
+        "2f",
+        betDayResult.date,
+        betDayResult.actual2f
+      );
     }
   }
 
@@ -349,6 +399,11 @@ function createSummaryTableHtmlHeader(): string {
   `;
 }
 
+/**
+ * 日別のまとめ行
+ *
+ * @param betDayResult
+ */
 function createSummaryTableHtmlRow(betDayResult: BetDayResult): string {
   const weekdayNames = ["日", "月", "火", "水", "木", "金", "土"];
   const plus =
@@ -513,8 +568,13 @@ export async function reportSummary(
     betDayResults.push(betDayResult);
   }
 
+  // グラフのデータ ラベル
   const labels: string[] = [];
+
+  // グラフのデータ 差額
   const differenceAll: number[] = [];
+
+  // グラフのデータ 資金
   const capital: number[] = [];
 
   const htmlStart = `
@@ -526,7 +586,8 @@ export async function reportSummary(
     </head>
     <body>
     ${isSimStr}<br>
-    <canvas id="charts"></canvas>
+    <canvas id="charts1" height="100"></canvas>
+    <canvas id="charts2" height="50"></canvas>
   `;
 
   let htmlSummaryTable = `
@@ -536,35 +597,53 @@ export async function reportSummary(
   for (let i = 0; i < betDayResults.length; i++) {
     const betDayResult = betDayResults[i];
 
+    // グラフのデータ作成 ラベル
     labels.push(betDayResult.date);
+
+    // グラフのデータ作成 差額
     differenceAll.push(
       betDayResult.differenceAll !== null ? betDayResult.differenceAll : 0
     );
+
+    // グラフのデータ作成 資金
     capital.push(betDayResult.capital);
 
-    htmlSummaryTable =
-      htmlSummaryTable + createSummaryTableHtmlRow(betDayResult);
+    // 日別のまとめ行
+    htmlSummaryTable += createSummaryTableHtmlRow(betDayResult);
   }
-  htmlSummaryTable =
-    htmlSummaryTable +
-    `
+  htmlSummaryTable += `
     </table>
   `;
 
+  // グラフのデータ 的中率 三連単
+  const hittingRate3t: number[] = [];
+
+  // 舟券種類別
   let htmlParameterTable = "";
   const types: TicketType[] = ["3t", "3f", "2t", "2f"];
   for (let i = 0; i < types.length; i++) {
     const type = types[i];
 
-    htmlParameterTable =
-      htmlParameterTable + createTypeParameterTableHtml(type, betDayResults);
+    // グラフのデータ作成 的中率 三連単
+    if (type === "3t") {
+      for (let j = 0; j < betDayResults.length; j++) {
+        const betDayResult = betDayResults[j];
+        hittingRate3t.push(
+          betDayResult.actual3t.hittingRate === null
+            ? -10
+            : betDayResult.actual3t.hittingRate * 100
+        );
+      }
+    }
+
+    htmlParameterTable += createTypeParameterTableHtml(type, betDayResults);
   }
 
   const htmlEnd = `
       <script src="../node_modules/chart.js/dist/Chart.js"></script>
       <script>
-        var ctx = document.getElementById("charts");
-        var myChart = new Chart(ctx, {
+        var ctx1 = document.getElementById("charts1");
+        var myChart1 = new Chart(ctx1, {
           type: 'line',
           data: {
             labels: ${JSON.stringify(labels)},
@@ -582,6 +661,22 @@ export async function reportSummary(
                 borderColor: 'lightgreen',
                 data: ${JSON.stringify(capital)},
                 fill: true
+              }
+            ]
+          }
+        });
+        var ctx2 = document.getElementById("charts2");
+        var myChart2 = new Chart(ctx2, {
+          type: 'line',
+          data: {
+            labels: ${JSON.stringify(labels)},
+            datasets: [
+              {
+                label: '三連単的中率',
+                backgroundColor: 'red',
+                borderColor: 'red',
+                data: ${JSON.stringify(hittingRate3t)},
+                fill: false
               }
             ]
           }
