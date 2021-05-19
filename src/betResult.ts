@@ -432,7 +432,7 @@ function tabulateBetDayResult3(
   }
 
   // 的中率(パーセント)
-  const hittingRate = entryRaceCount > 0 ? hitting / entryRaceCount : 0;
+  const hittingRate = entryRaceCount > 0 ? hitting / entryRaceCount : null;
 
   // 回収金額率(パーセント)
   const collectRate = amountPurchased > 0 ? collect / amountPurchased : 0;
