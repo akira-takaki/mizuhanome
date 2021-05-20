@@ -586,8 +586,7 @@ export async function reportSummary(
     </head>
     <body>
     ${isSimStr}<br>
-    <canvas id="charts1" height="100"></canvas>
-    <canvas id="charts2" height="50"></canvas>
+    <canvas id="charts1"></canvas>
   `;
 
   let htmlSummaryTable = `
@@ -625,14 +624,45 @@ export async function reportSummary(
     const type = types[i];
 
     // グラフのデータ作成 的中率 三連単
+    // 確率が1番高い組番の的中率
     if (type === "3t") {
       for (let j = 0; j < betDayResults.length; j++) {
         const betDayResult = betDayResults[j];
-        hittingRate3t.push(
-          betDayResult.actual3t.hittingRate === null
-            ? -10
-            : betDayResult.actual3t.hittingRate * 100
-        );
+
+        // 1日のレース数
+        const raceCount = betDayResult.betRaceResults.length;
+
+        // 1日の的中数
+        let hitting = 0;
+
+        for (let k = 0; k < betDayResult.betRaceResults.length; k++) {
+          // 1レースごとの処理
+          const betRaceResult = betDayResult.betRaceResults[k];
+
+          // 1レースのすべての組番を確率が高い順にソート
+          const sortedBetResults = betRaceResult.betResults
+            .sort((e1, e2) => {
+              if (e1.percent > e2.percent) {
+                return 1;
+              } else if (e1.percent < e2.percent) {
+                return -1;
+              } else {
+                return 0;
+              }
+            })
+            .reverse();
+
+          if (sortedBetResults[0].odds !== null) {
+            // 確率が1番高い組番にオッズが設定されていたら的中したってこと
+            hitting++;
+          }
+        }
+
+        // 1日の的中率を計算
+        const hittingRate = hitting / raceCount;
+
+        // グラフのデータとして加工
+        hittingRate3t.push(hittingRate * 100);
       }
     }
 
@@ -649,6 +679,7 @@ export async function reportSummary(
             labels: ${JSON.stringify(labels)},
             datasets: [
               {
+                yAxisID: "y-money",
                 label: '差額',
                 backgroundColor: 'blue',
                 borderColor: 'blue',
@@ -656,22 +687,15 @@ export async function reportSummary(
                 fill: false
               },
               {
+                yAxisID: "y-money",
                 label: '資金',
                 backgroundColor: 'lightgreen',
                 borderColor: 'lightgreen',
                 data: ${JSON.stringify(capital)},
                 fill: true
-              }
-            ]
-          }
-        });
-        var ctx2 = document.getElementById("charts2");
-        var myChart2 = new Chart(ctx2, {
-          type: 'line',
-          data: {
-            labels: ${JSON.stringify(labels)},
-            datasets: [
+              },
               {
+                yAxisID: "y-percent",
                 label: '三連単的中率',
                 backgroundColor: 'red',
                 borderColor: 'red',
@@ -679,6 +703,22 @@ export async function reportSummary(
                 fill: false
               }
             ]
+          },
+          options: {
+            scales: {
+              yAxes: [{
+                id: "y-money",
+                position: "left"
+              }, {
+                id: "y-percent",
+                position: "right",
+                ticks: {
+                  min: -10,
+                  max: 100,
+                  stepSize: 10
+                }
+              }]
+            }
           }
         });
       </script>
