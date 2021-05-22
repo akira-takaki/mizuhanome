@@ -42,6 +42,8 @@ async function simulation2(
     const originalBetRaceResult = originalBetDayResult.betRaceResults[i];
     const simulationBetRaceResult: BetRaceResult = {
       dataid: originalBetRaceResult.dataid,
+      raceCardBody: originalBetRaceResult.raceCardBody,
+      beforeInfoBody: originalBetRaceResult.beforeInfoBody,
       betResults: [],
       isDecision: true,
     };

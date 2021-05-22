@@ -94,10 +94,19 @@ export async function destroy(session: string): Promise<void> {
  * 出走表
  */
 export interface RaceCard {
+  status: string;
+
+  body: RaceCardBody;
+}
+
+/**
+ * 出走表 body
+ */
+export interface RaceCardBody {
   /** データID */
   dataid: number;
 
-  /** 日付。年(4桁)-月(2桁)-日(2桁)。 */
+  /** 日付 年(4桁)-月(2桁)-日(2桁) */
   hd: string;
 
   /** 場所番号。1から24 */
@@ -106,27 +115,84 @@ export interface RaceCard {
   /** R番号 */
   rno: number;
 
+  /** 節の何日目か */
+  nj: string;
+
+  /** 節の開始日 年(4桁)-月(2桁)-日(2桁) */
+  kfrom: string;
+
+  /** 節の予定終了日 年(4桁)-月(2桁)-日(2桁) */
+  kto: string;
+
   /** 場所の名前 */
   jname: string;
+
+  /** その大会のグレード */
+  tbgradename: string;
 
   /** 大会名 */
   ktitle: string;
 
-  /** 場外締切時刻 */
+  /** ナイターレースフラグ */
+  nightflag: number;
+
+  /** レースグレード */
+  gradeicon: string;
+
+  /** レースタイトル */
+  rtitle: string;
+
+  /** 侵入固定フラグ */
+  koteiflag: number;
+
+  /** レース距離 */
+  distance: number;
+
+  /** 安定板フラグ */
+  anteibanflag: number;
+
+  /** 場外締切時刻 00:00:00 */
+  deadline: string;
+
+  /** 場外締切時刻 00:00:00 */
   deadlinegai: string;
 }
 
 /**
- * 出走表
+ * レース指定 出走表 取得
  */
 export async function getRaceCard(
   session: string,
+  dataid: number
+): Promise<RaceCard | undefined> {
+  const url = `${baseUrl}/data/racecard/${dataid}?session=${session}`;
+  let raceCard: RaceCard;
+  try {
+    const axiosResponse: AxiosResponse<RaceCard> = await axios.get<
+      RaceCard,
+      AxiosResponse<RaceCard>
+    >(url);
+    raceCard = axiosResponse.data;
+  } catch (err) {
+    logger.error("出走表 失敗");
+    logger.debug(err);
+    return undefined;
+  }
+
+  return raceCard;
+}
+
+/**
+ * 月指定 出走表 取得
+ */
+export async function getRaceCardBodies(
+  session: string,
   today: dayjs.Dayjs
-): Promise<RaceCard[] | undefined> {
+): Promise<RaceCardBody[] | undefined> {
   const yyyy = today.format("YYYY");
   const mm = today.format("MM");
   const url = `${baseUrl}/data/racecard/${yyyy}/${mm}?session=${session}`;
-  let raceCards: RaceCard[];
+  let raceCards: RaceCardBody[];
   try {
     const axiosResponse: AxiosResponse = await axios.get(url);
 
@@ -139,6 +205,68 @@ export async function getRaceCard(
   }
 
   return raceCards;
+}
+
+/**
+ * 直前情報
+ */
+export interface BeforeInfo {
+  status: string;
+
+  body: BeforeInfoBody;
+}
+
+/**
+ * 直前情報 body
+ */
+export interface BeforeInfoBody {
+  /** データID */
+  dataid: number;
+
+  /** いつ時点のデータか */
+  measuretime: string;
+
+  /** 天気 */
+  weather: string;
+
+  /** 波の高さ */
+  wave: string;
+
+  /** 風速 */
+  wind: string;
+
+  /** 気温 */
+  temp: string;
+
+  /** 水温 */
+  water: string;
+
+  /** 風向。00~16まで17パターン */
+  winddirec: string;
+}
+
+/**
+ * 直前情報
+ */
+export async function getBeforeInfo(
+  session: string,
+  dataid: number
+): Promise<BeforeInfo | undefined> {
+  const url = `${baseUrl}/data/beforeinfo/${dataid}?session=${session}`;
+  let beforeInfo: BeforeInfo;
+  try {
+    const axiosResponse: AxiosResponse<BeforeInfo> = await axios.get<
+      BeforeInfo,
+      AxiosResponse<BeforeInfo>
+    >(url);
+    beforeInfo = axiosResponse.data;
+  } catch (err) {
+    logger.error("直前情報 失敗");
+    logger.debug(err);
+    return undefined;
+  }
+
+  return beforeInfo;
 }
 
 /**

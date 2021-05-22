@@ -2,7 +2,8 @@
   "license": "MIT",
   "scripts": {
     "start": "yarn run ts-node -r tsconfig-paths/register src/main.ts",
-    "sim": "yarn run ts-node -r tsconfig-paths/register src/simulation.ts"
+    "sim": "yarn run ts-node -r tsconfig-paths/register src/simulation.ts",
+    "comp": "yarn run ts-node -r tsconfig-paths/register src/complementary.ts"
   },
   "dependencies": {
     "await-semaphore": "^0.1.3",

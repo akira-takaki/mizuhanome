@@ -3,7 +3,15 @@ import dayjs from "dayjs";
 import { Mutex } from "await-semaphore/index";
 
 import { Config } from "#/config";
-import { getRaceResult, Odds, PredictsAll, RaceResult, Ticket } from "#/api";
+import {
+  BeforeInfoBody,
+  getRaceResult,
+  Odds,
+  PredictsAll,
+  RaceCardBody,
+  RaceResult,
+  Ticket,
+} from "#/api";
 import { generateNumbersetInfoOrderByPercent, TicketType } from "#/myUtil";
 import path from "path";
 
@@ -48,6 +56,12 @@ export interface BetResult {
 export interface BetRaceResult {
   /** データID */
   dataid: number;
+
+  /** 出走表 */
+  raceCardBody: RaceCardBody;
+
+  /** 直前情報 */
+  beforeInfoBody: BeforeInfoBody;
 
   /** 賭け結果 */
   betResults: BetResult[];
@@ -601,6 +615,8 @@ export async function initBetDayResult(
  *
  * @param date 日付
  * @param dataid データID
+ * @param raceCardBody 出走表
+ * @param beforeInfoBody 直前情報
  * @param odds オッズ
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券
@@ -608,6 +624,8 @@ export async function initBetDayResult(
 export async function addBetRaceResult(
   date: dayjs.Dayjs,
   dataid: number,
+  raceCardBody: RaceCardBody,
+  beforeInfoBody: BeforeInfoBody,
   odds: Odds,
   predictsAll: PredictsAll,
   tickets: Ticket[]
@@ -669,6 +687,8 @@ export async function addBetRaceResult(
 
     betDayResult.betRaceResults.push({
       dataid: dataid,
+      raceCardBody: raceCardBody,
+      beforeInfoBody: beforeInfoBody,
       betResults: betResults,
       isDecision: false,
     });

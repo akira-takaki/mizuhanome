@@ -6,9 +6,10 @@ import {
   authenticate,
   autoBuy,
   destroy,
+  getBeforeInfo,
   getOdds,
   getPredictsAll,
-  getRaceCard,
+  getRaceCardBodies,
   Odds,
   PredictsAll,
   refresh,
@@ -461,23 +462,23 @@ export async function boatRace(): Promise<void> {
     }, 50 * 60 * 1000);
 
     // 出走表 (当月分)
-    const raceCardsForMonth = await getRaceCard(session, today);
-    if (raceCardsForMonth === undefined) {
+    const raceCardBodiesForMonth = await getRaceCardBodies(session, today);
+    if (raceCardBodiesForMonth === undefined) {
       return;
     }
 
     // 出走表を当日、今の時間より未来のものだけに絞る
     const yyyymmdd = today.format("YYYY-MM-DD");
     const hhmmss = today.format("HH:mm:ss");
-    const raceCardsForDay = raceCardsForMonth.filter(
+    const raceCardBodiesForDay = raceCardBodiesForMonth.filter(
       (value) => value.hd === yyyymmdd
     );
-    const filteredRaceCards = raceCardsForDay.filter(
+    const filteredRaceCardBodies = raceCardBodiesForDay.filter(
       (value) => value.deadlinegai > hhmmss
     );
 
     // 出走表を時間で昇順ソートする
-    const sortedRaceCards = filteredRaceCards.sort((e1, e2) => {
+    const sortedRaceCardBodies = filteredRaceCardBodies.sort((e1, e2) => {
       const key1: string = e1.hd + " " + e1.deadlinegai;
       const key2: string = e2.hd + " " + e2.deadlinegai;
       if (key1 > key2) {
@@ -493,7 +494,7 @@ export async function boatRace(): Promise<void> {
     const betDayResult = makeBetDayResult(
       today,
       config,
-      raceCardsForDay.length
+      raceCardBodiesForDay.length
     );
     await initBetDayResult(today, betDayResult);
 
@@ -511,17 +512,17 @@ export async function boatRace(): Promise<void> {
     }, 9000);
 
     // 各レースで舟券購入
-    for (let i = 0; i < sortedRaceCards.length; i++) {
-      const raceCard = sortedRaceCards[i];
+    for (let i = 0; i < sortedRaceCardBodies.length; i++) {
+      const raceCardBody = sortedRaceCardBodies[i];
       logger.debug(
-        `title : ${raceCard.jname}_${raceCard.ktitle}_R${raceCard.rno}`
+        `title : ${raceCardBody.jname}_${raceCardBody.ktitle}_R${raceCardBody.rno}`
       );
       logger.debug(
-        `dataid=${raceCard.dataid}, jcd=${raceCard.jcd}, hd=${raceCard.hd}, deadlinegai=${raceCard.deadlinegai}`
+        `dataid=${raceCardBody.dataid}, jcd=${raceCardBody.jcd}, hd=${raceCardBody.hd}, deadlinegai=${raceCardBody.deadlinegai}`
       );
 
       // 場外締切時刻の30秒前の時間を計算
-      const deadLineGaiStr = `${raceCard.hd} ${raceCard.deadlinegai}`;
+      const deadLineGaiStr = `${raceCardBody.hd} ${raceCardBody.deadlinegai}`;
       const dateFormat = "YYYY-MM-DD HH:mm:ss";
       const deadLineGai = dayjs(deadLineGaiStr, dateFormat);
       const deadLineGaiMinus30Second = deadLineGai.add(-30, "second");
@@ -553,17 +554,28 @@ export async function boatRace(): Promise<void> {
         continue;
       }
 
+      // 直前情報取得
+      const beforeInfo = await getBeforeInfo(session, raceCardBody.dataid);
+      if (beforeInfo === undefined || beforeInfo.status !== "200") {
+        logger.trace("直前情報取得 NG");
+        continue;
+      } else {
+        logger.trace("直前情報取得 OK");
+      }
+
       // オッズ取得
-      const odds = await getOdds(session, raceCard.dataid);
+      const odds = await getOdds(session, raceCardBody.dataid);
       if (odds === undefined) {
+        logger.trace("オッズ取得 NG");
         continue;
       } else {
         logger.trace("オッズ取得 OK");
       }
 
       // 直前予想全確率取得
-      const predictsAll = await getPredictsAll(session, raceCard.dataid);
+      const predictsAll = await getPredictsAll(session, raceCardBody.dataid);
       if (predictsAll === undefined) {
+        logger.trace("直前予想全確率取得 NG");
         continue;
       }
 
@@ -575,7 +587,7 @@ export async function boatRace(): Promise<void> {
       // 購入する三連単の舟券を追加する
       await addTicket3t(
         yyyymmdd,
-        raceCard.dataid,
+        raceCardBody.dataid,
         powers,
         odds,
         predictsAll,
@@ -588,7 +600,7 @@ export async function boatRace(): Promise<void> {
       // 購入する二連単の舟券を追加する
       // await addTicket2t(
       //   yyyymmdd,
-      //   raceCard.dataid,
+      //   raceCardBody.dataid,
       //   powers,
       //   odds,
       //   predictsAll,
@@ -602,7 +614,9 @@ export async function boatRace(): Promise<void> {
       // シミュレーション用に賭けてない組番情報も保存する
       await addBetRaceResult(
         today,
-        raceCard.dataid,
+        raceCardBody.dataid,
+        raceCardBody,
+        beforeInfo.body,
         odds,
         predictsAll,
         tickets
@@ -612,7 +626,7 @@ export async function boatRace(): Promise<void> {
         logger.debug(`tickets=${util.inspect(tickets, { depth: null })}`);
 
         // 舟券購入
-        await autoBuy(session, raceCard.dataid, tickets);
+        await autoBuy(session, raceCardBody.dataid, tickets);
       }
     }
 
