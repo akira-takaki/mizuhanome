@@ -300,46 +300,6 @@ export async function getOdds(
 }
 
 /**
- * 直前予想トップ6
- */
-export interface PredictsTop6 {
-  status: string;
-  dataid: string;
-  // eslint-disable-next-line camelcase
-  player_powers: number[];
-  top6: {
-    "3t": string[];
-    "3f": string[];
-    "2t": string[];
-    "2f": string[];
-  };
-}
-
-/**
- * 直前予想トップ6取得
- */
-export async function getPredictsTop6(
-  session: string,
-  dataid: number
-): Promise<PredictsTop6 | undefined> {
-  const url = `${baseUrl}/predicts/${dataid}/top6?session=${session}&type=2`;
-  let predicts: PredictsTop6;
-  try {
-    const axiosResponse: AxiosResponse<PredictsTop6> = await axios.get<
-      PredictsTop6,
-      AxiosResponse<PredictsTop6>
-    >(url);
-    predicts = axiosResponse.data;
-  } catch (err) {
-    // 異常レスポンスのときは無視
-    logger.debug("直前予想なし");
-    return undefined;
-  }
-
-  return predicts;
-}
-
-/**
  * 直前予想全確率
  */
 export interface PredictsAll {
