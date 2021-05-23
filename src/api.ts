@@ -230,7 +230,7 @@ export interface BeforeInfoBody {
   weather: string;
 
   /** 波の高さ */
-  wave: string;
+  wave: string | null;
 
   /** 風速 */
   wind: string;
