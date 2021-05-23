@@ -1,5 +1,6 @@
 import fs from "fs-extra";
 import dayjs from "dayjs";
+import path from "path";
 import { Mutex } from "await-semaphore/index";
 
 import { Config } from "#/config";
@@ -13,7 +14,6 @@ import {
   Ticket,
 } from "#/api";
 import { generateNumbersetInfoOrderByPercent, TicketType } from "#/myUtil";
-import path from "path";
 
 /**
  * 賭け結果
@@ -614,7 +614,6 @@ export async function initBetDayResult(
  * シミュレーション用に賭けてない組番情報も保存する
  *
  * @param date 日付
- * @param dataid データID
  * @param raceCardBody 出走表
  * @param beforeInfoBody 直前情報
  * @param odds オッズ
@@ -623,7 +622,6 @@ export async function initBetDayResult(
  */
 export async function addBetRaceResult(
   date: dayjs.Dayjs,
-  dataid: number,
   raceCardBody: RaceCardBody,
   beforeInfoBody: BeforeInfoBody,
   odds: Odds,
@@ -686,7 +684,7 @@ export async function addBetRaceResult(
     }
 
     betDayResult.betRaceResults.push({
-      dataid: dataid,
+      dataid: raceCardBody.dataid,
       raceCardBody: raceCardBody,
       beforeInfoBody: beforeInfoBody,
       betResults: betResults,

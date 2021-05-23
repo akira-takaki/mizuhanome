@@ -17,7 +17,7 @@ import { Ticket } from "#/api";
 import {
   addTicket2f2,
   addTicket2t2Cocomo,
-  addTicket3f2,
+  addTicket3f2Cocomo,
   addTicket3t2Cocomo,
 } from "#/boatRace";
 import { initCocomo, updateCocomoSim } from "#/cocomo";
@@ -85,7 +85,8 @@ async function simulation2(
     };
     await addTicket3t2Cocomo(
       yyyymmdd,
-      simulationBetRaceResult.dataid,
+      simulationBetRaceResult.raceCardBody,
+      simulationBetRaceResult.beforeInfoBody,
       powers,
       numbersetInfos3t,
       ticket3t,
@@ -97,7 +98,14 @@ async function simulation2(
       type: "3f",
       numbers: [],
     };
-    // addTicket3f2(powers, numbersetInfos3f, ticket3f);
+    // await addTicket3f2Cocomo(
+    //   yyyymmdd,
+    //   simulationBetRaceResult.dataid,
+    //   powers,
+    //   numbersetInfos3f,
+    //   ticket3f,
+    //   true
+    // );
 
     // 購入する二連単の舟券を追加する
     const ticket2t: Ticket = {

@@ -5,6 +5,7 @@ import * as util from "util";
 import {
   authenticate,
   autoBuy,
+  BeforeInfoBody,
   destroy,
   getBeforeInfo,
   getOdds,
@@ -12,6 +13,7 @@ import {
   getRaceCardBodies,
   Odds,
   PredictsAll,
+  RaceCardBody,
   refresh,
   setupApi,
   Ticket,
@@ -49,7 +51,8 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
  * ココモ法
  *
  * @param yyyymmdd 当日
- * @param dataid データID
+ * @param raceCardBody 出走表 body
+ * @param beforeInfoBody 直前情報 body
  * @param powers プレイヤーのパワー配列
  * @param numbersetInfos 1レースの 3t 組番情報
  * @param ticket 舟券
@@ -57,26 +60,18 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
  */
 export async function addTicket3t2Cocomo(
   yyyymmdd: string,
-  dataid: number,
+  raceCardBody: RaceCardBody,
+  beforeInfoBody: BeforeInfoBody,
   powers: Power[],
   numbersetInfos: NumbersetInfo[],
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
-  // 確率の閾値 20%
-  const percent = 0.2;
+  // 舟券を購入する場所番号
+  const jcdArray = [8, 11, 12, 13, 21, 24];
 
-  const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.percent >= percent
-  );
-  if (
-    filteredNumbersetInfos.length >= 2 ||
-    filteredNumbersetInfos.length <= 0
-  ) {
-    // 確率の閾値以上のものが複数の場合、
-    // または、
-    // 確率の閾値以上のものが無い場合、
-    // 賭けない
+  if (!jcdArray.includes(raceCardBody.jcd)) {
+    // 舟券を購入する場所番号 に含まれていなければ賭けない
     return;
   }
 
@@ -84,16 +79,15 @@ export async function addTicket3t2Cocomo(
   const sortedNumbersetInfos = numbersetInfos
     .sort(numbersetInfoOrderByPercent)
     .reverse();
-  const top1NumbersetInfo = sortedNumbersetInfos[0];
-  const top2NumbersetInfo = sortedNumbersetInfos[1];
-  if (top1NumbersetInfo.percent - top2NumbersetInfo.percent < 0.04) {
-    // 確率が1番目に大きいものと、
-    // 2番目に大きいものとの差が 4% より小さい場合、
-    // 賭けない
+
+  const numbersetInfo = sortedNumbersetInfos[0];
+
+  // 確率の閾値 17%
+  const percent = 0.17;
+  if (numbersetInfo.percent < percent) {
+    // 確率の閾値より低い場合賭けない
     return;
   }
-
-  const numbersetInfo = filteredNumbersetInfos[0];
 
   if (numbersetInfo.odds === null || numbersetInfo.odds < 2.8) {
     // オッズが 指定倍 より低いものは、賭けない
@@ -105,11 +99,11 @@ export async function addTicket3t2Cocomo(
   // 賭け金
   const bet = await calcCocomoBet(
     yyyymmdd,
-    dataid,
+    raceCardBody.dataid,
     numbersetInfo.numberset,
     "3t",
-    1000,
-    15,
+    300,
+    12,
     isSim
   );
   if (bet !== null) {
@@ -124,7 +118,8 @@ export async function addTicket3t2Cocomo(
  * 購入する三連単の舟券を追加する
  *
  * @param yyyymmdd 当日
- * @param dataid データID
+ * @param raceCardBody 出走表 body
+ * @param beforeInfoBody 直前情報 body
  * @param powers プレイヤーのパワー配列
  * @param odds オッズ
  * @param predictsAll 直前予想全確率
@@ -133,7 +128,8 @@ export async function addTicket3t2Cocomo(
  */
 async function addTicket3t(
   yyyymmdd: string,
-  dataid: number,
+  raceCardBody: RaceCardBody,
+  beforeInfoBody: BeforeInfoBody,
   powers: Power[],
   odds: Odds,
   predictsAll: PredictsAll,
@@ -152,7 +148,8 @@ async function addTicket3t(
   // 購入する三連単の舟券を追加する
   await addTicket3t2Cocomo(
     yyyymmdd,
-    dataid,
+    raceCardBody,
+    beforeInfoBody,
     powers,
     numbersetInfos,
     ticket,
@@ -166,40 +163,56 @@ async function addTicket3t(
 
 /**
  * 購入する三連複の舟券を追加する
+ * 確率が一番高いものを1点賭ける
+ * ココモ法
  *
+ * @param yyyymmdd 当日
+ * @param dataid データID
  * @param powers プレイヤーのパワー配列
  * @param numbersetInfos 1レースの 3f 組番情報
  * @param ticket 舟券
+ * @param isSim
  */
-export function addTicket3f2(
+export async function addTicket3f2Cocomo(
+  yyyymmdd: string,
+  dataid: number,
   powers: Power[],
   numbersetInfos: NumbersetInfo[],
-  ticket: Ticket
-): void {
-  for (let i = 0; i < powers.length; i++) {
-    if (powers[i].numberStr === "1" && powers[i].power >= 70) {
-      // 1号艇がパワー70以上ならばこのレースに賭けない
-      return;
-    }
-  }
+  ticket: Ticket,
+  isSim: boolean
+): Promise<void> {
+  // 確率が大きい順にソート
+  const sortedNumbersetInfos = numbersetInfos
+    .sort(numbersetInfoOrderByPercent)
+    .reverse();
 
-  // 期待値が thresholdExpectedValue 以上のものに絞り込む
-  const thresholdExpectedValue = 1.5;
-  const filteredNumbersetInfos = numbersetInfos.filter(
-    (value) => value.expectedValue >= thresholdExpectedValue
-  );
-  if (filteredNumbersetInfos.length <= 0) {
+  const numbersetInfo = sortedNumbersetInfos[0];
+
+  // 確率の閾値
+  const percent = 0.39;
+  if (numbersetInfo.percent < percent) {
+    // 確率の閾値より低い場合賭けない
     return;
   }
 
-  const defaultBet = 100;
+  if (numbersetInfo.odds === null || numbersetInfo.odds < 2.8) {
+    // オッズが 指定倍 より低いものは、賭けない
+    // ココモ法としては 2.6倍 が最低ラインだが、
+    // レース前オッズは下がる可能性があるため 指定倍 で判断する。
+    return;
+  }
 
-  for (let i = 0; i < filteredNumbersetInfos.length; i++) {
-    const numbersetInfo = filteredNumbersetInfos[i];
-
-    // 賭け金
-    const bet = roundBet(defaultBet * numbersetInfo.expectedValue);
-
+  // 賭け金
+  const bet = await calcCocomoBet(
+    yyyymmdd,
+    dataid,
+    numbersetInfo.numberset,
+    "3f",
+    1000,
+    15,
+    isSim
+  );
+  if (bet !== null) {
     ticket.numbers.push({
       numberset: numbersetInfo.numberset,
       bet: bet,
@@ -210,17 +223,23 @@ export function addTicket3f2(
 /**
  * 購入する三連複の舟券を追加する
  *
+ * @param yyyymmdd 当日
+ * @param dataid データID
  * @param powers プレイヤーのパワー配列
  * @param odds オッズ
  * @param predictsAll 直前予想全確率
  * @param tickets 舟券配列
+ * @param isSim
  */
-function addTicket3f(
+async function addTicket3f(
+  yyyymmdd: string,
+  dataid: number,
   powers: Power[],
   odds: Odds,
   predictsAll: PredictsAll,
-  tickets: Ticket[]
-): void {
+  tickets: Ticket[],
+  isSim = false
+): Promise<void> {
   const type: TicketType = "3f";
   const ticket: Ticket = {
     type: type,
@@ -231,7 +250,14 @@ function addTicket3f(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する三連複の舟券を追加する
-  addTicket3f2(powers, numbersetInfos, ticket);
+  await addTicket3f2Cocomo(
+    yyyymmdd,
+    dataid,
+    powers,
+    numbersetInfos,
+    ticket,
+    isSim
+  );
 
   if (ticket.numbers.length > 0) {
     tickets.push(ticket);
@@ -587,7 +613,8 @@ export async function boatRace(): Promise<void> {
       // 購入する三連単の舟券を追加する
       await addTicket3t(
         yyyymmdd,
-        raceCardBody.dataid,
+        raceCardBody,
+        beforeInfo.body,
         powers,
         odds,
         predictsAll,
@@ -595,7 +622,14 @@ export async function boatRace(): Promise<void> {
       );
 
       // 購入する三連複の舟券を追加する
-      // addTicket3f(powers, odds, predictsAll, tickets);
+      // await addTicket3f(
+      //   yyyymmdd,
+      //   raceCardBody.dataid,
+      //   powers,
+      //   odds,
+      //   predictsAll,
+      //   tickets
+      // );
 
       // 購入する二連単の舟券を追加する
       // await addTicket2t(
@@ -614,7 +648,6 @@ export async function boatRace(): Promise<void> {
       // シミュレーション用に賭けてない組番情報も保存する
       await addBetRaceResult(
         today,
-        raceCardBody.dataid,
         raceCardBody,
         beforeInfo.body,
         odds,

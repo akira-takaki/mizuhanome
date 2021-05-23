@@ -15,7 +15,6 @@ import {
   setupApi,
 } from "#/api";
 import { sleep } from "#/myUtil";
-import * as util from "util";
 
 /**
  * 補完処理 日別
@@ -41,7 +40,6 @@ async function complementaryOfDay(
       if (raceCard === undefined || raceCard.status !== "200") {
         console.error("can't get RaceCard.");
       } else {
-        // console.info("raceCard=" + util.inspect(raceCard));
         betRaceResult.raceCardBody = raceCard.body;
         isUpdate = true;
       }
@@ -54,7 +52,6 @@ async function complementaryOfDay(
       if (beforeInfo === undefined || beforeInfo.status !== "200") {
         console.error("can't get BeforeInfo.");
       } else {
-        // console.info("beforeInfo=" + util.inspect(beforeInfo));
         betRaceResult.beforeInfoBody = beforeInfo.body;
         isUpdate = true;
       }
