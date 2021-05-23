@@ -249,9 +249,13 @@ export interface BeforeInfoBody {
  * 直前情報
  */
 export async function getBeforeInfo(
-  session: string,
+  session: string | undefined,
   dataid: number
 ): Promise<BeforeInfo | undefined> {
+  if (session === undefined) {
+    return undefined;
+  }
+
   const url = `${baseUrl}/data/beforeinfo/${dataid}?session=${session}`;
   let beforeInfo: BeforeInfo;
   try {
