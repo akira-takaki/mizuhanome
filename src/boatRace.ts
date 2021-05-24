@@ -82,8 +82,8 @@ export async function addTicket3t2Cocomo(
 
   const numbersetInfo = sortedNumbersetInfos[0];
 
-  // 確率の閾値 17%
-  const percent = 0.17;
+  // 確率の閾値 18%
+  const percent = 0.18;
   if (numbersetInfo.percent < percent) {
     // 確率の閾値より低い場合賭けない
     return;
@@ -102,7 +102,7 @@ export async function addTicket3t2Cocomo(
     raceCardBody.dataid,
     numbersetInfo.numberset,
     "3t",
-    300,
+    500,
     12,
     isSim
   );
