@@ -104,13 +104,13 @@ export interface RaceCard {
  */
 export interface RaceCardBody {
   /** データID */
-  dataid: number;
+  dataid: number | string;
 
   /** 日付 年(4桁)-月(2桁)-日(2桁) */
   hd: string;
 
   /** 場所番号。1から24 */
-  jcd: number;
+  jcd: number | string;
 
   /** R番号 */
   rno: number;

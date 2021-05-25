@@ -578,7 +578,7 @@ export function calcHittingRate(
   // 場所番号 で絞り込み
   if (jcdArray !== undefined) {
     filteredBetRaceResults = filteredBetRaceResults.filter((value) =>
-      jcdArray.includes(value.raceCardBody.jcd)
+      jcdArray.includes(parseInt(value.raceCardBody.jcd.toString()))
     );
   }
 

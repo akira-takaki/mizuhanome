@@ -10,7 +10,7 @@ interface BetHistory {
   yyyymmdd: string;
 
   /** データID */
-  dataid: number;
+  dataid: number | string;
 
   /** 組番 */
   numberset: string;
@@ -225,14 +225,22 @@ export async function updateCocomo(
 
     if (betHistory !== null) {
       // 結果を取得
-      const raceResult = await getRaceResult(session, betHistory.dataid);
+      const raceResult = await getRaceResult(
+        session,
+        parseInt(betHistory.dataid.toString())
+      );
       if (raceResult !== undefined) {
         const oddsStr: string | null =
           raceResult[`odds_${type}${betHistory.numberset}`];
         const odds: number | null =
           oddsStr === null ? null : parseInt(oddsStr, 10) / 100;
 
-        updateCocomo2(cocomo, betHistory.dataid, betHistory.numberset, odds);
+        updateCocomo2(
+          cocomo,
+          parseInt(betHistory.dataid.toString()),
+          betHistory.numberset,
+          odds
+        );
 
         writeCocomo(cocomo, type, isSim);
       }

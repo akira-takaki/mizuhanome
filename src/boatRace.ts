@@ -70,7 +70,7 @@ export async function addTicket3t2Cocomo(
   // 舟券を購入する場所番号
   const jcdArray = [8, 11, 12, 13, 21, 24];
 
-  if (!jcdArray.includes(raceCardBody.jcd)) {
+  if (!jcdArray.includes(parseInt(raceCardBody.jcd.toString()))) {
     // 舟券を購入する場所番号 に含まれていなければ賭けない
     return;
   }
@@ -99,7 +99,7 @@ export async function addTicket3t2Cocomo(
   // 賭け金
   const bet = await calcCocomoBet(
     yyyymmdd,
-    raceCardBody.dataid,
+    parseInt(raceCardBody.dataid.toString()),
     numbersetInfo.numberset,
     "3t",
     500,
@@ -581,7 +581,10 @@ export async function boatRace(): Promise<void> {
       }
 
       // 直前情報取得
-      const beforeInfo = await getBeforeInfo(session, raceCardBody.dataid);
+      const beforeInfo = await getBeforeInfo(
+        session,
+        parseInt(raceCardBody.dataid.toString())
+      );
       if (beforeInfo === undefined || beforeInfo.status !== "200") {
         logger.trace("直前情報取得 NG");
         continue;
@@ -590,7 +593,10 @@ export async function boatRace(): Promise<void> {
       }
 
       // オッズ取得
-      const odds = await getOdds(session, raceCardBody.dataid);
+      const odds = await getOdds(
+        session,
+        parseInt(raceCardBody.dataid.toString())
+      );
       if (odds === undefined) {
         logger.trace("オッズ取得 NG");
         continue;
@@ -599,7 +605,10 @@ export async function boatRace(): Promise<void> {
       }
 
       // 直前予想全確率取得
-      const predictsAll = await getPredictsAll(session, raceCardBody.dataid);
+      const predictsAll = await getPredictsAll(
+        session,
+        parseInt(raceCardBody.dataid.toString())
+      );
       if (predictsAll === undefined) {
         logger.trace("直前予想全確率取得 NG");
         continue;
@@ -659,7 +668,11 @@ export async function boatRace(): Promise<void> {
         logger.debug(`tickets=${util.inspect(tickets, { depth: null })}`);
 
         // 舟券購入
-        await autoBuy(session, raceCardBody.dataid, tickets);
+        await autoBuy(
+          session,
+          parseInt(raceCardBody.dataid.toString()),
+          tickets
+        );
       }
     }
 

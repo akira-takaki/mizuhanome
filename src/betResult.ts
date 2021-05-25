@@ -684,7 +684,7 @@ export async function addBetRaceResult(
     }
 
     betDayResult.betRaceResults.push({
-      dataid: raceCardBody.dataid,
+      dataid: parseInt(raceCardBody.dataid.toString()),
       raceCardBody: raceCardBody,
       beforeInfoBody: beforeInfoBody,
       betResults: betResults,
