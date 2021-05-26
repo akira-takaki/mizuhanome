@@ -159,6 +159,32 @@ export interface RaceCardBody {
 }
 
 /**
+ * APIで読み込んだ値の必要なものだけをセットし直す
+ */
+function renewRaceCardBody(raceCardBody: RaceCardBody): RaceCardBody {
+  return {
+    dataid: raceCardBody.dataid,
+    hd: raceCardBody.hd,
+    jcd: raceCardBody.jcd,
+    rno: raceCardBody.rno,
+    nj: raceCardBody.nj,
+    kfrom: raceCardBody.kfrom,
+    kto: raceCardBody.kto,
+    jname: raceCardBody.jname,
+    tbgradename: raceCardBody.tbgradename,
+    ktitle: raceCardBody.ktitle,
+    nightflag: raceCardBody.nightflag,
+    gradeicon: raceCardBody.gradeicon,
+    rtitle: raceCardBody.rtitle,
+    koteiflag: raceCardBody.koteiflag,
+    distance: raceCardBody.distance,
+    anteibanflag: raceCardBody.anteibanflag,
+    deadline: raceCardBody.deadline,
+    deadlinegai: raceCardBody.deadlinegai,
+  };
+}
+
+/**
  * レース指定 出走表 取得
  */
 export async function getRaceCard(
@@ -179,7 +205,10 @@ export async function getRaceCard(
     return undefined;
   }
 
-  return raceCard;
+  return {
+    status: raceCard.status,
+    body: renewRaceCardBody(raceCard.body),
+  };
 }
 
 /**
@@ -204,7 +233,7 @@ export async function getRaceCardBodies(
     return undefined;
   }
 
-  return raceCards;
+  return raceCards.map((value) => renewRaceCardBody(value));
 }
 
 /**
@@ -246,6 +275,22 @@ export interface BeforeInfoBody {
 }
 
 /**
+ * APIで読み込んだ値の必要なものだけをセットし直す
+ */
+function renewBeforeInfoBody(beforeInfoBody: BeforeInfoBody): BeforeInfoBody {
+  return {
+    dataid: beforeInfoBody.dataid,
+    measuretime: beforeInfoBody.measuretime,
+    weather: beforeInfoBody.weather,
+    wave: beforeInfoBody.wave,
+    wind: beforeInfoBody.wind,
+    temp: beforeInfoBody.temp,
+    water: beforeInfoBody.water,
+    winddirec: beforeInfoBody.winddirec,
+  };
+}
+
+/**
  * 直前情報
  */
 export async function getBeforeInfo(
@@ -270,7 +315,10 @@ export async function getBeforeInfo(
     return undefined;
   }
 
-  return beforeInfo;
+  return {
+    status: beforeInfo.status,
+    body: renewBeforeInfoBody(beforeInfo.body),
+  };
 }
 
 /**
