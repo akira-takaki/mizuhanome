@@ -663,7 +663,6 @@ export async function reportSummary(
   const hittingRate2fArray: (number | null)[] = [];
   const hittingRate3tWave1Array: (number | null)[] = [];
   const hittingRate3tWave2Array: (number | null)[] = [];
-  const hittingRate3tWave3Array: (number | null)[] = [];
   const hittingRate3tJcd: (number | null)[][] = [];
   for (let i = 1; i <= 24; i++) {
     hittingRate3tJcd[i] = [];
@@ -709,8 +708,7 @@ export async function reportSummary(
     hittingRate2tArray.push(calcHittingRate(betDayResult, "2t"));
     hittingRate2fArray.push(calcHittingRate(betDayResult, "2f"));
     hittingRate3tWave1Array.push(calcHittingRate(betDayResult, "3t", 0, 9));
-    hittingRate3tWave2Array.push(calcHittingRate(betDayResult, "3t", 10, 19));
-    hittingRate3tWave3Array.push(calcHittingRate(betDayResult, "3t", 20, 99));
+    hittingRate3tWave2Array.push(calcHittingRate(betDayResult, "3t", 10, 99));
     for (let j = 1; j <= 24; j++) {
       hittingRate3tJcd[j].push(
         calcHittingRate(betDayResult, "3t", undefined, undefined, [j])
@@ -831,7 +829,7 @@ export async function reportSummary(
       <th>jcd</th>
   `;
   for (let i = 1; i <= 24; i++) {
-    charts4TableHead += `<td>${i}</td>`;
+    charts4TableHead += `<th>${i}</th>`;
   }
   charts4TableHead += "</tr>";
   let charts4TableRow = `
@@ -956,17 +954,10 @@ export async function reportSummary(
                 fill: false
               },
               {
-                label: '三連単 波10-19 的中率',
+                label: '三連単 波10- 的中率',
                 backgroundColor: 'aquamarine',
                 borderColor: 'aquamarine',
                 data: ${JSON.stringify(hittingRate3tWave2Array)},
-                fill: false
-              },
-              {
-                label: '三連単 波20- 的中率',
-                backgroundColor: 'lawngreen',
-                borderColor: 'lawngreen',
-                data: ${JSON.stringify(hittingRate3tWave3Array)},
                 fill: false
               }
             ]
