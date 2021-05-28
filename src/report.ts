@@ -783,7 +783,6 @@ export async function reportSummary(
     }
     charts4Body += `
               {
-                yAxisID: "y-percent",
                 label: '三連単的中率(jcd=${i})',
                 backgroundColor: '${charts4Colors[i]}',
                 borderColor: '${charts4Colors[i]}',
@@ -795,7 +794,6 @@ export async function reportSummary(
   }
   charts4Body += `
               , {
-                yAxisID: "y-percent",
                 label: '三連単的中率(jcd=8,11,12,13,21,24)',
                 backgroundColor: 'blue',
                 borderColor: 'blue',
@@ -805,7 +803,6 @@ export async function reportSummary(
     `;
   charts4Body += `
               , {
-                yAxisID: "y-percent",
                 label: '三連単的中率',
                 backgroundColor: 'red',
                 borderColor: 'red',
@@ -818,11 +815,10 @@ export async function reportSummary(
           },
           options: {
             scales: {
-              yAxes: [{
-                id: "y-percent",
-                position: "left",
-                ticks: { min: 0, max: 100, stepSize: 10 }
-              }]
+              y: {
+                min: 0,
+                max: 100
+              }
             }
           }
         });
@@ -876,7 +872,6 @@ export async function reportSummary(
             labels: ${JSON.stringify(labels)},
             datasets: [
               {
-                yAxisID: "y-money",
                 label: '差額',
                 backgroundColor: 'blue',
                 borderColor: 'blue',
@@ -884,7 +879,6 @@ export async function reportSummary(
                 fill: false
               },
               {
-                yAxisID: "y-money",
                 label: '資金',
                 backgroundColor: 'lightgreen',
                 borderColor: 'lightgreen',
@@ -892,14 +886,6 @@ export async function reportSummary(
                 fill: true
               }
             ]
-          },
-          options: {
-            scales: {
-              yAxes: [{
-                id: "y-money",
-                position: "left"
-              }]
-            }
           }
         });
 
@@ -910,7 +896,6 @@ export async function reportSummary(
             labels: ${JSON.stringify(labels)},
             datasets: [
               {
-                yAxisID: "y-percent",
                 label: '三連単的中率',
                 backgroundColor: 'red',
                 borderColor: 'red',
@@ -918,7 +903,6 @@ export async function reportSummary(
                 fill: false
               },
               {
-                yAxisID: "y-percent",
                 label: '三連複的中率',
                 backgroundColor: 'green',
                 borderColor: 'green',
@@ -926,7 +910,6 @@ export async function reportSummary(
                 fill: false
               },
               {
-                yAxisID: "y-percent",
                 label: '二連単的中率',
                 backgroundColor: 'blue',
                 borderColor: 'blue',
@@ -934,7 +917,6 @@ export async function reportSummary(
                 fill: false
               },
               {
-                yAxisID: "y-percent",
                 label: '二連複的中率',
                 backgroundColor: 'orange',
                 borderColor: 'orange',
@@ -945,11 +927,10 @@ export async function reportSummary(
           },
           options: {
             scales: {
-              yAxes: [{
-                id: "y-percent",
-                position: "left",
-                ticks: { min: 0, max: 100, stepSize: 10 }
-              }]
+              y: {
+                min : 0,
+                max : 100
+              }
             }
           }
         });
@@ -961,7 +942,6 @@ export async function reportSummary(
             labels: ${JSON.stringify(labels)},
             datasets: [
               {
-                yAxisID: "y-percent",
                 label: '三連単的中率',
                 backgroundColor: 'green',
                 borderColor: 'green',
@@ -969,7 +949,6 @@ export async function reportSummary(
                 fill: false
               },
               {
-                yAxisID: "y-percent",
                 label: '三連単 波0-9 的中率',
                 backgroundColor: 'mediumseagreen',
                 borderColor: 'mediumseagreen',
@@ -977,7 +956,6 @@ export async function reportSummary(
                 fill: false
               },
               {
-                yAxisID: "y-percent",
                 label: '三連単 波10-19 的中率',
                 backgroundColor: 'aquamarine',
                 borderColor: 'aquamarine',
@@ -985,7 +963,6 @@ export async function reportSummary(
                 fill: false
               },
               {
-                yAxisID: "y-percent",
                 label: '三連単 波20- 的中率',
                 backgroundColor: 'lawngreen',
                 borderColor: 'lawngreen',
@@ -996,11 +973,10 @@ export async function reportSummary(
           },
           options: {
             scales: {
-              yAxes: [{
-                id: "y-percent",
-                position: "left",
-                ticks: { min: 0, max: 100, stepSize: 10 }
-              }]
+              y: {
+                min: 0,
+                max: 100
+              }
             }
           }
         });
