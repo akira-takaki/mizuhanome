@@ -8,7 +8,7 @@ export type TicketType = "3t" | "3f" | "2t" | "2f";
  *
  * @param millisecond
  */
-export async function sleep(millisecond: number): Promise<void> {
+export async function sleep(millisecond: number): Promise<unknown> {
   return new Promise((resolve) => setTimeout(resolve, millisecond));
 }
 

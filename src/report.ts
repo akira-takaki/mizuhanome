@@ -717,14 +717,13 @@ export async function reportSummary(
       );
     }
     hittingRate3tJcdComposite.push(
-      calcHittingRate(betDayResult, "3t", undefined, undefined, [
-        8,
-        11,
-        12,
-        13,
-        21,
-        24,
-      ])
+      calcHittingRate(
+        betDayResult,
+        "3t",
+        undefined,
+        undefined,
+        [8, 11, 12, 13, 21, 24]
+      )
     );
 
     // 日別のまとめ行
