@@ -707,8 +707,8 @@ export async function reportSummary(
     hittingRate3fArray.push(calcHittingRate(betDayResult, "3f"));
     hittingRate2tArray.push(calcHittingRate(betDayResult, "2t"));
     hittingRate2fArray.push(calcHittingRate(betDayResult, "2f"));
-    hittingRate3tWave1Array.push(calcHittingRate(betDayResult, "3t", 0, 9));
-    hittingRate3tWave2Array.push(calcHittingRate(betDayResult, "3t", 10, 99));
+    hittingRate3tWave1Array.push(calcHittingRate(betDayResult, "3t", 0, 10));
+    hittingRate3tWave2Array.push(calcHittingRate(betDayResult, "3t", 11, 99));
     for (let j = 1; j <= 24; j++) {
       hittingRate3tJcd[j].push(
         calcHittingRate(betDayResult, "3t", undefined, undefined, [j])
@@ -947,14 +947,14 @@ export async function reportSummary(
                 fill: false
               },
               {
-                label: '三連単 波0-9 的中率',
+                label: '三連単 波0-10 的中率',
                 backgroundColor: 'mediumseagreen',
                 borderColor: 'mediumseagreen',
                 data: ${JSON.stringify(hittingRate3tWave1Array)},
                 fill: false
               },
               {
-                label: '三連単 波10- 的中率',
+                label: '三連単 波11- 的中率',
                 backgroundColor: 'aquamarine',
                 borderColor: 'aquamarine',
                 data: ${JSON.stringify(hittingRate3tWave2Array)},
