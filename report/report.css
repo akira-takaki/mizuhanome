@@ -216,3 +216,16 @@ td.difference-minus {
     color: red;
     background-color: white;
 }
+
+td.zero-count {
+    text-align: right;
+}
+
+td.zero-percent {
+    text-align: right;
+}
+
+td.zero-percent-pickup {
+    text-align: right;
+    background-color: yellow;
+}

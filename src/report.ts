@@ -832,7 +832,7 @@ export async function reportSummary(
   `;
   for (let i = 1; i <= 24; i++) {
     const zeroCount = hittingRate3tJcd[i].filter((value) => value === 0).length;
-    charts4TableRow += `<td>${zeroCount}</td>`;
+    charts4TableRow += `<td class="zero-count">${zeroCount}</td>`;
   }
   charts4TableRow += `
     </tr>
@@ -844,7 +844,12 @@ export async function reportSummary(
     const allCount = hittingRate3tJcd[i].filter(
       (value) => value !== null && value >= 0
     ).length;
-    charts4TableRow += `<td>${Math.round((zeroCount / allCount) * 100)}</td>`;
+    const zeroPercent = Math.round((zeroCount / allCount) * 100);
+    let zeroPercentClass = "zero-percent";
+    if (zeroPercent <= 15) {
+      zeroPercentClass += "-pickup";
+    }
+    charts4TableRow += `<td class="${zeroPercentClass}">${zeroPercent}%</td>`;
   }
   charts4TableRow += `
     </tr>
