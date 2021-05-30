@@ -75,6 +75,14 @@ export async function addTicket3t2Cocomo(
     return;
   }
 
+  if (
+    beforeInfoBody.wave !== null &&
+    parseInt(beforeInfoBody.wave.replace("cm", "")) > 10
+  ) {
+    // 波の高さが 10cm より大きい場合賭けない
+    return;
+  }
+
   // 確率が大きい順にソート
   const sortedNumbersetInfos = numbersetInfos
     .sort(numbersetInfoOrderByPercent)
