@@ -707,7 +707,7 @@ export async function reportSummary(
     hittingRate3fArray.push(calcHittingRate(betDayResult, "3f"));
     hittingRate2tArray.push(calcHittingRate(betDayResult, "2t"));
     hittingRate2fArray.push(calcHittingRate(betDayResult, "2f"));
-    hittingRate3tWave1Array.push(calcHittingRate(betDayResult, "3t", 0, 10));
+    hittingRate3tWave1Array.push(calcHittingRate(betDayResult, "3t", 0, 11));
     hittingRate3tWave2Array.push(calcHittingRate(betDayResult, "3t", 11, 99));
     for (let j = 1; j <= 24; j++) {
       hittingRate3tJcd[j].push(
@@ -715,13 +715,7 @@ export async function reportSummary(
       );
     }
     hittingRate3tJcdComposite.push(
-      calcHittingRate(
-        betDayResult,
-        "3t",
-        undefined,
-        undefined,
-        [8, 11, 12, 13, 21, 24]
-      )
+      calcHittingRate(betDayResult, "3t", 0, 11, [8, 11, 12, 13, 21, 24])
     );
 
     // 日別のまとめ行
@@ -792,7 +786,7 @@ export async function reportSummary(
   }
   charts4Body += `
               , {
-                label: '三連単的中率(jcd=8,11,12,13,21,24)',
+                label: '三連単的中率(jcd=8,11,12,13,21,24, wave=0-10)',
                 backgroundColor: 'blue',
                 borderColor: 'blue',
                 data: ${JSON.stringify(hittingRate3tJcdComposite)},
