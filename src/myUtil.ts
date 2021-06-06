@@ -1,4 +1,4 @@
-import { Odds, PredictsAll } from "#/api";
+import { Odds, PredictsAll, RaceCardBody } from "#/api";
 import { BetRaceResult } from "#/betResult";
 
 export type TicketType = "3t" | "3f" | "2t" | "2f";
@@ -397,4 +397,25 @@ export function generateNumbersetInfoOrderByPercent(
 
   // 確率の降順
   return numbersetInfos.sort(numbersetInfoOrderByPercent).reverse();
+}
+
+/**
+ * 出走表を時間で昇順ソートする
+ *
+ * @param e1
+ * @param e2
+ */
+export function raceCardBodyOrderByDeadlinegai(
+  e1: RaceCardBody,
+  e2: RaceCardBody
+): number {
+  const key1: string = e1.hd + " " + e1.deadlinegai;
+  const key2: string = e2.hd + " " + e2.deadlinegai;
+  if (key1 > key2) {
+    return 1;
+  } else if (key1 < key2) {
+    return -1;
+  } else {
+    return 0;
+  }
 }

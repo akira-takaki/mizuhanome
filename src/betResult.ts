@@ -182,8 +182,8 @@ export function betResultOrderByTypeAndExpectedValue(
 const DIR = "./store";
 const PREFIX = `betDayResult`;
 const SUFFIX = `json`;
-const DATE_FORMAT = "YYYY/MM/DD";
-const FILE_NAME_DATE_FORMAT = "YYYYMMDD";
+export const DATE_FORMAT = "YYYY/MM/DD";
+export const FILE_NAME_DATE_FORMAT = "YYYYMMDD";
 const mutex: Mutex = new Mutex();
 
 const BET_DAY_RESULT_FILE_REGEXP = new RegExp(
@@ -224,7 +224,7 @@ export function storedBetDayResultDates(isSim: boolean): dayjs.Dayjs[] {
  * @param date 日付
  * @param isSim シミュレーションかどうか
  */
-function makeFileName(date: dayjs.Dayjs, isSim: boolean): string {
+export function makeFileName(date: dayjs.Dayjs, isSim: boolean): string {
   const dateStr = date.format(FILE_NAME_DATE_FORMAT);
   if (isSim) {
     return path.join(DIR, `${PREFIX}_${dateStr}_sim.${SUFFIX}`);

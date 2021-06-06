@@ -34,6 +34,7 @@ import {
   numbersetInfoOrderByPercent,
   playerPowers,
   Power,
+  raceCardBodyOrderByDeadlinegai,
   roundBet,
   sleep,
   TicketType,
@@ -512,17 +513,9 @@ export async function boatRace(): Promise<void> {
     );
 
     // 出走表を時間で昇順ソートする
-    const sortedRaceCardBodies = filteredRaceCardBodies.sort((e1, e2) => {
-      const key1: string = e1.hd + " " + e1.deadlinegai;
-      const key2: string = e2.hd + " " + e2.deadlinegai;
-      if (key1 > key2) {
-        return 1;
-      } else if (key1 < key2) {
-        return -1;
-      } else {
-        return 0;
-      }
-    });
+    const sortedRaceCardBodies = filteredRaceCardBodies.sort(
+      raceCardBodyOrderByDeadlinegai
+    );
 
     // 日単位の賭け結果 の初期化
     const betDayResult = makeBetDayResult(

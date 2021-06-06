@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 
 import {
+  DATE_FORMAT,
   readBetDayResult,
   storedBetDayResultDates,
   writeBetDayResult,
@@ -23,7 +24,7 @@ async function complementaryOfDay(
   session: string,
   date: dayjs.Dayjs
 ): Promise<void> {
-  console.info(date.toString());
+  console.info(date.format(DATE_FORMAT));
 
   // 「日単位の賭け結果」を読み込む
   const betDayResult = readBetDayResult(date);

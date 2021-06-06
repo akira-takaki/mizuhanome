@@ -7,6 +7,7 @@ import {
   BetRaceResult,
   BetResult,
   betResultOrderByTypeAndExpectedValue,
+  FILE_NAME_DATE_FORMAT,
   Parameter,
   readBetDayResult,
 } from "#/betResult";
@@ -23,7 +24,6 @@ import { logger } from "#/boatRace";
 const DIR = "./report";
 const PREFIX = "betDayResult";
 const SUFFIX = "html";
-const DATE_FORMAT = "YYYYMMDD";
 
 /**
  * ファイル名を作って返す
@@ -32,7 +32,7 @@ const DATE_FORMAT = "YYYYMMDD";
  * @param isSim シミュレーションかどうか
  */
 function makeFileName(date: dayjs.Dayjs, isSim: boolean): string {
-  const dateStr = date.format(DATE_FORMAT);
+  const dateStr = date.format(FILE_NAME_DATE_FORMAT);
   if (isSim) {
     return path.join(DIR, `${PREFIX}_${dateStr}_sim.${SUFFIX}`);
   } else {
