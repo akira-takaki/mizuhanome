@@ -69,7 +69,7 @@ export async function addTicket3t2Cocomo(
   isSim: boolean
 ): Promise<void> {
   // 舟券を購入する場所番号
-  const jcdArray = [8, 11, 12, 13, 21, 24];
+  const jcdArray = [11, 12, 13, 21, 24];
 
   if (!jcdArray.includes(parseInt(raceCardBody.jcd.toString()))) {
     // 舟券を購入する場所番号 に含まれていなければ賭けない
@@ -91,8 +91,29 @@ export async function addTicket3t2Cocomo(
 
   const numbersetInfo = sortedNumbersetInfos[0];
 
-  // 確率の閾値 18%
-  const percent = 0.18;
+  // 確率の閾値  // ¥500 12回 での金額
+  // const percent = 0.18;
+  // const percent = 0.173;
+  // const percent = 0.172;
+  // const percent = 0.17;
+  // const percent = 0.166;
+  // const percent = 0.163;
+  // const percent = 0.162;
+  // const percent = 0.159;
+  // const percent = 0.141;
+  // const percent = 0.14;
+  // const percent = 0.139;
+  // const percent = 0.136;
+  // const percent = 0.135;
+  // const percent = 0.134; // 1,892,900-
+  // const percent = 0.128;
+  // const percent = 0.125; // 2,468,650-
+  // const percent = 0.124;
+  // const percent = 0.123; // 2,124,150-
+  const percent = 0.122; // 2,561,850-
+  // const percent = 0.121; // 1,983,750-
+  // const percent = 0.118; // 2,102,450-
+  // const percent = 0.11; // X
   if (numbersetInfo.percent < percent) {
     // 確率の閾値より低い場合賭けない
     return;
@@ -111,7 +132,7 @@ export async function addTicket3t2Cocomo(
     parseInt(raceCardBody.dataid.toString()),
     numbersetInfo.numberset,
     "3t",
-    500,
+    200,
     12,
     isSim
   );

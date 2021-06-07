@@ -715,7 +715,7 @@ export async function reportSummary(
       );
     }
     hittingRate3tJcdComposite.push(
-      calcHittingRate(betDayResult, "3t", 0, 11, [8, 11, 12, 13, 21, 24])
+      calcHittingRate(betDayResult, "3t", 0, 11, [11, 12, 13, 21, 24])
     );
 
     // 日別のまとめ行
@@ -786,7 +786,7 @@ export async function reportSummary(
   }
   charts4Body += `
               , {
-                label: '三連単的中率(jcd=8,11,12,13,21,24, wave=0-10)',
+                label: '三連単的中率(jcd=11,12,13,21,24, wave=0-10)',
                 backgroundColor: 'blue',
                 borderColor: 'blue',
                 data: ${JSON.stringify(hittingRate3tJcdComposite)},
@@ -820,10 +820,35 @@ export async function reportSummary(
   let charts4TableHead = `
   <table>
     <tr>
-      <th>jcd</th>
+      <th>jcd<br>jname</th>
   `;
+  const jnames: string[] = [];
+  jnames[1] = "桐生";
+  jnames[2] = "戸田";
+  jnames[3] = "江戸川";
+  jnames[4] = "平和島";
+  jnames[5] = "多摩川";
+  jnames[6] = "浜名湖";
+  jnames[7] = "蒲郡";
+  jnames[8] = "常滑";
+  jnames[9] = "津";
+  jnames[10] = "三国";
+  jnames[11] = "びわこ";
+  jnames[12] = "住之江";
+  jnames[13] = "尼崎";
+  jnames[14] = "鳴門";
+  jnames[15] = "丸亀";
+  jnames[16] = "児島";
+  jnames[17] = "宮島";
+  jnames[18] = "徳山";
+  jnames[19] = "下関";
+  jnames[20] = "若松";
+  jnames[21] = "芦屋";
+  jnames[22] = "福岡";
+  jnames[23] = "唐津";
+  jnames[24] = "大村";
   for (let i = 1; i <= 24; i++) {
-    charts4TableHead += `<th>${i}</th>`;
+    charts4TableHead += `<th>${i}<br>${jnames[i]}</th>`;
   }
   charts4TableHead += "</tr>";
   let charts4TableRow = `
