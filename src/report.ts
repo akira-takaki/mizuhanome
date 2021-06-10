@@ -678,7 +678,7 @@ export async function reportSummary(
     </head>
     <body>
     ${isSimStr}<br>
-    <canvas id="charts1" height="80"></canvas>
+    <canvas id="charts1" height="160"></canvas>
     <canvas id="charts2" height="80"></canvas>
     <canvas id="charts3" height="80"></canvas>
     <canvas id="charts4" height="80"></canvas>
