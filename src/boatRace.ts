@@ -104,7 +104,8 @@ export async function addTicket3t2Cocomo(
   // const percent = 0.07; // 100円, 17回, 5,790,640-
   // const percent = 0.074; // 100円, 17回, 7,363,640-
   // const percent = 0.076; // 100円, 17回, 8,929,230-
-  const percent = 0.122; // 200円, 12回, 1,024,540-
+  // const percent = 0.122; // 200円, 12回, 1,024,540-
+  const percent = 0.125; // 200円, 12回, 1,096,740-
   if (numbersetInfo.percent < percent) {
     // 確率の閾値より低い場合賭けない
     return;
