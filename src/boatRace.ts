@@ -91,29 +91,20 @@ export async function addTicket3t2Cocomo(
 
   const numbersetInfo = sortedNumbersetInfos[0];
 
-  // 確率の閾値  // ¥500 12回 での金額
-  // const percent = 0.18;
-  // const percent = 0.173;
-  // const percent = 0.172;
-  // const percent = 0.17;
-  // const percent = 0.166;
-  // const percent = 0.163;
-  // const percent = 0.162;
-  // const percent = 0.159;
-  // const percent = 0.141;
-  // const percent = 0.14;
-  // const percent = 0.139;
-  // const percent = 0.136;
-  // const percent = 0.135;
-  // const percent = 0.134; // 1,892,900-
-  // const percent = 0.128;
-  // const percent = 0.125; // 2,468,650-
-  // const percent = 0.124;
-  // const percent = 0.123; // 2,124,150-
-  const percent = 0.122; // 2,561,850-
-  // const percent = 0.121; // 1,983,750-
-  // const percent = 0.118; // 2,102,450-
-  // const percent = 0.11; // X
+  // 確率の閾値
+  // const percent = 0.134; // 500円, 12回, 1,892,900-
+  // const percent = 0.125; // 500円, 12回, 2,468,650-
+  // const percent = 0.123; // 500円, 12回, 2,124,150-
+  // const percent = 0.122; // 500円, 12回, 2,561,850-
+  // const percent = 0.121; // 500円, 12回, 1,983,750-
+  // const percent = 0.118; // 500円, 12回, 2,102,450-
+  // const percent = 0.082; // 500円, 12回, 2,631,400-
+  // const percent = 0.067; // 100円, 17回, 5,296,210-
+  // const percent = 0.068; // 100円, 17回, 5,777,140-
+  // const percent = 0.07; // 100円, 17回, 5,790,640-
+  // const percent = 0.074; // 100円, 17回, 7,363,640-
+  // const percent = 0.076; // 100円, 17回, 8,929,230-
+  const percent = 0.122; // 200円, 12回, 1,024,540-
   if (numbersetInfo.percent < percent) {
     // 確率の閾値より低い場合賭けない
     return;
@@ -562,9 +553,6 @@ export async function boatRace(): Promise<void> {
     // 各レースで舟券購入
     for (let i = 0; i < sortedRaceCardBodies.length; i++) {
       const raceCardBody = sortedRaceCardBodies[i];
-      logger.debug(
-        `title : ${raceCardBody.jname}_${raceCardBody.ktitle}_R${raceCardBody.rno}`
-      );
       logger.debug(
         `dataid=${raceCardBody.dataid}, jcd=${raceCardBody.jcd}, hd=${raceCardBody.hd}, deadlinegai=${raceCardBody.deadlinegai}`
       );

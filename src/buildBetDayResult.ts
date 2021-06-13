@@ -169,7 +169,7 @@ async function buildBetDayResult(): Promise<void> {
     );
 
     // 終了日
-    const endDate: dayjs.Dayjs = dayjs("2021/01/13", DATE_FORMAT);
+    const endDate: dayjs.Dayjs = dayjs("2021/06/12", DATE_FORMAT);
 
     // 開始日から終了日まで繰り返し
     let date: dayjs.Dayjs = startDate;

@@ -116,7 +116,7 @@ export interface RaceCardBody {
   rno: number;
 
   /** 節の何日目か */
-  nj: string;
+  // nj: string;
 
   /** 節の開始日 年(4桁)-月(2桁)-日(2桁) */
   kfrom: string;
@@ -125,13 +125,13 @@ export interface RaceCardBody {
   kto: string;
 
   /** 場所の名前 */
-  jname: string;
+  // jname: string;
 
   /** その大会のグレード */
-  tbgradename: string;
+  // tbgradename: string;
 
   /** 大会名 */
-  ktitle: string;
+  // ktitle: string;
 
   /** ナイターレースフラグ */
   nightflag: number;
@@ -140,7 +140,7 @@ export interface RaceCardBody {
   gradeicon: string;
 
   /** レースタイトル */
-  rtitle: string;
+  // rtitle: string;
 
   /** 侵入固定フラグ */
   koteiflag: number;
@@ -167,15 +167,15 @@ function renewRaceCardBody(raceCardBody: RaceCardBody): RaceCardBody {
     hd: raceCardBody.hd,
     jcd: raceCardBody.jcd,
     rno: raceCardBody.rno,
-    nj: raceCardBody.nj,
+    // nj: raceCardBody.nj,
     kfrom: raceCardBody.kfrom,
     kto: raceCardBody.kto,
-    jname: raceCardBody.jname,
-    tbgradename: raceCardBody.tbgradename,
-    ktitle: raceCardBody.ktitle,
+    // jname: raceCardBody.jname,
+    // tbgradename: raceCardBody.tbgradename,
+    // ktitle: raceCardBody.ktitle,
     nightflag: raceCardBody.nightflag,
     gradeicon: raceCardBody.gradeicon,
-    rtitle: raceCardBody.rtitle,
+    // rtitle: raceCardBody.rtitle,
     koteiflag: raceCardBody.koteiflag,
     distance: raceCardBody.distance,
     anteibanflag: raceCardBody.anteibanflag,
@@ -253,10 +253,10 @@ export interface BeforeInfoBody {
   dataid: number;
 
   /** いつ時点のデータか */
-  measuretime: string;
+  // measuretime: string;
 
   /** 天気 */
-  weather: string;
+  // weather: string;
 
   /** 波の高さ */
   wave: string | null;
@@ -265,13 +265,13 @@ export interface BeforeInfoBody {
   wind: string;
 
   /** 気温 */
-  temp: string;
+  // temp: string;
 
   /** 水温 */
-  water: string;
+  // water: string;
 
   /** 風向。00~16まで17パターン */
-  winddirec: string;
+  // winddirec: string;
 }
 
 /**
@@ -280,13 +280,13 @@ export interface BeforeInfoBody {
 function renewBeforeInfoBody(beforeInfoBody: BeforeInfoBody): BeforeInfoBody {
   return {
     dataid: beforeInfoBody.dataid,
-    measuretime: beforeInfoBody.measuretime,
-    weather: beforeInfoBody.weather,
+    // measuretime: beforeInfoBody.measuretime,
+    // weather: beforeInfoBody.weather,
     wave: beforeInfoBody.wave,
     wind: beforeInfoBody.wind,
-    temp: beforeInfoBody.temp,
-    water: beforeInfoBody.water,
-    winddirec: beforeInfoBody.winddirec,
+    // temp: beforeInfoBody.temp,
+    // water: beforeInfoBody.water,
+    // winddirec: beforeInfoBody.winddirec,
   };
 }
 
