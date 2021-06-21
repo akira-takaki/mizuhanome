@@ -558,13 +558,13 @@ export async function boatRace(): Promise<void> {
         `dataid=${raceCardBody.dataid}, jcd=${raceCardBody.jcd}, hd=${raceCardBody.hd}, deadlinegai=${raceCardBody.deadlinegai}`
       );
 
-      // 場外締切時刻の30秒前の時間を計算
+      // 場外締切時刻の60秒前の時間を計算
       const deadLineGaiStr = `${raceCardBody.hd} ${raceCardBody.deadlinegai}`;
       const dateFormat = "YYYY-MM-DD HH:mm:ss";
       const deadLineGai = dayjs(deadLineGaiStr, dateFormat);
-      const deadLineGaiMinus30Second = deadLineGai.add(-30, "second");
+      const deadLineGaiMinus60Second = deadLineGai.add(-60, "second");
 
-      logger.trace("場外締切時刻の30秒前まで待つ");
+      logger.trace("場外締切時刻の60秒前まで待つ");
       let isPass = false;
       let isWait = true;
       while (isWait) {
@@ -577,9 +577,9 @@ export async function boatRace(): Promise<void> {
           continue;
         } else if (
           deadLineGai.isAfter(now) &&
-          deadLineGaiMinus30Second.isBefore(now)
+          deadLineGaiMinus60Second.isBefore(now)
         ) {
-          // 場外締切時刻よりも30秒前ならば待つのをやめる
+          // 場外締切時刻よりも60秒前ならば待つのをやめる
           isWait = false;
         }
 
