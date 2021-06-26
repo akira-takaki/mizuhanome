@@ -42,6 +42,7 @@ import {
 import { Config, readConfig, writeConfig } from "#/config";
 import { report, reportSummary } from "#/report";
 import { calcCocomoBet, updateCocomo } from "#/cocomo";
+import { calcCocomoTopNBet, updateCocomoTopN } from "#/cocomoTopN";
 
 log4js.configure("./config/LogConfig.json");
 export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
@@ -138,6 +139,81 @@ export async function addTicket3t2Cocomo(
 
 /**
  * 購入する三連単の舟券を追加する
+ * 確率が高いものからN点賭ける
+ * ココモ法 TopN
+ *
+ * @param yyyymmdd 当日
+ * @param raceCardBody 出走表 body
+ * @param beforeInfoBody 直前情報 body
+ * @param powers プレイヤーのパワー配列
+ * @param numbersetInfos 1レースの 3t 組番情報
+ * @param ticket 舟券
+ * @param isSim
+ */
+export async function addTicket3t2CocomoTopN(
+  yyyymmdd: string,
+  raceCardBody: RaceCardBody,
+  beforeInfoBody: BeforeInfoBody,
+  powers: Power[],
+  numbersetInfos: NumbersetInfo[],
+  ticket: Ticket,
+  isSim: boolean
+): Promise<void> {
+  // 舟券を購入する場所番号
+  const jcdArray = [11, 12, 13, 21, 24];
+
+  if (!jcdArray.includes(parseInt(raceCardBody.jcd.toString()))) {
+    // 舟券を購入する場所番号 に含まれていなければ賭けない
+    return;
+  }
+
+  if (
+    beforeInfoBody.wave !== null &&
+    parseInt(beforeInfoBody.wave.replace("cm", "")) > 10
+  ) {
+    // 波の高さが 10cm より大きい場合賭けない
+    return;
+  }
+
+  // 確率が大きい順にソート
+  const sortedNumbersetInfos = numbersetInfos
+    .sort(numbersetInfoOrderByPercent)
+    .reverse();
+
+  const numbersetInfoTop1 = sortedNumbersetInfos[0];
+
+  const percent = 0.125;
+  if (numbersetInfoTop1.percent < percent) {
+    // 確率の閾値より低い場合賭けない
+    return;
+  }
+
+  if (numbersetInfoTop1.odds === null || numbersetInfoTop1.odds < 2.8) {
+    // オッズが 指定倍 より低いものは、賭けない
+    // ココモ法としては 2.6倍 が最低ラインだが、
+    // レース前オッズは下がる可能性があるため 指定倍 で判断する。
+    return;
+  }
+
+  const topN = 1;
+  const sliceNumbersetInfoTopN = sortedNumbersetInfos.slice(0, topN);
+
+  // 賭け金を計算し、舟券へ追加する
+  await calcCocomoTopNBet(
+    yyyymmdd,
+    parseInt(raceCardBody.dataid.toString()),
+    sliceNumbersetInfoTopN,
+    "3t",
+    100,
+    12,
+    5.5,
+    ticket,
+    isSim
+  );
+}
+
+/**
+ * 購入する三連単の舟券を追加する
  *
  * @param yyyymmdd 当日
  * @param raceCardBody 出走表 body
@@ -168,7 +244,7 @@ async function addTicket3t(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する三連単の舟券を追加する
-  await addTicket3t2Cocomo(
+  await addTicket3t2CocomoTopN(
     yyyymmdd,
     raceCardBody,
     beforeInfoBody,
@@ -549,6 +625,7 @@ export async function boatRace(): Promise<void> {
     cocomoIntervalId = setInterval(async () => {
       // ココモ法の賭け結果 の勝敗を更新する
       await updateCocomo(session, "3t");
+      await updateCocomoTopN(session, "3t");
     }, 9000);
 
     // 各レースで舟券購入

@@ -19,8 +19,10 @@ import {
   addTicket2t2Cocomo,
   addTicket3f2Cocomo,
   addTicket3t2Cocomo,
+  addTicket3t2CocomoTopN,
 } from "#/boatRace";
 import { initCocomo, updateCocomoSim } from "#/cocomo";
+import { initCocomoTopN, updateCocomoTopNSim } from "#/cocomoTopN";
 
 async function simulation2(
   config: Config,
@@ -83,7 +85,16 @@ async function simulation2(
       type: "3t",
       numbers: [],
     };
-    await addTicket3t2Cocomo(
+    // await addTicket3t2Cocomo(
+    //   yyyymmdd,
+    //   simulationBetRaceResult.raceCardBody,
+    //   simulationBetRaceResult.beforeInfoBody,
+    //   powers,
+    //   numbersetInfos3t,
+    //   ticket3t,
+    //   true
+    // );
+    await addTicket3t2CocomoTopN(
       yyyymmdd,
       simulationBetRaceResult.raceCardBody,
       simulationBetRaceResult.beforeInfoBody,
@@ -189,6 +200,13 @@ async function simulation2(
           originalBetResult.odds,
           "3t"
         );
+
+        await updateCocomoTopNSim(
+          simulationBetRaceResult.dataid,
+          originalBetResult.numberset,
+          originalBetResult.odds,
+          "3t"
+        );
       }
     }
   }
@@ -215,6 +233,7 @@ async function simulation(): Promise<void> {
 
   // ココモ法 初期化
   await initCocomo("3t", true);
+  await initCocomoTopN("3t", true);
 
   // ファイルに保存してある「日単位の賭け結果」の日付配列
   let isSim = false;
