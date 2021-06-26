@@ -6,7 +6,7 @@ import {
   BetDayResult,
   BetRaceResult,
   BetResult,
-  betResultOrderByTypeAndExpectedValue,
+  betResultOrderByTypeAndPercent,
   FILE_NAME_DATE_FORMAT,
   Parameter,
   readBetDayResult,
@@ -335,7 +335,7 @@ function createBetRaceResultTableHtml(betRaceResult: BetRaceResult): string {
   // ただし、レース結果(oddsが設定されているもの)は残す
   const filteredBetResults = betRaceResult.betResults
     .filter((value) => value.bet > 0 || (value.odds !== null && value.odds > 1))
-    .sort(betResultOrderByTypeAndExpectedValue);
+    .sort(betResultOrderByTypeAndPercent);
 
   let tableRow = "";
   let prevType = "";
