@@ -151,7 +151,7 @@ export async function calcCocomoBet(
   return bet;
 }
 
-export function pickupNotDecisionBetHistory(cocomo: Cocomo): BetHistory | null {
+function pickupNotDecisionBetHistory(cocomo: Cocomo): BetHistory | null {
   for (let i = 0; i < cocomo.betHistories.length; i++) {
     const betHistory = cocomo.betHistories[i];
 
@@ -163,7 +163,7 @@ export function pickupNotDecisionBetHistory(cocomo: Cocomo): BetHistory | null {
   return null;
 }
 
-export function updateCocomo2(
+function updateCocomo2(
   cocomo: Cocomo,
   dataid: number,
   numberset: string,
