@@ -147,12 +147,12 @@ export interface BetDayResult {
 }
 
 /**
- * 賭け結果の 舟券種類 と 期待値 で昇順ソート
+ * 賭け結果の 舟券種類(3t,3f,2t,2f順) と 確率(降順) でソート
  *
  * @param e1
  * @param e2
  */
-export function betResultOrderByTypeAndExpectedValue(
+export function betResultOrderByTypeAndPercent(
   e1: BetResult,
   e2: BetResult
 ): number {
@@ -169,10 +169,10 @@ export function betResultOrderByTypeAndExpectedValue(
   } else if (type1 < type2) {
     return -1;
   } else {
-    if (e1.expectedValue > e2.expectedValue) {
-      return 1;
-    } else if (e1.expectedValue < e2.expectedValue) {
+    if (e1.percent > e2.percent) {
       return -1;
+    } else if (e1.percent < e2.percent) {
+      return 1;
     } else {
       return 0;
     }
