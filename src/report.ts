@@ -552,6 +552,7 @@ export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
  * @param waveFrom 波の高さ(From)
  * @param waveTo 波の高さ(To)
  * @param jcdArray 場所番号(オプション)
+ * @param top 上位何番目までを含めるか
  * @return 的中率
  */
 export function calcHittingRate(
@@ -559,7 +560,8 @@ export function calcHittingRate(
   type: TicketType,
   waveFrom?: number,
   waveTo?: number,
-  jcdArray?: number[]
+  jcdArray?: number[],
+  top = 1
 ): number | null {
   let filteredBetRaceResults = betDayResult.betRaceResults;
 
@@ -609,9 +611,12 @@ export function calcHittingRate(
       })
       .reverse();
 
-    if (sortedBetResults[0].odds !== null) {
-      // 確率が1番高い組番にオッズが設定されていたら的中したってこと
-      hitting++;
+    for (let j = 0; j < top; j++) {
+      if (sortedBetResults[j].odds !== null) {
+        // 組番にオッズが設定されていたら的中したってこと
+        hitting++;
+        break;
+      }
     }
   }
 
@@ -668,6 +673,10 @@ export async function reportSummary(
     hittingRate3tJcd[i] = [];
   }
   const hittingRate3tJcdComposite: (number | null)[] = [];
+  const hittingRate3tTopN: (number | null)[][] = [];
+  for (let i = 1; i <= 20; i++) {
+    hittingRate3tTopN[i] = [];
+  }
 
   const htmlStart = `
   <!DOCTYPE html>
@@ -682,6 +691,7 @@ export async function reportSummary(
     <canvas id="charts2" height="80"></canvas>
     <canvas id="charts3" height="80"></canvas>
     <canvas id="charts4" height="80"></canvas>
+    <canvas id="chartsTopN" height="80"></canvas>
   `;
 
   let htmlSummaryTable = `
@@ -702,21 +712,42 @@ export async function reportSummary(
     // グラフのデータ作成 資金
     capital.push(betDayResult.capital);
 
-    // グラフのデータ作成 的中率
+    // ===== グラフのデータ作成 的中率 =====
+    // 舟券種類別 的中率
     hittingRate3tArray.push(calcHittingRate(betDayResult, "3t"));
     hittingRate3fArray.push(calcHittingRate(betDayResult, "3f"));
     hittingRate2tArray.push(calcHittingRate(betDayResult, "2t"));
     hittingRate2fArray.push(calcHittingRate(betDayResult, "2f"));
+
+    // 三連単 波の高さ別 的中率
     hittingRate3tWave1Array.push(calcHittingRate(betDayResult, "3t", 0, 11));
     hittingRate3tWave2Array.push(calcHittingRate(betDayResult, "3t", 11, 99));
+
+    // 三連単 場所別 的中率
     for (let j = 1; j <= 24; j++) {
       hittingRate3tJcd[j].push(
         calcHittingRate(betDayResult, "3t", undefined, undefined, [j])
       );
     }
+
+    // 三連単 選抜した場所 合成 的中率
     hittingRate3tJcdComposite.push(
       calcHittingRate(betDayResult, "3t", 0, 11, [11, 12, 13, 21, 24])
     );
+
+    // 三連単 選抜した場所 合成 トップN 的中率
+    for (let j = 1; j <= 20; j++) {
+      hittingRate3tTopN[j].push(
+        calcHittingRate(
+          betDayResult,
+          "3t",
+          undefined,
+          undefined,
+          [11, 12, 13, 21, 24],
+          j
+        )
+      );
+    }
 
     // 日別のまとめ行
     htmlSummaryTable += createSummaryTableHtmlRow(betDayResult);
@@ -816,6 +847,68 @@ export async function reportSummary(
         });
   `;
   const charts4 = charts4Head + charts4Body + charts4Tail;
+
+  const chartsTopNColors = [
+    "",
+    "#ff3300",
+    "#99cc00",
+    "#33ff66",
+    "#006699",
+    "#6633cc",
+    "#ff66cc",
+    "#cc3300",
+    "#ccff33",
+    "#009933",
+    "#3399cc",
+    "#9966ff",
+    "#ff0099",
+    "#ff6633",
+    "#669900",
+    "#33cc66",
+    "#66ccff",
+    "#6600ff",
+    "#660033",
+    "#993300",
+    "#99cc33",
+  ];
+  const chartsTopNHead = `
+        var ctxTopN = document.getElementById("chartsTopN");
+        var myChartTopN = new Chart(ctxTopN, {
+          type: 'line',
+          data: {
+            labels: ${JSON.stringify(labels)},
+            datasets: [
+  `;
+  let chartsTopNBody = ``;
+  for (let i = 1; i <= 20; i++) {
+    if (i > 1) {
+      chartsTopNBody += ",";
+    }
+    chartsTopNBody += `
+              {
+                label: '三連単的中率(Top${i}, jcd=11,12,13,21,24)',
+                backgroundColor: '${chartsTopNColors[i]}',
+                borderColor: '${chartsTopNColors[i]}',
+                data: ${JSON.stringify(hittingRate3tTopN[i])},
+                fill: false,
+                hidden: true
+              }
+    `;
+  }
+  const chartsTopNTail = `
+            ]
+          },
+          options: {
+            scales: {
+              y: {
+                min: 0,
+                max: 100
+              }
+            }
+          }
+        });
+  `;
+  const chartsTopN = chartsTopNHead + chartsTopNBody + chartsTopNTail;
 
   let charts4TableHead = `
   <table>
@@ -997,6 +1090,9 @@ export async function reportSummary(
         });
         
         ${charts4}
+        
+        ${chartsTopN}
+
       </script>
     </body>
   </html>
