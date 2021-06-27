@@ -204,9 +204,9 @@ export async function addTicket3t2CocomoTopN(
     parseInt(raceCardBody.dataid.toString()),
     sliceNumbersetInfoTopN,
     "3t",
-    100,
+    200,
     12,
-    5.5,
+    4.0,
     ticket,
     isSim
   );
