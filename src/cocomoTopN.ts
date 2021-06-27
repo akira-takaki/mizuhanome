@@ -136,14 +136,13 @@ export async function calcCocomoTopNBet(
       if (cocomo.betRaceArray.length <= 0) {
         // 1回目 は仮の計算で求める
         paid = defaultBet * numbersetInfoArray.length;
-      } else if (cocomo.betRaceArray.length === 1) {
-        // 2回目 は前回支払ったお金
-        paid = cocomo.betRaceArray[cocomo.betRaceArray.length - 1].allBet;
       } else {
-        // 3回目以降 は前回 + 前々回 に支払ったお金
-        paid =
-          cocomo.betRaceArray[cocomo.betRaceArray.length - 2].allBet +
-          cocomo.betRaceArray[cocomo.betRaceArray.length - 1].allBet;
+        // 2回目以降 は今までに支払ったお金
+        paid = cocomo.betRaceArray
+          .map((betRace) => betRace.allBet)
+          .reduce(
+            (previousValue, currentValue) => previousValue + currentValue
+          );
       }
 
       // 儲けたいお金
