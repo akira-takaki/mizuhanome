@@ -553,6 +553,7 @@ export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
  * @param waveTo 波の高さ(To)
  * @param jcdArray 場所番号(オプション)
  * @param top 上位何番目までを含めるか
+ * @param percent 確率の閾値
  * @return 的中率
  */
 export function calcHittingRate(
@@ -561,7 +562,8 @@ export function calcHittingRate(
   waveFrom?: number,
   waveTo?: number,
   jcdArray?: number[],
-  top = 1
+  top = 1,
+  percent?: number
 ): number | null {
   let filteredBetRaceResults = betDayResult.betRaceResults;
 
@@ -584,11 +586,13 @@ export function calcHittingRate(
     );
   }
 
-  const raceCount = filteredBetRaceResults.length;
-  if (raceCount <= 0) {
+  if (filteredBetRaceResults.length <= 0) {
     // 該当するレースが無かった場合
     return null;
   }
+
+  // レース数
+  let raceCount = 0;
 
   // 1日の的中数
   let hitting = 0;
@@ -598,7 +602,7 @@ export function calcHittingRate(
     const betRaceResult = filteredBetRaceResults[i];
 
     // 1レースのすべての組番を確率が高い順にソート
-    const sortedBetResults = betRaceResult.betResults
+    let sortedBetResults = betRaceResult.betResults
       .filter((value) => value.type === type)
       .sort((e1, e2) => {
         if (e1.percent > e2.percent) {
@@ -611,7 +615,22 @@ export function calcHittingRate(
       })
       .reverse();
 
-    for (let j = 0; j < top; j++) {
+    if (percent !== undefined) {
+      // 指定された確率以上のものに絞り込む
+      sortedBetResults = sortedBetResults.filter(
+        (value) => value.percent >= percent
+      );
+    }
+
+    if (sortedBetResults.length <= 0) {
+      // 絞り込んだ結果、組番がなければカウントしない
+      continue;
+    }
+
+    raceCount++;
+
+    const targetCount = Math.min(top, sortedBetResults.length);
+    for (let j = 0; j < targetCount; j++) {
       if (sortedBetResults[j].odds !== null) {
         // 組番にオッズが設定されていたら的中したってこと
         hitting++;
@@ -677,6 +696,12 @@ export async function reportSummary(
   for (let i = 1; i <= 20; i++) {
     hittingRate3tTopN[i] = [];
   }
+  const hittingRate3tPercent: (number | null)[][] = [];
+  const percentArray: number[] = [];
+  for (let i = 1; i <= 20; i++) {
+    hittingRate3tPercent[i] = [];
+    percentArray[i] = 0.002 * i + 0.09;
+  }
 
   const htmlStart = `
   <!DOCTYPE html>
@@ -692,6 +717,7 @@ export async function reportSummary(
     <canvas id="charts3" height="80"></canvas>
     <canvas id="charts4" height="80"></canvas>
     <canvas id="chartsTopN" height="80"></canvas>
+    <canvas id="chartsPercent" height="80"></canvas>
   `;
 
   let htmlSummaryTable = `
@@ -745,6 +771,21 @@ export async function reportSummary(
           undefined,
           [11, 12, 13, 21, 24],
           j
+        )
+      );
+    }
+
+    // 三連単 選抜した場所 合成 指定確率以上 的中率
+    for (let j = 1; j <= 20; j++) {
+      hittingRate3tPercent[j].push(
+        calcHittingRate(
+          betDayResult,
+          "3t",
+          0,
+          11,
+          [11, 12, 13, 21, 24],
+          1,
+          percentArray[j]
         )
       );
     }
@@ -909,6 +950,80 @@ export async function reportSummary(
         });
   `;
   const chartsTopN = chartsTopNHead + chartsTopNBody + chartsTopNTail;
+
+  const chartsPercentColors = [
+    "",
+    "#ff3300",
+    "#99cc00",
+    "#33ff66",
+    "#006699",
+    "#6633cc",
+    "#ff66cc",
+    "#cc3300",
+    "#ccff33",
+    "#009933",
+    "#3399cc",
+    "#9966ff",
+    "#ff0099",
+    "#ff6633",
+    "#669900",
+    "#33cc66",
+    "#66ccff",
+    "#6600ff",
+    "#660033",
+    "#993300",
+    "#99cc33",
+  ];
+  const chartsPercentHead = `
+        var ctxPercent = document.getElementById("chartsPercent");
+        var myChartPercent = new Chart(ctxPercent, {
+          type: 'line',
+          data: {
+            labels: ${JSON.stringify(labels)},
+            datasets: [
+  `;
+  let chartsPercentBody = ``;
+  for (let i = 1; i <= 20; i++) {
+    if (i > 1) {
+      chartsPercentBody += ",";
+    }
+    chartsPercentBody += `
+              {
+                label: '三連単的中率(percent>=${
+                  percentArray[i]
+                }, jcd=11,12,13,21,24, wave=0-10)',
+                backgroundColor: '${chartsPercentColors[i]}',
+                borderColor: '${chartsPercentColors[i]}',
+                data: ${JSON.stringify(hittingRate3tPercent[i])},
+                fill: false,
+                hidden: true
+              }
+    `;
+  }
+  chartsPercentBody += `
+              , {
+                label: '三連単的中率(jcd=11,12,13,21,24, wave=0-10)',
+                backgroundColor: 'blue',
+                borderColor: 'blue',
+                data: ${JSON.stringify(hittingRate3tJcdComposite)},
+                fill: false
+              }
+    `;
+  const chartsPercentTail = `
+            ]
+          },
+          options: {
+            scales: {
+              y: {
+                min: 0,
+                max: 100
+              }
+            }
+          }
+        });
+  `;
+  const chartsPercent =
+    chartsPercentHead + chartsPercentBody + chartsPercentTail;
 
   let charts4TableHead = `
   <table>
@@ -1092,6 +1207,8 @@ export async function reportSummary(
         ${charts4}
         
         ${chartsTopN}
+
+        ${chartsPercent}
 
       </script>
     </body>
