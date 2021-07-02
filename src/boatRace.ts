@@ -57,6 +57,7 @@ export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
  * @param beforeInfoBody 直前情報 body
  * @param powers プレイヤーのパワー配列
  * @param numbersetInfos 1レースの 3t 組番情報
+ * @param todayJcdArray 今日レースをやるレース場コード配列
  * @param ticket 舟券
  * @param isSim
  */
@@ -66,14 +67,37 @@ export async function addTicket3t2Cocomo(
   beforeInfoBody: BeforeInfoBody,
   powers: Power[],
   numbersetInfos: NumbersetInfo[],
+  todayJcdArray: number[],
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
-  // 舟券を購入する場所番号
-  const jcdArray = [11, 12, 13, 21, 24];
+  // 舟券を購入するレース場コード
+  const jcdArray: number[] = [
+    11, // びわこ 9%
+    21, // 芦屋 12%
+    12, // 住之江 13%
+    24, // 大村 14%
+    13, // 尼崎 15%
+  ];
+  const selectCount = 3; // 舟券を購入するレース場の数
+  const selectedJcdArray: number[] = []; // 選抜レース場コード配列
+  for (let i = 0; i < jcdArray.length; i++) {
+    for (let j = 0; j < todayJcdArray.length; j++) {
+      if (jcdArray[i] === todayJcdArray[j]) {
+        // 今日レースをやるレース場コードの場合、
+        // 選抜レース場コード配列 に追加
+        selectedJcdArray.push(jcdArray[i]);
+        break;
+      }
+    }
+    if (selectedJcdArray.length >= selectCount) {
+      // 選抜レース場コード配列 が指定数になったら、そこまで。
+      break;
+    }
+  }
 
-  if (!jcdArray.includes(parseInt(raceCardBody.jcd.toString()))) {
-    // 舟券を購入する場所番号 に含まれていなければ賭けない
+  if (!selectedJcdArray.includes(parseInt(raceCardBody.jcd.toString()))) {
+    // 選抜レース場コード配列 に含まれていなければ賭けない
     return;
   }
 
@@ -147,6 +171,7 @@ export async function addTicket3t2Cocomo(
  * @param beforeInfoBody 直前情報 body
  * @param powers プレイヤーのパワー配列
  * @param numbersetInfos 1レースの 3t 組番情報
+ * @param todayJcdArray 今日レースをやるレース場コード配列
  * @param ticket 舟券
  * @param isSim
  */
@@ -156,14 +181,37 @@ export async function addTicket3t2CocomoTopN(
   beforeInfoBody: BeforeInfoBody,
   powers: Power[],
   numbersetInfos: NumbersetInfo[],
+  todayJcdArray: number[],
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
-  // 舟券を購入する場所番号
-  const jcdArray = [11, 12, 13, 21, 24];
+  // 舟券を購入するレース場コード
+  const jcdArray: number[] = [
+    11, // びわこ 9%
+    21, // 芦屋 12%
+    12, // 住之江 13%
+    24, // 大村 14%
+    13, // 尼崎 15%
+  ];
+  const selectCount = 3; // 舟券を購入するレース場の数
+  const selectedJcdArray: number[] = []; // 選抜レース場コード配列
+  for (let i = 0; i < jcdArray.length; i++) {
+    for (let j = 0; j < todayJcdArray.length; j++) {
+      if (jcdArray[i] === todayJcdArray[j]) {
+        // 今日レースをやるレース場コードの場合、
+        // 選抜レース場コード配列 に追加
+        selectedJcdArray.push(jcdArray[i]);
+        break;
+      }
+    }
+    if (selectedJcdArray.length >= selectCount) {
+      // 選抜レース場コード配列 が指定数になったら、そこまで。
+      break;
+    }
+  }
 
-  if (!jcdArray.includes(parseInt(raceCardBody.jcd.toString()))) {
-    // 舟券を購入する場所番号 に含まれていなければ賭けない
+  if (!selectedJcdArray.includes(parseInt(raceCardBody.jcd.toString()))) {
+    // 選抜レース場コード配列 に含まれていなければ賭けない
     return;
   }
 
@@ -221,6 +269,7 @@ export async function addTicket3t2CocomoTopN(
  * @param powers プレイヤーのパワー配列
  * @param odds オッズ
  * @param predictsAll 直前予想全確率
+ * @param todayJcdArray 今日レースをやるレース場コード配列
  * @param tickets 舟券配列
  * @param isSim
  */
@@ -231,6 +280,7 @@ async function addTicket3t(
   powers: Power[],
   odds: Odds,
   predictsAll: PredictsAll,
+  todayJcdArray: number[],
   tickets: Ticket[],
   isSim = false
 ): Promise<void> {
@@ -250,6 +300,7 @@ async function addTicket3t(
     beforeInfoBody,
     powers,
     numbersetInfos,
+    todayJcdArray,
     ticket,
     isSim
   );
@@ -628,6 +679,13 @@ export async function boatRace(): Promise<void> {
       await updateCocomoTopN(session, "3t");
     }, 9000);
 
+    // 今日レースをやるレース場コード
+    const todayJcdArray: number[] = Array.from(
+      new Set(
+        sortedRaceCardBodies.map((value) => parseInt(value.jcd.toString()))
+      )
+    );
+
     // 各レースで舟券購入
     for (let i = 0; i < sortedRaceCardBodies.length; i++) {
       const raceCardBody = sortedRaceCardBodies[i];
@@ -715,6 +773,7 @@ export async function boatRace(): Promise<void> {
         powers,
         odds,
         predictsAll,
+        todayJcdArray,
         tickets
       );
 

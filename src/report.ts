@@ -25,6 +25,32 @@ const DIR = "./report";
 const PREFIX = "betDayResult";
 const SUFFIX = "html";
 
+const jnames: string[] = [];
+jnames[1] = "桐生";
+jnames[2] = "戸田";
+jnames[3] = "江戸川";
+jnames[4] = "平和島";
+jnames[5] = "多摩川";
+jnames[6] = "浜名湖";
+jnames[7] = "蒲郡";
+jnames[8] = "常滑";
+jnames[9] = "津";
+jnames[10] = "三国";
+jnames[11] = "びわこ";
+jnames[12] = "住之江";
+jnames[13] = "尼崎";
+jnames[14] = "鳴門";
+jnames[15] = "丸亀";
+jnames[16] = "児島";
+jnames[17] = "宮島";
+jnames[18] = "徳山";
+jnames[19] = "下関";
+jnames[20] = "若松";
+jnames[21] = "芦屋";
+jnames[22] = "福岡";
+jnames[23] = "唐津";
+jnames[24] = "大村";
+
 /**
  * ファイル名を作って返す
  *
@@ -524,6 +550,12 @@ export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
   let htmlTable = "";
   for (let i = 0; i < betDayResult.betRaceResults.length; i++) {
     const betRaceResult = betDayResult.betRaceResults[i];
+
+    htmlTable =
+      htmlTable +
+      betRaceResult.raceCardBody.jcd.toString() +
+      " : " +
+      jnames[parseInt(betRaceResult.raceCardBody.jcd.toString())];
 
     const powers = playerPowersFromBetRaceResult(betRaceResult);
     htmlTable = htmlTable + createPlayerPowerTableHtml(powers);
@@ -1030,31 +1062,6 @@ export async function reportSummary(
     <tr>
       <th>jcd<br>jname</th>
   `;
-  const jnames: string[] = [];
-  jnames[1] = "桐生";
-  jnames[2] = "戸田";
-  jnames[3] = "江戸川";
-  jnames[4] = "平和島";
-  jnames[5] = "多摩川";
-  jnames[6] = "浜名湖";
-  jnames[7] = "蒲郡";
-  jnames[8] = "常滑";
-  jnames[9] = "津";
-  jnames[10] = "三国";
-  jnames[11] = "びわこ";
-  jnames[12] = "住之江";
-  jnames[13] = "尼崎";
-  jnames[14] = "鳴門";
-  jnames[15] = "丸亀";
-  jnames[16] = "児島";
-  jnames[17] = "宮島";
-  jnames[18] = "徳山";
-  jnames[19] = "下関";
-  jnames[20] = "若松";
-  jnames[21] = "芦屋";
-  jnames[22] = "福岡";
-  jnames[23] = "唐津";
-  jnames[24] = "大村";
   for (let i = 1; i <= 24; i++) {
     charts4TableHead += `<th>${i}<br>${jnames[i]}</th>`;
   }

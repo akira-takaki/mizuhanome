@@ -40,6 +40,15 @@ async function simulation2(
     originalBetDayResult.raceCount
   );
 
+  // 今日レースをやるレース場コード
+  const todayJcdArray: number[] = Array.from(
+    new Set(
+      originalBetDayResult.betRaceResults.map((value) =>
+        parseInt(value.raceCardBody.jcd.toString())
+      )
+    )
+  );
+
   for (let i = 0; i < originalBetDayResult.betRaceResults.length; i++) {
     const originalBetRaceResult = originalBetDayResult.betRaceResults[i];
     const simulationBetRaceResult: BetRaceResult = {
@@ -91,6 +100,7 @@ async function simulation2(
     //   simulationBetRaceResult.beforeInfoBody,
     //   powers,
     //   numbersetInfos3t,
+    //   todayJcdArray,
     //   ticket3t,
     //   true
     // );
@@ -100,6 +110,7 @@ async function simulation2(
       simulationBetRaceResult.beforeInfoBody,
       powers,
       numbersetInfos3t,
+      todayJcdArray,
       ticket3t,
       true
     );
