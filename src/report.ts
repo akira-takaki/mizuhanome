@@ -790,7 +790,7 @@ export async function reportSummary(
 
     // 三連単 選抜した場所 合成 的中率
     hittingRate3tJcdComposite.push(
-      calcHittingRate(betDayResult, "3t", 0, 11, [11, 12, 13, 21, 24])
+      calcHittingRate(betDayResult, "3t", 0, 11, [11, 12, 13, 21])
     );
 
     // 三連単 選抜した場所 合成 トップN 的中率
@@ -801,7 +801,7 @@ export async function reportSummary(
           "3t",
           undefined,
           undefined,
-          [11, 12, 13, 21, 24],
+          [11, 12, 13, 21],
           j
         )
       );
@@ -815,7 +815,7 @@ export async function reportSummary(
           "3t",
           0,
           11,
-          [11, 12, 13, 21, 24],
+          [11, 12, 13, 21],
           1,
           percentArray[j]
         )
@@ -890,7 +890,7 @@ export async function reportSummary(
   }
   charts4Body += `
               , {
-                label: '三連単的中率(jcd=11,12,13,21,24, wave=0-10)',
+                label: '三連単的中率(jcd=11,12,13,21, wave=0-10)',
                 backgroundColor: 'blue',
                 borderColor: 'blue',
                 data: ${JSON.stringify(hittingRate3tJcdComposite)},
@@ -959,7 +959,7 @@ export async function reportSummary(
     }
     chartsTopNBody += `
               {
-                label: '三連単的中率(Top${i}, jcd=11,12,13,21,24)',
+                label: '三連単的中率(Top${i}, jcd=11,12,13,21)',
                 backgroundColor: '${chartsTopNColors[i]}',
                 borderColor: '${chartsTopNColors[i]}',
                 data: ${JSON.stringify(hittingRate3tTopN[i])},
@@ -1023,7 +1023,7 @@ export async function reportSummary(
               {
                 label: '三連単的中率(percent>=${
                   percentArray[i]
-                }, jcd=11,12,13,21,24, wave=0-10)',
+                }, jcd=11,12,13,21, wave=0-10)',
                 backgroundColor: '${chartsPercentColors[i]}',
                 borderColor: '${chartsPercentColors[i]}',
                 data: ${JSON.stringify(hittingRate3tPercent[i])},
@@ -1034,7 +1034,7 @@ export async function reportSummary(
   }
   chartsPercentBody += `
               , {
-                label: '三連単的中率(jcd=11,12,13,21,24, wave=0-10)',
+                label: '三連単的中率(jcd=11,12,13,21, wave=0-10)',
                 backgroundColor: 'blue',
                 borderColor: 'blue',
                 data: ${JSON.stringify(hittingRate3tJcdComposite)},

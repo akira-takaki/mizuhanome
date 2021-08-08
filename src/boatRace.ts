@@ -73,11 +73,10 @@ export async function addTicket3t2Cocomo(
 ): Promise<void> {
   // 舟券を購入するレース場コード
   const jcdArray: number[] = [
-    11, // びわこ 9%
-    21, // 芦屋 12%
-    12, // 住之江 13%
-    24, // 大村 14%
-    13, // 尼崎 15%
+    11, // びわこ 14%
+    13, // 尼崎 14%
+    12, // 住之江 15%
+    21, // 芦屋 15%
   ];
   const selectCount = 3; // 舟券を購入するレース場の数
   const selectedJcdArray: number[] = []; // 選抜レース場コード配列
@@ -187,11 +186,10 @@ export async function addTicket3t2CocomoTopN(
 ): Promise<void> {
   // 舟券を購入するレース場コード
   const jcdArray: number[] = [
-    11, // びわこ 9%
-    21, // 芦屋 12%
-    12, // 住之江 13%
-    24, // 大村 14%
-    13, // 尼崎 15%
+    11, // びわこ 14%
+    13, // 尼崎 14%
+    12, // 住之江 15%
+    21, // 芦屋 15%
   ];
   const selectCount = 3; // 舟券を購入するレース場の数
   const selectedJcdArray: number[] = []; // 選抜レース場コード配列
