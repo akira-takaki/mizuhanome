@@ -4,6 +4,7 @@ import { Mutex } from "await-semaphore";
 
 import { getRaceResult, Ticket } from "#/api";
 import { NumbersetInfo, roundBet, TicketType } from "#/myUtil";
+import dayjs from "dayjs";
 
 interface BetNumberset {
   /** 組番 */
@@ -291,6 +292,25 @@ export async function updateCocomoTopN(
         }
 
         writeCocomo(cocomo, type, isSim);
+      } else {
+        const now: dayjs.Dayjs = dayjs();
+        if (now.hour() >= 22) {
+          // 22:00 過ぎても結果が取得できなければ強制的に結果を設定する
+          for (let i = 0; i < betRace.betNumbersetArray.length; i++) {
+            const betNumberset = betRace.betNumbersetArray[i];
+
+            const odds: number | null = null;
+
+            updateCocomoTopN2(
+              cocomo,
+              parseInt(betRace.dataid.toString()),
+              betNumberset.numberset,
+              odds
+            );
+          }
+
+          writeCocomo(cocomo, type, isSim);
+        }
       }
     }
   } finally {

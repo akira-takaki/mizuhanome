@@ -735,6 +735,15 @@ export async function updateBetRaceResult(
         betRaceResult.dataid
       );
       if (raceResult === undefined) {
+        const now: dayjs.Dayjs = dayjs();
+        if (now.hour() >= 22) {
+          // 22:00 過ぎても結果が取得できなければ強制的に結果を設定する
+          betRaceResult.isDecision = true;
+          for (let j = 0; j < betRaceResult.betResults.length; j++) {
+            const betResult = betRaceResult.betResults[j];
+            betResult.dividend = 0;
+          }
+        }
         continue;
       }
 

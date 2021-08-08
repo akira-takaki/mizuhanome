@@ -4,6 +4,7 @@ import { Mutex } from "await-semaphore";
 
 import { getRaceResult } from "#/api";
 import { TicketType } from "#/myUtil";
+import dayjs from "dayjs";
 
 interface BetHistory {
   /** 日付 */
@@ -243,6 +244,19 @@ export async function updateCocomo(
         );
 
         writeCocomo(cocomo, type, isSim);
+      } else {
+        const now: dayjs.Dayjs = dayjs();
+        if (now.hour() >= 22) {
+          // 22:00 過ぎても結果が取得できなければ強制的に結果を設定する
+          updateCocomo2(
+            cocomo,
+            parseInt(betHistory.dataid.toString()),
+            betHistory.numberset,
+            null
+          );
+
+          writeCocomo(cocomo, type, isSim);
+        }
       }
     }
   } finally {
