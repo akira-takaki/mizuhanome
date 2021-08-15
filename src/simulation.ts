@@ -11,7 +11,7 @@ import {
   tabulateBetDayResult,
   writeBetDayResult,
 } from "#/betResult";
-import { report, reportSummary } from "#/report";
+import { missCountMax, report, reportSummary } from "#/report";
 import { NumbersetInfo, playerPowersFromBetRaceResult } from "#/myUtil";
 import { Ticket } from "#/api";
 import {
@@ -263,6 +263,8 @@ async function simulation(): Promise<void> {
   isSim = true;
   dateArray = storedBetDayResultDates(isSim);
   await reportSummary(dateArray, isSim);
+
+  console.log("連続ではずれたカウントの最大値 missCountMax=" + missCountMax);
 }
 
 simulation().catch((err) => {

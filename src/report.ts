@@ -51,6 +51,12 @@ jnames[22] = "福岡";
 jnames[23] = "唐津";
 jnames[24] = "大村";
 
+/* 連続ではずれたカウント */
+export let missCount = 0;
+
+/* 連続ではずれたカウントの最大値 */
+export let missCountMax = 0;
+
 /**
  * ファイル名を作って返す
  *
@@ -263,12 +269,15 @@ function createBetRaceResultTableHtmlRow(
   if (isHit) {
     classSuffix = "hit";
     statusStr = "当";
+    missCountMax = Math.max(missCount, missCountMax);
+    missCount = 0;
   } else if (isResult) {
     classSuffix = "result";
     statusStr = "結";
   } else {
     classSuffix = "miss";
     statusStr = "";
+    missCount++;
   }
   const trStart = `
     <tr class="bet-${classSuffix}">
