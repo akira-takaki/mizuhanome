@@ -230,7 +230,25 @@ export async function addTicket3t2CocomoTopN(
 
   const numbersetInfoTop1 = sortedNumbersetInfos[0];
 
-  const percent = 0.125;
+  // const percent = 0.165; // missCountMax=20
+  // const percent = 0.155; // missCountMax=23
+  // const percent = 0.145; // missCountMax=22
+  // const percent = 0.141; // missCountMax=20
+  // const percent = 0.140; // missCountMax=20
+  // const percent = 0.139; // missCountMax=22
+  // const percent = 0.138; // missCountMax=23
+  // const percent = 0.137; // missCountMax=18
+  const percent = 0.136; // missCountMax=18
+  // const percent = 0.135; // missCountMax=18
+  // const percent = 0.134; // missCountMax=19
+  // const percent = 0.133; // missCountMax=20
+  // const percent = 0.132; // missCountMax=23
+  // const percent = 0.131; // missCountMax=23
+  // const percent = 0.130; // missCountMax=21
+  // const percent = 0.129; // missCountMax=22
+  // const percent = 0.128; // missCountMax=23
+  // const percent = 0.125; // missCountMax=25
+  // const percent = 0.115; // missCountMax=28
   if (numbersetInfoTop1.percent < percent) {
     // 確率の閾値より低い場合賭けない
     return;
@@ -252,7 +270,7 @@ export async function addTicket3t2CocomoTopN(
     parseInt(raceCardBody.dataid.toString()),
     sliceNumbersetInfoTopN,
     "3t",
-    8000,
+    13000,
     30,
     1.5,
     ticket,
