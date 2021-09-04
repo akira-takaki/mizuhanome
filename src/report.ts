@@ -737,11 +737,14 @@ export async function reportSummary(
   for (let i = 1; i <= 20; i++) {
     hittingRate3tTopN[i] = [];
   }
+
+  // 三連単 選抜した場所 合成 指定確率以上 的中率
   const hittingRate3tPercent: (number | null)[][] = [];
   const percentArray: number[] = [];
-  for (let i = 1; i <= 20; i++) {
+  const percentArraySize = 10;
+  for (let i = 1; i <= percentArraySize; i++) {
     hittingRate3tPercent[i] = [];
-    percentArray[i] = 0.002 * i + 0.09;
+    percentArray[i] = 0.01 * i + 0.08;
   }
 
   const htmlStart = `
@@ -817,7 +820,7 @@ export async function reportSummary(
     }
 
     // 三連単 選抜した場所 合成 指定確率以上 的中率
-    for (let j = 1; j <= 20; j++) {
+    for (let j = 1; j <= percentArraySize; j++) {
       hittingRate3tPercent[j].push(
         calcHittingRate(
           betDayResult,
@@ -1024,7 +1027,7 @@ export async function reportSummary(
             datasets: [
   `;
   let chartsPercentBody = ``;
-  for (let i = 1; i <= 20; i++) {
+  for (let i = 1; i <= percentArraySize; i++) {
     if (i > 1) {
       chartsPercentBody += ",";
     }
