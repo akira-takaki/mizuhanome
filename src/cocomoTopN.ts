@@ -88,7 +88,7 @@ export async function initCocomoTopN(
  * @param dataid
  * @param numbersetInfoArray 組番情報
  * @param type 舟券種類
- * @param defaultBet 初期賭け金
+ * @param paidOffset 支払ったお金の底上げ分
  * @param maxCount 損切り回数
  * @param wantRate 儲けたいお金の倍率
  * @param ticket 舟券
@@ -99,7 +99,7 @@ export async function calcCocomoTopNBet(
   dataid: number,
   numbersetInfoArray: NumbersetInfo[],
   type: TicketType,
-  defaultBet: number,
+  paidOffset: number,
   maxCount: number,
   wantRate: number,
   ticket: Ticket,
@@ -135,15 +135,17 @@ export async function calcCocomoTopNBet(
       let paid: number;
 
       if (cocomo.betRaceArray.length <= 0) {
-        // 1回目 は仮の計算で求める
-        paid = defaultBet * numbersetInfoArray.length;
+        // 1回目 は「支払ったお金の底上げ分」
+        paid = paidOffset;
       } else {
-        // 2回目以降 は今までに支払ったお金
-        paid = cocomo.betRaceArray
-          .map((betRace) => betRace.allBet)
-          .reduce(
-            (previousValue, currentValue) => previousValue + currentValue
-          );
+        // 2回目以降 は「支払ったお金の底上げ分」+「今までに支払ったお金」
+        paid =
+          paidOffset +
+          cocomo.betRaceArray
+            .map((betRace) => betRace.allBet)
+            .reduce(
+              (previousValue, currentValue) => previousValue + currentValue
+            );
       }
 
       // 儲けたいお金
