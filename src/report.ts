@@ -1095,7 +1095,7 @@ export async function reportSummary(
     ).length;
     const zeroPercent = Math.round((zeroCount / allCount) * 100);
     let zeroPercentClass = "zero-percent";
-    if (zeroPercent <= 15) {
+    if (zeroPercent <= 18) {
       zeroPercentClass += "-pickup";
     }
     charts4TableRow += `<td class="${zeroPercentClass}">${zeroPercent}%</td>`;
