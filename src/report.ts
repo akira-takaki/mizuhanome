@@ -764,12 +764,21 @@ export async function reportSummary(
     <canvas id="chartsPercent" height="80"></canvas>
   `;
 
+  let amountPurchasedAllMax = 0;
   let htmlSummaryTable = `
     <table class="summary">
   `;
   htmlSummaryTable = htmlSummaryTable + createSummaryTableHtmlHeader();
   for (let i = 0; i < betDayResults.length; i++) {
     const betDayResult = betDayResults[i];
+
+    // 購入金額の最大値
+    if (betDayResult.amountPurchasedAll !== null) {
+      amountPurchasedAllMax = Math.max(
+        amountPurchasedAllMax,
+        betDayResult.amountPurchasedAll
+      );
+    }
 
     // グラフのデータ作成 ラベル
     labels.push(betDayResult.date);
@@ -839,6 +848,9 @@ export async function reportSummary(
   }
   htmlSummaryTable += `
     </table>
+  `;
+  htmlSummaryTable += `
+    購入金額の最大値 : ${currencyFormatter.format(amountPurchasedAllMax)}<br/>
   `;
 
   // 舟券種類別
