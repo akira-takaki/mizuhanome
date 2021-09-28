@@ -271,7 +271,7 @@ export async function addTicket3t2CocomoTopN(
     sliceNumbersetInfoTopN,
     "3t",
     3500,
-    30,
+    40,
     1.5,
     ticket,
     isSim
