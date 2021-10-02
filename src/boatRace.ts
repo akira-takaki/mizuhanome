@@ -185,14 +185,49 @@ export async function addTicket3t2CocomoTopN(
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
-  // 舟券を購入するレース場コード
+  // 確率の閾値 と 舟券を購入するレース場コード
+  // const percent = 0.136; // missCountMax=25, ￥2,266,830
+  // const jcdArray: number[] = [
+  //   11, // びわこ 13%
+  //   13, // 尼崎 14%
+  //   21, // 芦屋 14%
+  //   12, // 住之江 16%
+  //   24, // 大村 17%
+  // ];
+
+  // 確率の閾値 と 舟券を購入するレース場コード
+  // const percent = 0.136; // missCountMax=24, ￥3,054,300
+  // const jcdArray: number[] = [
+  //   21, // 芦屋 48%
+  //   24, // 大村 48%
+  //   9, //  津   51%
+  //   13, // 尼崎 51%
+  //   10, // 三国 54%
+  //   18, // 徳山 55%
+  // ];
+
+  // 確率の閾値 と 舟券を購入するレース場コード
+  const percent = 0.139; // missCountMax=23, ￥2,414,370
   const jcdArray: number[] = [
-    11, // びわこ 13%
-    13, // 尼崎 14%
-    21, // 芦屋 14%
-    12, // 住之江 16%
-    24, // 大村 17%
+    21, // 芦屋   48%
+    24, // 大村   50%
+    13, // 尼崎   51%
+    9, //  津     54%
+    10, // 三国   55%
+    11, // びわこ 55%
   ];
+
+  // 確率の閾値 と 舟券を購入するレース場コード
+  // const percent = 0.141; // missCountMax=24, ￥2,673,850
+  // const jcdArray: number[] = [
+  //   21, // 芦屋   51%
+  //   13, // 尼崎   52%
+  //   24, // 大村   52%
+  //   9, //  津     54%
+  //   20, // 若松   57%
+  //   11, // びわこ 58%
+  // ];
+
   const selectCount = 3; // 舟券を購入するレース場の数
   const selectedJcdArray: number[] = []; // 選抜レース場コード配列
   for (let i = 0; i < jcdArray.length; i++) {
@@ -230,25 +265,6 @@ export async function addTicket3t2CocomoTopN(
 
   const numbersetInfoTop1 = sortedNumbersetInfos[0];
 
-  // const percent = 0.165; // missCountMax=20
-  // const percent = 0.155; // missCountMax=23
-  // const percent = 0.145; // missCountMax=22
-  // const percent = 0.141; // missCountMax=20
-  // const percent = 0.140; // missCountMax=20
-  // const percent = 0.139; // missCountMax=22
-  // const percent = 0.138; // missCountMax=23
-  // const percent = 0.137; // missCountMax=18
-  const percent = 0.136; // missCountMax=18
-  // const percent = 0.135; // missCountMax=18
-  // const percent = 0.134; // missCountMax=19
-  // const percent = 0.133; // missCountMax=20
-  // const percent = 0.132; // missCountMax=23
-  // const percent = 0.131; // missCountMax=23
-  // const percent = 0.130; // missCountMax=21
-  // const percent = 0.129; // missCountMax=22
-  // const percent = 0.128; // missCountMax=23
-  // const percent = 0.125; // missCountMax=25
-  // const percent = 0.115; // missCountMax=28
   if (numbersetInfoTop1.percent < percent) {
     // 確率の閾値より低い場合賭けない
     return;
@@ -270,7 +286,7 @@ export async function addTicket3t2CocomoTopN(
     parseInt(raceCardBody.dataid.toString()),
     sliceNumbersetInfoTopN,
     "3t",
-    3500,
+    3000,
     40,
     1.5,
     ticket,
