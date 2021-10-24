@@ -1,7 +1,8 @@
 {
   "license": "MIT",
   "scripts": {
-    "start": "yarn run ts-node -r tsconfig-paths/register src/main.ts",
+    "start": "yarn start1",
+    "start1": "node --max_old_space_size=3000 -r ts-node/register -r tsconfig-paths/register src/main.ts",
     "sim": "yarn run ts-node -r tsconfig-paths/register src/simulation.ts",
     "comp": "yarn run ts-node -r tsconfig-paths/register src/complementary.ts"
   },
