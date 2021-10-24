@@ -296,8 +296,8 @@ export async function updateCocomoTopN(
         writeCocomo(cocomo, type, isSim);
       } else {
         const now: dayjs.Dayjs = dayjs();
-        if (now.hour() >= 22) {
-          // 22:00 過ぎても結果が取得できなければ強制的に結果を設定する
+        if (now.hour() >= 23) {
+          // 23:00 過ぎても結果が取得できなければ強制的に結果を設定する
           for (let i = 0; i < betRace.betNumbersetArray.length; i++) {
             const betNumberset = betRace.betNumbersetArray[i];
 
