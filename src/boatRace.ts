@@ -186,29 +186,6 @@ export async function addTicket3t2CocomoTopN(
   isSim: boolean
 ): Promise<void> {
   // 確率の閾値 と 舟券を購入するレース場コード
-  // const percent = 0.136; // missCountMax=25
-  // const selectCount = 3; // 舟券を購入するレース場の数
-  // const jcdArray: number[] = [
-  //   11, // びわこ 13%
-  //   13, // 尼崎 14%
-  //   21, // 芦屋 14%
-  //   12, // 住之江 16%
-  //   24, // 大村 17%
-  // ];
-
-  // 確率の閾値 と 舟券を購入するレース場コード
-  // const percent = 0.136; // missCountMax=24
-  // const selectCount = 3; // 舟券を購入するレース場の数
-  // const jcdArray: number[] = [
-  //   21, // 芦屋 48%
-  //   24, // 大村 48%
-  //   9, //  津   51%
-  //   13, // 尼崎 51%
-  //   10, // 三国 54%
-  //   18, // 徳山 55%
-  // ];
-
-  // 確率の閾値 と 舟券を購入するレース場コード
   // const percent = 0.139; // missCountMax=23, ￥2,067,920
   // const selectCount = 3; // 舟券を購入するレース場の数
   // const jcdArray: number[] = [
@@ -221,17 +198,41 @@ export async function addTicket3t2CocomoTopN(
   // ];
 
   // 確率の閾値 と 舟券を購入するレース場コード
-  const percent = 0.139; // missCountMax=23, ￥2,325,990
+  // const percent = 0.139; // missCountMax=23
+  // const selectCount = 3; // 舟券を購入するレース場の数
+  // const jcdArray: number[] = [
+  //   21, // 芦屋   48%
+  //   24, // 大村   50%
+  //   13, // 尼崎   51%
+  //   9, //  津     54%
+  //   10, // 三国   55%
+  //   11, // びわこ 55%
+  //   20, // 若松   57%
+  // ];
+
+  // 確率の閾値 と 舟券を購入するレース場コード
+  const percent = 0.139; // missCountMax=21
   const selectCount = 3; // 舟券を購入するレース場の数
   const jcdArray: number[] = [
     21, // 芦屋   48%
-    24, // 大村   50%
     13, // 尼崎   51%
     9, //  津     54%
     10, // 三国   55%
     11, // びわこ 55%
     20, // 若松   57%
   ];
+
+  // 確率の閾値 と 舟券を購入するレース場コード
+  // const percent = 0.139; // missCountMax=31
+  // const selectCount = 3; // 舟券を購入するレース場の数
+  // const jcdArray: number[] = [
+  //   21, // 芦屋   50%
+  //   13, // 尼崎   51%
+  //   19, // 下関   53%
+  //   18, // 徳山   53%
+  //   20, // 若松   54%
+  //   9, //  津     57%
+  // ];
 
   // 確率の閾値 と 舟券を購入するレース場コード
   // const percent = 0.139; // missCountMax=29, ￥3,822,000
@@ -245,64 +246,6 @@ export async function addTicket3t2CocomoTopN(
   //   11, // びわこ 55%
   //   20, // 若松   57%
   //   18, // 徳山   57%
-  // ];
-
-  // 確率の閾値 と 舟券を購入するレース場コード
-  // const percent = 0.139; // missCountMax=29, ￥3,760,370
-  // const selectCount = 3; // 舟券を購入するレース場の数
-  // const jcdArray: number[] = [
-  //   21, // 芦屋   48%
-  //   24, // 大村   50%
-  //   13, // 尼崎   51%
-  //   9, //  津     54%
-  //   10, // 三国   55%
-  //   11, // びわこ 55%
-  //   20, // 若松   57%
-  //   18, // 徳山   57%
-  //   22, // 福岡   58%
-  //   19, // 下関   60%
-  //   23, // 唐津   60%
-  // ];
-
-  // 確率の閾値 と 舟券を購入するレース場コード
-  // const percent = 0.139; // missCountMax=38, ￥8,452,790
-  // const selectCount = 4; // 舟券を購入するレース場の数
-  // const jcdArray: number[] = [
-  //   21, // 芦屋   48%
-  //   24, // 大村   50%
-  //   13, // 尼崎   51%
-  //   9, //  津     54%
-  //   10, // 三国   55%
-  //   11, // びわこ 55%
-  //   20, // 若松   57%
-  //   18, // 徳山   57%
-  //   22, // 福岡   58%
-  //   19, // 下関   60%
-  //   23, // 唐津   60%
-  // ];
-
-  // 確率の閾値 と 舟券を購入するレース場コード
-  // const percent = 0.141; // missCountMax=24
-  // const selectCount = 3; // 舟券を購入するレース場の数
-  // const jcdArray: number[] = [
-  //   21, // 芦屋   51%
-  //   13, // 尼崎   52%
-  //   24, // 大村   52%
-  //   9, //  津     54%
-  //   20, // 若松   57%
-  //   11, // びわこ 58%
-  // ];
-
-  // 確率の閾値 と 舟券を購入するレース場コード
-  // const percent = 0.15; // missCountMax=24
-  // const selectCount = 3; // 舟券を購入するレース場の数
-  // const jcdArray: number[] = [
-  //   24, // 大村   55%
-  //   13, // 尼崎   56%
-  //   11, // びわこ 58%
-  //   20, // 若松   59%
-  //   21, // 芦屋   60%
-  //   18, // 徳山   60%
   // ];
 
   const selectedJcdArray: number[] = []; // 選抜レース場コード配列
@@ -362,7 +305,7 @@ export async function addTicket3t2CocomoTopN(
     parseInt(raceCardBody.dataid.toString()),
     sliceNumbersetInfoTopN,
     "3t",
-    10500,
+    7000,
     40,
     1.5,
     ticket,
