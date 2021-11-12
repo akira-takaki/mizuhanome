@@ -1041,35 +1041,90 @@ export async function reportSummary(
       charts4TableRow += charts4TableHead;
     }
 
+    // 「的中率が 0 の数」の行 (左のヘッダーを含む)
     charts4TableRow += `
     <tr>
-      <th rowspan="2">確率 ${percentFromToArray[i].toFixed(
+      <th rowspan="3">確率 ${percentFromToArray[i].toFixed(
         3
-      )}以上<br>的中率が 0 の数<br>0 の割合(%)</th>
+      )}以上<br>的中率が 0 の数<br>0 の割合(%)<br>的中率の平均値</th>
   `;
     for (let jcd = 1; jcd <= 24; jcd++) {
+      // 的中率が 0 の数
       const zeroCount = hittingRate3tJcd[i][jcd].filter(
         (value) => value === 0
       ).length;
+
       charts4TableRow += `<td class="zero-count">${zeroCount}</td>`;
     }
     charts4TableRow += `
     </tr>
     <tr>
   `;
+
+    // 「的中率が 0 の数」の行
     for (let jcd = 1; jcd <= 24; jcd++) {
+      // 的中率が 0 の数
       const zeroCount = hittingRate3tJcd[i][jcd].filter(
         (value) => value === 0
       ).length;
+
+      // すべての数
       const allCount = hittingRate3tJcd[i][jcd].filter(
         (value) => value !== null && value >= 0
       ).length;
+
+      // 的中率が 0 の割合
       const zeroPercent = Math.round((zeroCount / allCount) * 100);
+
+      // 背景色の設定
       let zeroPercentClass = "zero-percent";
       if (zeroPercent <= 55) {
         zeroPercentClass += "-pickup";
       }
       charts4TableRow += `<td class="${zeroPercentClass}">${zeroPercent}%</td>`;
+    }
+    charts4TableRow += `
+    </tr>
+    <tr>
+  `;
+
+    // 「的中率の平均値」の行
+    for (let jcd = 1; jcd <= 24; jcd++) {
+      // 有効なすべての的中率
+      const filteredHittingRate3tJcdArray = hittingRate3tJcd[i][jcd].filter(
+        (value) => value !== null && value >= 0
+      );
+
+      // 有効なすべての的中率 の合計
+      const sumHittingRate3tJcd = filteredHittingRate3tJcdArray.reduce(
+        (previousValue, currentValue) => {
+          if (previousValue === null) {
+            previousValue = 0;
+          }
+          if (currentValue === null) {
+            return previousValue;
+          } else {
+            return previousValue + currentValue;
+          }
+        },
+        0
+      );
+
+      // 的中率の平均値
+      if (sumHittingRate3tJcd !== null) {
+        const averageHittingRate3tJcd = Math.round(
+          sumHittingRate3tJcd / filteredHittingRate3tJcdArray.length
+        );
+
+        // 背景色の設定
+        let averageHittingRateClass = "average-hitting-rate";
+        if (averageHittingRate3tJcd >= 20) {
+          averageHittingRateClass += "-pickup";
+        }
+        charts4TableRow += `<td class="${averageHittingRateClass}">${averageHittingRate3tJcd}%</td>`;
+      } else {
+        charts4TableRow += `<td class="average-hitting-rate">-</td>`;
+      }
     }
     charts4TableRow += `
     </tr>

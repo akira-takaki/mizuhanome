@@ -229,3 +229,13 @@ td.zero-percent-pickup {
     text-align: right;
     background-color: yellow;
 }
+
+td.average-hitting-rate {
+    text-align: right;
+    background-color: lightgray;
+}
+
+td.average-hitting-rate-pickup {
+    text-align: right;
+    background-color: yellow;
+}
