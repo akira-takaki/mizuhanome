@@ -161,6 +161,14 @@ export async function addTicket3t2Cocomo(
   }
 }
 
+interface JcdPercent {
+  // レース場コード
+  jcd: number;
+
+  // 確率の閾値
+  percent: number;
+}
+
 /**
  * 購入する三連単の舟券を追加する
  * 確率が高いものからN点賭ける
@@ -187,13 +195,7 @@ export async function addTicket3t2CocomoTopN(
 ): Promise<void> {
   // 舟券を購入するレース場コード と 確率の閾値 missCountMax=20
   // const selectCount = 3; // 舟券を購入するレース場の数
-  // const jcdArray: {
-  //   // レース場コード
-  //   jcd: number;
-  //
-  //   // 確率の閾値
-  //   percent: number;
-  // }[] = [
+  // const jcdArray: JcdPercent[] = [
   //   { jcd: 11, percent: 0.139 }, // びわこ 0の割合:62%, 的中率の平均値:20%, missCountMax=13
   //   { jcd: 21, percent: 0.139 }, // 芦屋   0の割合:50%, 的中率の平均値:23%, missCountMax=14
   //   { jcd: 13, percent: 0.139 }, // 尼崎   0の割合:51%, 的中率の平均値:19%, missCountMax=16
@@ -202,27 +204,20 @@ export async function addTicket3t2CocomoTopN(
   //   { jcd: 9, percent: 0.139 }, //  津     0の割合:57%, 的中率の平均値:19%, missCountMax=23
   // ];
 
-  // 舟券を購入するレース場コード と 確率の閾値 missCountMax=16
-  const selectCount = 2; // 舟券を購入するレース場の数
-  const jcdArray: {
-    // レース場コード
-    jcd: number;
-
-    // 確率の閾値
-    percent: number;
-  }[] = [
-    { jcd: 10, percent: 0.133 }, // 三国 0の割合:52%, 的中率の平均値:21%, missCountMax=14
-    { jcd: 21, percent: 0.137 }, // 芦屋 0の割合:50%, 的中率の平均値:22%, missCountMax=15
-    { jcd: 20, percent: 0.14 }, //  若松 0の割合:54%, 的中率の平均値:20%, missCountMax=16
-    { jcd: 13, percent: 0.134 }, // 尼崎 0の割合:49%, 的中率の平均値:20%, missCountMax=17
-    { jcd: 23, percent: 0.124 }, // 唐津 0の割合:44%, 的中率の平均値:24%, missCountMax=20
-    { jcd: 19, percent: 0.141 }, // 下関 0の割合:53%, 的中率の平均値:21%, missCountMax=20
-    { jcd: 17, percent: 0.114 }, // 宮島 0の割合:48%, 的中率の平均値:20%, missCountMax=21
+  // 舟券を購入するレース場コード と 確率の閾値 missCountMax=19
+  const selectCount = 3; // 舟券を購入するレース場の数
+  const jcdArray: JcdPercent[] = [
+    { jcd: 11, percent: 0.135 }, // びわこ 0の割合:59%, 的中率の平均値:22%, missCountMax=14
+    { jcd: 10, percent: 0.133 }, // 三国 0の割合:54%, 的中率の平均値:21%, missCountMax=14
+    { jcd: 20, percent: 0.14 }, //  若松 0の割合:53%, 的中率の平均値:20%, missCountMax=16
+    { jcd: 13, percent: 0.134 }, // 尼崎 0の割合:49%, 的中率の平均値:19%, missCountMax=17
+    { jcd: 23, percent: 0.124 }, // 唐津 0の割合:45%, 的中率の平均値:24%, missCountMax=20
+    { jcd: 17, percent: 0.138 }, // 宮島 0の割合:61%, 的中率の平均値:22%, missCountMax=20
+    { jcd: 19, percent: 0.141 }, // 下関 0の割合:57%, 的中率の平均値:19%, missCountMax=20
     { jcd: 15, percent: 0.121 }, // 丸亀 0の割合:52%, 的中率の平均値:20%, missCountMax=23
-    // { jcd: 18, percent: 0.125 }, // 徳山 0の割合:40%, 的中率の平均値:20%, missCountMax=29
   ];
 
-  const selectedJcdArray: { jcd: number; percent: number }[] = []; // 選抜レース場コード配列
+  const selectedJcdArray: JcdPercent[] = []; // 選抜レース場コード配列
   for (let i = 0; i < jcdArray.length; i++) {
     for (let j = 0; j < todayJcdArray.length; j++) {
       if (jcdArray[i].jcd === todayJcdArray[j]) {
@@ -283,7 +278,7 @@ export async function addTicket3t2CocomoTopN(
     parseInt(raceCardBody.dataid.toString()),
     sliceNumbersetInfoTopN,
     "3t",
-    9000,
+    5500,
     40,
     1.5,
     ticket,
