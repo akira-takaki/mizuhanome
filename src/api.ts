@@ -417,6 +417,15 @@ interface AutoBuyRequest {
 }
 
 /**
+ * 自動購入レスポンス
+ */
+interface AutoBuyResponse {
+  status: number;
+  message: string;
+  dataid: number;
+}
+
+/**
  * 自動購入
  */
 export async function autoBuy(
@@ -438,15 +447,26 @@ export async function autoBuy(
 
   // 舟券購入 処理
   const url = `${baseUrl}/autobuy/${dataid}?session=${session}`;
-  let axiosResponse: AxiosResponse;
+  let axiosResponse: AxiosResponse<AutoBuyResponse>;
   try {
-    axiosResponse = await axios.post(url, autoBuyRequest, {
+    axiosResponse = await axios.post<
+      AutoBuyResponse,
+      AxiosResponse<AutoBuyResponse>
+    >(url, autoBuyRequest, {
       headers: { "Content-Type": "application/json" },
     });
     logger.debug(util.inspect(axiosResponse.data));
   } catch (err) {
-    logger.error("舟券購入 失敗");
+    logger.error("舟券購入API 失敗");
     logger.debug(err);
+    return;
+  }
+
+  const autoBuyResponse: AutoBuyResponse = axiosResponse.data;
+  if (autoBuyResponse.status === -1) {
+    logger.error("舟券購入 失敗");
+
+    // TODO 舟券購入 失敗 メール送信
   }
 }
 
