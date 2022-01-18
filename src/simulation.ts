@@ -11,7 +11,12 @@ import {
   tabulateBetDayResult,
   writeBetDayResult,
 } from "#/betResult";
-import { missCountMax, report, reportSummary } from "#/report";
+import {
+  missCountMax,
+  missCountMaxDistributionMap,
+  report,
+  reportSummary,
+} from "#/report";
 import { NumbersetInfo, playerPowersFromBetRaceResult } from "#/myUtil";
 import { Ticket } from "#/api";
 import {
@@ -265,6 +270,24 @@ async function simulation(): Promise<void> {
   await reportSummary(dateArray, isSim);
 
   console.log("連続ではずれたカウントの最大値 missCountMax=" + missCountMax);
+  let totalCount = 0;
+  for (let i = 1; i <= missCountMax; i++) {
+    totalCount += missCountMaxDistributionMap[i];
+  }
+  for (let i = 1; i <= missCountMax; i++) {
+    const percent = Math.round(
+      (missCountMaxDistributionMap[i] / totalCount) * 100
+    );
+    console.log(
+      "missCountMaxDistributionMap[" +
+        i +
+        "]=" +
+        missCountMaxDistributionMap[i] +
+        ", " +
+        percent +
+        "%"
+    );
+  }
 }
 
 simulation().catch((err) => {

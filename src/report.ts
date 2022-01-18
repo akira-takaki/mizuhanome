@@ -57,6 +57,11 @@ export let missCount = 0;
 /* 連続ではずれたカウントの最大値 */
 export let missCountMax = 0;
 
+export const missCountMaxDistributionMap: number[] = [];
+for (let i = 1; i <= 50; i++) {
+  missCountMaxDistributionMap[i] = 0;
+}
+
 /**
  * ファイル名を作って返す
  *
@@ -270,6 +275,7 @@ function createBetRaceResultTableHtmlRow(
     classSuffix = "hit";
     statusStr = "当";
     missCountMax = Math.max(missCount, missCountMax);
+    missCountMaxDistributionMap[missCount] += 1;
     missCount = 0;
   } else if (isResult) {
     classSuffix = "result";

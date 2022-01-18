@@ -148,6 +148,12 @@ export async function calcCocomoTopNBet(
             );
       }
 
+      // 統計の結果から
+      // 当たる確率が高い 1回目から5回目まで「支払ったお金の底上げ分」を増やす
+      // if (cocomo.betRaceArray.length >= 0 && cocomo.betRaceArray.length <= 4) {
+      //   paid += Math.round(paidOffset / 2) * (cocomo.betRaceArray.length + 1);
+      // }
+
       // 儲けたいお金
       const want = Math.round(paid * wantRate);
 
