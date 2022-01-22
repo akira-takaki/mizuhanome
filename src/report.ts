@@ -20,6 +20,7 @@ import {
   TicketType,
 } from "#/myUtil";
 import { logger } from "#/boatRace";
+import { sendmail } from "#/sendmail";
 
 const DIR = "./report";
 const PREFIX = "betDayResult";
@@ -533,6 +534,7 @@ export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
     betDayResult = readBetDayResult(date, isSim);
   } catch (err) {
     logger.error(err);
+    await sendmail("report() : エラー");
     return;
   }
 
@@ -713,6 +715,7 @@ export async function reportSummary(
       betDayResult = readBetDayResult(date, isSim);
     } catch (err) {
       logger.error(err);
+      await sendmail("reportSummary() : エラー");
       return;
     }
     betDayResults.push(betDayResult);

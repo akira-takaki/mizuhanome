@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import dayjs from "dayjs";
 import { boatRace, logger } from "#/boatRace";
+import { sendmail } from "#/sendmail";
 
 async function main(): Promise<void> {
   logger.info("起動");
@@ -23,7 +24,10 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error(err);
+
+  await sendmail("システムダウン");
+
   process.exit(1);
 });

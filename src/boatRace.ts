@@ -28,6 +28,7 @@ import {
   updateBetRaceResult,
 } from "#/betResult";
 import {
+  currencyFormatter,
   generateNumbersetInfo,
   isRough,
   NumbersetInfo,
@@ -43,6 +44,7 @@ import { Config, readConfig, writeConfig } from "#/config";
 import { report, reportSummary } from "#/report";
 import { calcCocomoBet, updateCocomo } from "#/cocomo";
 import { calcCocomoTopNBet, updateCocomoTopN } from "#/cocomoTopN";
+import { sendmail } from "#/sendmail";
 
 log4js.configure("./config/LogConfig.json");
 export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
@@ -702,6 +704,7 @@ export async function boatRace(): Promise<void> {
   const session = await authenticate();
   if (session === undefined) {
     logger.error("session is undefined");
+    await sendmail("session is undefined");
     return;
   }
 
@@ -763,6 +766,8 @@ export async function boatRace(): Promise<void> {
         sortedRaceCardBodies.map((value) => parseInt(value.jcd.toString()))
       )
     );
+
+    await sendmail("運用開始");
 
     // 各レースで舟券購入
     for (let i = 0; i < sortedRaceCardBodies.length; i++) {
@@ -910,7 +915,11 @@ export async function boatRace(): Promise<void> {
     const tabulatedBetDayResult = await tabulateBetDayResult(today);
 
     // 次回の資金を設定へ反映
+    let difference: number | null = null;
     if (tabulatedBetDayResult.nextCapital !== null) {
+      // 差額
+      difference = tabulatedBetDayResult.nextCapital - config.capital;
+
       config.capital = tabulatedBetDayResult.nextCapital;
       await writeConfig(config);
     }
@@ -920,8 +929,15 @@ export async function boatRace(): Promise<void> {
     const isSim = false;
     const dateArray = storedBetDayResultDates(isSim);
     await reportSummary(dateArray, isSim);
+
+    if (difference === null) {
+      await sendmail("正常終了 差額 (不明)");
+    } else {
+      await sendmail("正常終了 差額 " + currencyFormatter.format(difference));
+    }
   } catch (err) {
     logger.error(err);
+    await sendmail("異常終了");
   } finally {
     if (sessionIntervalId !== null) {
       clearInterval(sessionIntervalId);

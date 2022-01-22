@@ -6,6 +6,7 @@ import csvtojson from "csvtojson";
 import { logger } from "#/boatRace";
 import { Config } from "#/config";
 import { TicketType } from "#/myUtil";
+import { sendmail } from "#/sendmail";
 
 let baseUrl: string;
 let email: string;
@@ -43,6 +44,7 @@ export async function authenticate(): Promise<string | undefined> {
   } catch (err) {
     logger.error("認証 失敗");
     logger.debug(err);
+    await sendmail("認証 失敗");
     return undefined;
   }
 
@@ -87,6 +89,7 @@ export async function destroy(session: string): Promise<void> {
   } catch (err) {
     logger.error("セッションの破棄 失敗");
     logger.debug(err);
+    await sendmail("セッションの破棄 失敗");
   }
 }
 
@@ -202,6 +205,7 @@ export async function getRaceCard(
   } catch (err) {
     logger.error("出走表 失敗");
     logger.debug(err);
+    await sendmail("出走表 失敗");
     return undefined;
   }
 
@@ -230,6 +234,7 @@ export async function getRaceCardBodies(
   } catch (err) {
     logger.error("出走表 失敗");
     logger.debug(err);
+    await sendmail("出走表 失敗");
     return undefined;
   }
 
@@ -312,6 +317,7 @@ export async function getBeforeInfo(
   } catch (err) {
     logger.error("直前情報 失敗");
     logger.debug(err);
+    // メールは送信しない
     return undefined;
   }
 
@@ -345,6 +351,7 @@ export async function getOdds(
     axiosResponse = await axios.get(url);
   } catch (err) {
     logger.error("オッズ 失敗");
+    // メールは送信しない
     return undefined;
   }
 
@@ -435,6 +442,7 @@ export async function autoBuy(
 ): Promise<void> {
   if (session === undefined) {
     logger.error("舟券購入 失敗 : session is undefined");
+    await sendmail("舟券購入 失敗 : session is undefined");
     return;
   }
 
@@ -459,14 +467,14 @@ export async function autoBuy(
   } catch (err) {
     logger.error("舟券購入API 失敗");
     logger.debug(err);
+    await sendmail("舟券購入API 失敗");
     return;
   }
 
   const autoBuyResponse: AutoBuyResponse = axiosResponse.data;
   if (autoBuyResponse.status === -1) {
     logger.error("舟券購入 失敗");
-
-    // TODO 舟券購入 失敗 メール送信
+    await sendmail("舟券購入 失敗");
   }
 }
 
