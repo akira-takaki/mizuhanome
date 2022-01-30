@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import dayjs from "dayjs";
 import path from "path";
-import { Mutex } from "await-semaphore/index";
+import { Mutex } from "await-semaphore";
 
 import { Config } from "#/config";
 import {

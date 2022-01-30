@@ -1,5 +1,5 @@
 import fs from "fs-extra";
-import { Mutex } from "await-semaphore/index";
+import { Mutex } from "await-semaphore";
 
 /**
  * 設定
