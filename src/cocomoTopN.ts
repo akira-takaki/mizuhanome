@@ -89,6 +89,7 @@ export async function initCocomoTopN(
  * @param numbersetInfoArray 組番情報
  * @param type 舟券種類
  * @param paidOffset 支払ったお金の底上げ分
+ * @param hitCountArray n回目で当たった割合 (hitCountArray[0]が10の場合、0回目で当たった割合が10%ということ)
  * @param maxCount 損切り回数
  * @param wantRate 儲けたいお金の倍率
  * @param ticket 舟券
@@ -100,6 +101,7 @@ export async function calcCocomoTopNBet(
   numbersetInfoArray: NumbersetInfo[],
   type: TicketType,
   paidOffset: number,
+  hitCountArray: number[],
   maxCount: number,
   wantRate: number,
   ticket: Ticket,
@@ -149,13 +151,15 @@ export async function calcCocomoTopNBet(
       }
 
       // 統計の結果から
-      // 当たる確率が高い 1回目から5回目まで「支払ったお金の底上げ分」を増やす
-      // if (cocomo.betRaceArray.length >= 0 && cocomo.betRaceArray.length <= 4) {
-      //   paid += Math.round(paidOffset / 2) * (cocomo.betRaceArray.length + 1);
-      // }
+      const nCount = cocomo.betRaceArray.length; // 0 が 1回目
+      let adjustedWantRate = wantRate;
+      if (hitCountArray.length > nCount) {
+        // 当たる確率が高い n回目の「儲けたいお金の倍率」を増やす
+        adjustedWantRate += 0.05 * hitCountArray[nCount];
+      }
 
       // 儲けたいお金
-      const want = Math.round(paid * wantRate);
+      const want = Math.round(paid * adjustedWantRate);
 
       const betNumbersetArray: BetNumberset[] = [];
       let allBet = 0;
