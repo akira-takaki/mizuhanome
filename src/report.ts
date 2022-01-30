@@ -1035,7 +1035,8 @@ export async function reportSummary(
   `;
   let charts4TableHead = `
     <tr>
-      <th>jcd<br>jname</th>
+      <th>確率絞込み↓</th>
+      <th>jcd<br>jname →</th>
   `;
   for (let jcd = 1; jcd <= 24; jcd++) {
     charts4TableHead += `<th>${jcd}<br>${jnames[jcd]}</th>`;
@@ -1048,14 +1049,20 @@ export async function reportSummary(
   for (let i = 0; i < percentFromToArray.length; i++) {
     if (i % 10 === 0) {
       charts4TableRow += charts4TableHead;
+
+      // 空白行
+      charts4TableRow += `
+    <tr>
+      <td colspan="26" class="space-row"></td>
+    </tr>
+  `;
     }
 
-    // 「的中率が 0 の数」の行 (左のヘッダーを含む)
+    // 「的中率が 0 の数」の行
     charts4TableRow += `
     <tr>
-      <th rowspan="3">確率 ${percentFromToArray[i].toFixed(
-        3
-      )}以上<br>的中率が 0 の数<br>0 の割合(%)<br>的中率の平均値</th>
+      <th rowspan="3">確率 ${percentFromToArray[i].toFixed(3)}以上</th>
+      <th>的中率が 0 の数</th>
   `;
     for (let jcd = 1; jcd <= 24; jcd++) {
       // 的中率が 0 の数
@@ -1067,10 +1074,13 @@ export async function reportSummary(
     }
     charts4TableRow += `
     </tr>
-    <tr>
   `;
 
-    // 「的中率が 0 の数」の行
+    // 「的中率が 0 の割合」の行
+    charts4TableRow += `
+    <tr>
+      <th>的中率が 0 の割合(%)</th>
+  `;
     for (let jcd = 1; jcd <= 24; jcd++) {
       // 的中率が 0 の数
       const zeroCount = hittingRate3tJcd[i][jcd].filter(
@@ -1094,10 +1104,13 @@ export async function reportSummary(
     }
     charts4TableRow += `
     </tr>
-    <tr>
   `;
 
     // 「的中率の平均値」の行
+    charts4TableRow += `
+    <tr>
+      <th class="average-hitting-rate-header">的中率の平均値</th>
+  `;
     for (let jcd = 1; jcd <= 24; jcd++) {
       // 有効なすべての的中率
       const filteredHittingRate3tJcdArray = hittingRate3tJcd[i][jcd].filter(
@@ -1136,6 +1149,13 @@ export async function reportSummary(
       }
     }
     charts4TableRow += `
+    </tr>
+  `;
+
+    // 空白行
+    charts4TableRow += `
+    <tr>
+      <td colspan="26" class="space-row"></td>
     </tr>
   `;
   }
