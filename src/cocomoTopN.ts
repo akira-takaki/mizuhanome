@@ -157,6 +157,11 @@ export async function calcCocomoTopNBet(
         // 当たる確率が高い n回目の「儲けたいお金の倍率」を増やす
         adjustedWantRate += 0.05 * hitCountArray[nCount];
       }
+      if (nCount >= 20) {
+        // 20回目を超えたら、賭け金の高騰を防ぐために 1.0 にする。
+        // 回収率より、被害が最小になるようにする。
+        adjustedWantRate = 1.0;
+      }
 
       // 儲けたいお金
       const want = Math.round(paid * adjustedWantRate);
