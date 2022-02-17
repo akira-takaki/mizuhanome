@@ -205,6 +205,7 @@ export async function addTicket3t2CocomoTopN(
     12, // 4回目、12%
     10, // 5回目、10%
   ];
+  const limitCount = 16;
   const selectCount = 3; // 舟券を購入するレース場の数
   const jcdArray: JcdPercent[] = [
     { jcd: 11, percent: 0.135 }, // びわこ 0の割合:60%, 的中率の平均値:21%, missCountMax=14
@@ -227,6 +228,7 @@ export async function addTicket3t2CocomoTopN(
   //   9, // 4回目、9%
   //   11, // 5回目、11%
   // ];
+  // const limitCount = 21;
   // const selectCount = 4; // 舟券を購入するレース場の数
   // const jcdArray: JcdPercent[] = [
   //   { jcd: 11, percent: 0.135 }, // びわこ 0の割合:60%, 的中率の平均値:21%, missCountMax=14
@@ -306,6 +308,7 @@ export async function addTicket3t2CocomoTopN(
     hitCountArray,
     40,
     1.5,
+    limitCount,
     ticket,
     isSim
   );

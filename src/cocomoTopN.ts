@@ -92,6 +92,7 @@ export async function initCocomoTopN(
  * @param hitCountArray n回目で当たった割合 (hitCountArray[0]が10の場合、0回目で当たった割合が10%ということ)
  * @param maxCount 損切り回数
  * @param wantRate 儲けたいお金の倍率
+ * @param limitCount limitCount回数を超えたら「賭けたいお金の倍率」を強制的に 1.0 にする
  * @param ticket 舟券
  * @param isSim
  */
@@ -104,6 +105,7 @@ export async function calcCocomoTopNBet(
   hitCountArray: number[],
   maxCount: number,
   wantRate: number,
+  limitCount: number,
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
@@ -157,8 +159,8 @@ export async function calcCocomoTopNBet(
         // 当たる確率が高い n回目の「儲けたいお金の倍率」を増やす
         adjustedWantRate += 0.05 * hitCountArray[nCount];
       }
-      if (nCount >= 20) {
-        // 20回目を超えたら、賭け金の高騰を防ぐために 1.0 にする。
+      if (nCount >= limitCount) {
+        // limitCount回目を超えたら、賭け金の高騰を防ぐために 1.0 にする。
         // 回収率より、被害が最小になるようにする。
         adjustedWantRate = 1.0;
       }
