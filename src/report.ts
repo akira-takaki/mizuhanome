@@ -735,8 +735,6 @@ export async function reportSummary(
   const hittingRate3fArray: (number | null)[] = [];
   const hittingRate2tArray: (number | null)[] = [];
   const hittingRate2fArray: (number | null)[] = [];
-  const hittingRate3tWave1Array: (number | null)[] = [];
-  const hittingRate3tWave2Array: (number | null)[] = [];
 
   // ========== 三連単 場所別 的中率 ========== START
   const percentFromToArray: number[] = []; // 確率の範囲 配列
@@ -754,19 +752,56 @@ export async function reportSummary(
   }
   // ========== 三連単 場所別 的中率 ========== END
 
-  const hittingRate3tJcdComposite: (number | null)[] = [];
-  const hittingRate3tTopN: (number | null)[][] = [];
-  for (let i = 1; i <= 20; i++) {
-    hittingRate3tTopN[i] = [];
-  }
-
-  // 三連単 選抜した場所 合成 指定確率以上 的中率
+  // 三連単 選抜した場所 指定確率以上 的中率
   const hittingRate3tPercent: (number | null)[][] = [];
-  const percentArray: number[] = [];
-  const percentArraySize = 10;
-  for (let i = 1; i <= percentArraySize; i++) {
+  const jcdAndPercentAndNameArray: {
+    jcd: number[];
+    percent: number;
+    jcdName: string;
+  }[] = [];
+  jcdAndPercentAndNameArray[1] = {
+    jcd: [11],
+    percent: 0.135,
+    jcdName: "びわこ",
+  };
+  jcdAndPercentAndNameArray[2] = {
+    jcd: [10],
+    percent: 0.133,
+    jcdName: "三国",
+  };
+  jcdAndPercentAndNameArray[3] = {
+    jcd: [20],
+    percent: 0.14,
+    jcdName: "若松",
+  };
+  jcdAndPercentAndNameArray[4] = {
+    jcd: [13],
+    percent: 0.134,
+    jcdName: "尼崎",
+  };
+  jcdAndPercentAndNameArray[5] = {
+    jcd: [23],
+    percent: 0.124,
+    jcdName: "唐津",
+  };
+  jcdAndPercentAndNameArray[6] = {
+    jcd: [17],
+    percent: 0.138,
+    jcdName: "宮島",
+  };
+  jcdAndPercentAndNameArray[7] = {
+    jcd: [19],
+    percent: 0.141,
+    jcdName: "下関",
+  };
+  jcdAndPercentAndNameArray[8] = {
+    jcd: [15],
+    percent: 0.121,
+    jcdName: "丸亀",
+  };
+  const jcdAndPercentAndNameArraySize = 8;
+  for (let i = 1; i <= jcdAndPercentAndNameArraySize; i++) {
     hittingRate3tPercent[i] = [];
-    percentArray[i] = 0.01 * i + 0.08;
   }
 
   const htmlStart = `
@@ -780,8 +815,6 @@ export async function reportSummary(
     ${isSimStr}<br>
     <canvas id="charts1" height="160"></canvas>
     <canvas id="charts2" height="80"></canvas>
-    <canvas id="charts3" height="80"></canvas>
-    <canvas id="chartsTopN" height="80"></canvas>
     <canvas id="chartsPercent" height="80"></canvas>
   `;
 
@@ -819,10 +852,6 @@ export async function reportSummary(
     hittingRate2tArray.push(calcHittingRate(betDayResult, "2t"));
     hittingRate2fArray.push(calcHittingRate(betDayResult, "2f"));
 
-    // 三連単 波の高さ別 的中率
-    hittingRate3tWave1Array.push(calcHittingRate(betDayResult, "3t", 0, 11));
-    hittingRate3tWave2Array.push(calcHittingRate(betDayResult, "3t", 11, 99));
-
     // ========== 三連単 場所別 的中率 ========== START
     for (let j = 0; j < percentFromToArray.length; j++) {
       for (let jcd = 1; jcd <= 24; jcd++) {
@@ -841,36 +870,17 @@ export async function reportSummary(
     }
     // ========== 三連単 場所別 的中率 ========== END
 
-    // 三連単 選抜した場所 合成 的中率
-    hittingRate3tJcdComposite.push(
-      calcHittingRate(betDayResult, "3t", 0, 11, [11, 12, 13, 21, 24])
-    );
-
-    // 三連単 選抜した場所 合成 トップN 的中率
-    for (let j = 1; j <= 20; j++) {
-      hittingRate3tTopN[j].push(
-        calcHittingRate(
-          betDayResult,
-          "3t",
-          undefined,
-          undefined,
-          [11, 12, 13, 21, 24],
-          j
-        )
-      );
-    }
-
-    // 三連単 選抜した場所 合成 指定確率以上 的中率
-    for (let j = 1; j <= percentArraySize; j++) {
+    // 三連単 選抜した場所 指定確率以上 的中率
+    for (let j = 1; j <= jcdAndPercentAndNameArraySize; j++) {
       hittingRate3tPercent[j].push(
         calcHittingRate(
           betDayResult,
           "3t",
           0,
           11,
-          [11, 12, 13, 21, 24],
+          jcdAndPercentAndNameArray[j].jcd,
           1,
-          percentArray[j]
+          jcdAndPercentAndNameArray[j].percent
         )
       );
     }
@@ -892,68 +902,6 @@ export async function reportSummary(
     const type = types[i];
     htmlParameterTable += createTypeParameterTableHtml(type, betDayResults);
   }
-
-  const chartsTopNColors = [
-    "",
-    "#ff3300",
-    "#99cc00",
-    "#33ff66",
-    "#006699",
-    "#6633cc",
-    "#ff66cc",
-    "#cc3300",
-    "#ccff33",
-    "#009933",
-    "#3399cc",
-    "#9966ff",
-    "#ff0099",
-    "#ff6633",
-    "#669900",
-    "#33cc66",
-    "#66ccff",
-    "#6600ff",
-    "#660033",
-    "#993300",
-    "#99cc33",
-  ];
-  const chartsTopNHead = `
-        var ctxTopN = document.getElementById("chartsTopN");
-        var myChartTopN = new Chart(ctxTopN, {
-          type: 'line',
-          data: {
-            labels: ${JSON.stringify(labels)},
-            datasets: [
-  `;
-  let chartsTopNBody = ``;
-  for (let i = 1; i <= 20; i++) {
-    if (i > 1) {
-      chartsTopNBody += ",";
-    }
-    chartsTopNBody += `
-              {
-                label: '三連単的中率(Top${i}, jcd=11,12,13,21,24)',
-                backgroundColor: '${chartsTopNColors[i]}',
-                borderColor: '${chartsTopNColors[i]}',
-                data: ${JSON.stringify(hittingRate3tTopN[i])},
-                fill: false,
-                hidden: true
-              }
-    `;
-  }
-  const chartsTopNTail = `
-            ]
-          },
-          options: {
-            scales: {
-              y: {
-                min: 0,
-                max: 100
-              }
-            }
-          }
-        });
-  `;
-  const chartsTopN = chartsTopNHead + chartsTopNBody + chartsTopNTail;
 
   const chartsPercentColors = [
     "",
@@ -987,32 +935,23 @@ export async function reportSummary(
             datasets: [
   `;
   let chartsPercentBody = ``;
-  for (let i = 1; i <= percentArraySize; i++) {
+  for (let i = 1; i <= jcdAndPercentAndNameArraySize; i++) {
     if (i > 1) {
       chartsPercentBody += ",";
     }
     chartsPercentBody += `
               {
                 label: '三連単的中率(percent>=${
-                  percentArray[i]
-                }, jcd=11,12,13,21,24, wave=0-10)',
+                  jcdAndPercentAndNameArray[i].percent
+                }, ${jcdAndPercentAndNameArray[i].jcdName}, wave=0-10)',
                 backgroundColor: '${chartsPercentColors[i]}',
                 borderColor: '${chartsPercentColors[i]}',
                 data: ${JSON.stringify(hittingRate3tPercent[i])},
                 fill: false,
-                hidden: true
+                hidden: false
               }
     `;
   }
-  chartsPercentBody += `
-              , {
-                label: '三連単的中率(jcd=11,12,13,21,24, wave=0-10)',
-                backgroundColor: 'blue',
-                borderColor: 'blue',
-                data: ${JSON.stringify(hittingRate3tJcdComposite)},
-                fill: false
-              }
-    `;
   const chartsPercentTail = `
             ]
           },
@@ -1237,47 +1176,6 @@ export async function reportSummary(
             }
           }
         });
-
-        var ctx3 = document.getElementById("charts3");
-        var myChart3 = new Chart(ctx3, {
-          type: 'line',
-          data: {
-            labels: ${JSON.stringify(labels)},
-            datasets: [
-              {
-                label: '三連単的中率',
-                backgroundColor: 'green',
-                borderColor: 'green',
-                data: ${JSON.stringify(hittingRate3tArray)},
-                fill: false
-              },
-              {
-                label: '三連単 波0-10 的中率',
-                backgroundColor: 'mediumseagreen',
-                borderColor: 'mediumseagreen',
-                data: ${JSON.stringify(hittingRate3tWave1Array)},
-                fill: false
-              },
-              {
-                label: '三連単 波11- 的中率',
-                backgroundColor: 'aquamarine',
-                borderColor: 'aquamarine',
-                data: ${JSON.stringify(hittingRate3tWave2Array)},
-                fill: false
-              }
-            ]
-          },
-          options: {
-            scales: {
-              y: {
-                min: 0,
-                max: 100
-              }
-            }
-          }
-        });
-        
-        ${chartsTopN}
 
         ${chartsPercent}
 
