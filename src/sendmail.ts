@@ -1,8 +1,8 @@
 import sgMail, { MailDataRequired } from "@sendgrid/mail";
-import dayjs from "dayjs";
 
 import { logger } from "#/boatRace";
 import { Config, readConfig } from "#/config";
+import { getNow } from "#/myUtil";
 
 /**
  * メール送信
@@ -20,7 +20,7 @@ export async function sendmail(message: string): Promise<void> {
   const config: Config = await readConfig();
 
   const dateFormat = "YYYY-MM-DD HH:mm:ss";
-  const now = dayjs();
+  const now = getNow();
 
   const mailData: MailDataRequired = {
     to: config.email,

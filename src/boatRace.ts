@@ -30,6 +30,7 @@ import {
 import {
   currencyFormatter,
   generateNumbersetInfo,
+  getNow,
   isRough,
   NumbersetInfo,
   numbersetInfoOrderByPercent,
@@ -660,7 +661,7 @@ function addTicket2f(
  * ボートレース
  */
 export async function boatRace(): Promise<void> {
-  const today = dayjs();
+  const today = getNow();
 
   logger.info("設定ファイルの読み込み");
   let config: Config;
@@ -760,7 +761,7 @@ export async function boatRace(): Promise<void> {
       let isPass = false;
       let isWait = true;
       while (isWait) {
-        const now = dayjs();
+        const now = getNow();
 
         if (deadLineGai.isBefore(now)) {
           // 場外締切時刻を過ぎていたら処理をパス
@@ -823,16 +824,16 @@ export async function boatRace(): Promise<void> {
       const tickets: Ticket[] = [];
 
       // 購入する三連単の舟券を追加する
-      await addTicket3t(
-        yyyymmdd,
-        raceCardBody,
-        beforeInfo.body,
-        powers,
-        odds,
-        predictsAll,
-        todayJcdArray,
-        tickets
-      );
+      // await addTicket3t(
+      //   yyyymmdd,
+      //   raceCardBody,
+      //   beforeInfo.body,
+      //   powers,
+      //   odds,
+      //   predictsAll,
+      //   todayJcdArray,
+      //   tickets
+      // );
 
       // 購入する三連複の舟券を追加する
       // await addTicket3f(

@@ -7,7 +7,6 @@ import {
   readBetDayResult,
   storedBetDayResultDates,
 } from "#/betResult";
-import { TicketType } from "#/myUtil";
 
 const DIR = "./csv";
 const PREFIX = "raceResult";
