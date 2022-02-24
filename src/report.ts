@@ -22,6 +22,19 @@ import {
 import { logger } from "#/boatRace";
 import { sendmail } from "#/sendmail";
 
+interface JcdAndPercentAndName {
+  jcd: number;
+  percent: number;
+  jcdName: string;
+}
+
+interface JcdAndPercentAndNameArray {
+  jcdAndPercentAndNameArray: JcdAndPercentAndName[];
+
+  // 舟券を購入するレース場の数 (この数までのレース場を対象とする)
+  selectCount: number;
+}
+
 const DIR = "./report";
 const PREFIX = "betDayResult";
 const SUFFIX = "html";
@@ -59,7 +72,7 @@ export let missCount = 0;
 export let missCountMax = 0;
 
 export const missCountMaxDistributionMap: number[] = [];
-for (let i = 1; i <= 50; i++) {
+for (let i = 0; i < 50; i++) {
   missCountMaxDistributionMap[i] = 0;
 }
 
@@ -308,7 +321,9 @@ function createBetRaceResultTableHtmlRow(
       <td class="expectedValue">${decimalFormatter.format(
         betResult.expectedValue
       )}</td>
-      <td class="bet">${currencyFormatter.format(betResult.bet)}</td>
+      <td class="bet">${betResult.bet > 0 ? "★" : ""}${currencyFormatter.format(
+      betResult.bet
+    )}</td>
       <td class="preDividend">${currencyFormatter.format(
         betResult.preDividend
       )}</td>
@@ -603,6 +618,7 @@ export async function report(date: dayjs.Dayjs, isSim = false): Promise<void> {
  * @param jcdArray 場所番号(オプション)
  * @param top 上位何番目までを含めるか
  * @param percent 確率の閾値
+ * @param jcdAndPercentAndNameArray 「場所番号 と 確率の閾値」の配列 その日のレースで指定された場所番号が含まれているときに計算する
  * @return 的中率
  */
 export function calcHittingRate(
@@ -612,7 +628,8 @@ export function calcHittingRate(
   waveTo?: number,
   jcdArray?: number[],
   top = 1,
-  percent?: number
+  percent?: number,
+  jcdAndPercentAndNameArray?: JcdAndPercentAndNameArray
 ): number | null {
   let filteredBetRaceResults = betDayResult.betRaceResults;
 
@@ -632,6 +649,45 @@ export function calcHittingRate(
   if (jcdArray !== undefined) {
     filteredBetRaceResults = filteredBetRaceResults.filter((value) =>
       jcdArray.includes(parseInt(value.raceCardBody.jcd.toString()))
+    );
+  }
+
+  // その日のレースで指定された場所番号が含まれているときに計算する
+  if (jcdAndPercentAndNameArray !== undefined) {
+    // その日のレース場番号を抜き出す
+    const todayJcdArray: number[] = Array.from(
+      new Set(
+        filteredBetRaceResults.map((value) =>
+          parseInt(value.raceCardBody.jcd.toString())
+        )
+      )
+    );
+
+    // 必要な 場所番号 を抜き出す
+    const requiredJcdArray: number[] =
+      jcdAndPercentAndNameArray.jcdAndPercentAndNameArray.map(
+        (value) => value.jcd
+      );
+
+    const selectedJcdArray: number[] = [];
+    for (let i = 0; i < requiredJcdArray.length; i++) {
+      for (let j = 0; j < todayJcdArray.length; j++) {
+        if (requiredJcdArray[i] === todayJcdArray[j]) {
+          // 今日レースをやるレース場コードの場合、
+          // 選抜レース場コード配列 に追加
+          selectedJcdArray.push(requiredJcdArray[i]);
+          break;
+        }
+      }
+      if (selectedJcdArray.length >= jcdAndPercentAndNameArray.selectCount) {
+        // 選抜レース場コード配列 が指定数になったら、そこまで。
+        break;
+      }
+    }
+
+    // 「レースの賭け結果」を「必要な 場所番号」で絞り込む
+    filteredBetRaceResults = filteredBetRaceResults.filter((value) =>
+      selectedJcdArray.includes(parseInt(value.raceCardBody.jcd.toString()))
     );
   }
 
@@ -669,6 +725,20 @@ export function calcHittingRate(
       sortedBetResults = sortedBetResults.filter(
         (value) => value.percent >= percent
       );
+    }
+
+    if (jcdAndPercentAndNameArray !== undefined) {
+      // 指定された 場所番号 で 確率以上 のものに絞り込む
+      const jcdAndPercent: { jcd: number; percent: number } | undefined =
+        jcdAndPercentAndNameArray.jcdAndPercentAndNameArray.find(
+          (value) =>
+            value.jcd === parseInt(betRaceResult.raceCardBody.jcd.toString())
+        );
+      if (jcdAndPercent !== undefined) {
+        sortedBetResults = sortedBetResults.filter(
+          (value) => value.percent >= jcdAndPercent.percent
+        );
+      }
     }
 
     if (sortedBetResults.length <= 0) {
@@ -736,73 +806,247 @@ export async function reportSummary(
   const hittingRate2tArray: (number | null)[] = [];
   const hittingRate2fArray: (number | null)[] = [];
 
-  // ========== 三連単 場所別 的中率 ========== START
+  // ========== 三連複 場所別 的中率 ========== START {
   const percentFromToArray: number[] = []; // 確率の範囲 配列
   const fromPercent = 0.001; // 確率の初期値
-  for (let i = 0; i < 150; i++) {
+  for (let i = 350; i < 450; i++) {
     const percent = fromPercent + 0.001 * i;
     percentFromToArray.push(parseFloat(percent.toFixed(3)));
   }
-  const hittingRate3tJcd: (number | null)[][][] = [];
+  const hittingRate3fJcd: (number | null)[][][] = [];
   for (let i = 0; i < percentFromToArray.length; i++) {
-    hittingRate3tJcd[i] = [];
+    hittingRate3fJcd[i] = [];
     for (let jcd = 1; jcd <= 24; jcd++) {
-      hittingRate3tJcd[i][jcd] = [];
+      hittingRate3fJcd[i][jcd] = [];
     }
   }
-  // ========== 三連単 場所別 的中率 ========== END
+  // } ========== 三連複 場所別 的中率 ========== END
 
-  // 三連単 選抜した場所 指定確率以上 的中率
-  const hittingRate3tPercent: (number | null)[][] = [];
-  const jcdAndPercentAndNameArray: {
-    jcd: number[];
-    percent: number;
-    jcdName: string;
-  }[] = [];
-  jcdAndPercentAndNameArray[1] = {
-    jcd: [11],
-    percent: 0.135,
-    jcdName: "びわこ",
+  // ========== 三連複 選抜した場所 指定確率以上 的中率 ========== START {
+  // 桐生   0の割合:6%, 的中率の平均値:28%
+  const jcdKiryuPercent: JcdAndPercentAndName = {
+    jcd: 1,
+    percent: 0.143,
+    jcdName: "桐生",
   };
-  jcdAndPercentAndNameArray[2] = {
-    jcd: [10],
-    percent: 0.133,
+
+  // 戸田   0の割合:5%, 的中率の平均値:23%
+  const jcdTodaPercent: JcdAndPercentAndName = {
+    jcd: 2,
+    percent: 0.15,
+    jcdName: "戸田",
+  };
+
+  // 江戸川 0の割合:22%, 的中率の平均値:23%
+  const jcdEdogawaPercent: JcdAndPercentAndName = {
+    jcd: 3,
+    percent: 0.15,
+    jcdName: "江戸川",
+  };
+
+  // 平和島 0の割合:8%, 的中率の平均値:27%
+  const jcdHeiwajimaPercent: JcdAndPercentAndName = {
+    jcd: 4,
+    percent: 0.15,
+    jcdName: "平和島",
+  };
+
+  // 多摩川 0の割合:10%, 的中率の平均値:26%
+  const jcdTamagawaPercent: JcdAndPercentAndName = {
+    jcd: 5,
+    percent: 0.15,
+    jcdName: "多摩川",
+  };
+
+  // 浜名湖 0の割合:3%, 的中率の平均値:29%
+  const jcdHamanakoPercent: JcdAndPercentAndName = {
+    jcd: 6,
+    percent: 0.119,
+    jcdName: "浜名湖",
+  };
+
+  // 蒲郡 0の割合:2%, 的中率の平均値:29%
+  const jcdGamagoriPercent: JcdAndPercentAndName = {
+    jcd: 7,
+    percent: 0.141,
+    jcdName: "蒲郡",
+  };
+
+  // 常滑 0の割合:3%, 的中率の平均値:27%
+  const jcdTokonamePercent: JcdAndPercentAndName = {
+    jcd: 8,
+    percent: 0.15,
+    jcdName: "常滑",
+  };
+
+  // 津     0の割合:12%, 的中率の平均値:28%
+  const jcdTsuPercent: JcdAndPercentAndName = {
+    jcd: 9,
+    percent: 0.15,
+    jcdName: "津",
+  };
+
+  // 三国   0の割合:2%, 的中率の平均値:30%
+  const jcdMikuniPercent: JcdAndPercentAndName = {
+    jcd: 10,
+    percent: 0.121,
     jcdName: "三国",
   };
-  jcdAndPercentAndNameArray[3] = {
-    jcd: [20],
-    percent: 0.14,
-    jcdName: "若松",
+
+  // びわこ   0の割合:5%, 的中率の平均値:27%
+  const jcdBiwakoPercent: JcdAndPercentAndName = {
+    jcd: 11,
+    percent: 0.133,
+    jcdName: "びわこ",
   };
-  jcdAndPercentAndNameArray[4] = {
-    jcd: [13],
-    percent: 0.134,
+
+  // 住之江   0の割合:3%, 的中率の平均値:29%
+  const jcdSuminoePercent: JcdAndPercentAndName = {
+    jcd: 12,
+    percent: 0.131,
+    jcdName: "住之江",
+  };
+
+  // 尼崎   0の割合:3%, 的中率の平均値:28%
+  const jcdAmagasakiPercent: JcdAndPercentAndName = {
+    jcd: 13,
+    percent: 0.118,
     jcdName: "尼崎",
   };
-  jcdAndPercentAndNameArray[5] = {
-    jcd: [23],
-    percent: 0.124,
-    jcdName: "唐津",
+
+  // 鳴門   0の割合:8%, 的中率の平均値:28%
+  const jcdNarutoPercent: JcdAndPercentAndName = {
+    jcd: 14,
+    percent: 0.143,
+    jcdName: "鳴門",
   };
-  jcdAndPercentAndNameArray[6] = {
-    jcd: [17],
+
+  // 丸亀   0の割合:6%, 的中率の平均値:29%
+  const jcdMarugamePercent: JcdAndPercentAndName = {
+    jcd: 15,
+    percent: 0.124,
+    jcdName: "丸亀",
+  };
+
+  // 児島   0の割合:8%, 的中率の平均値:23%
+  const jcdKojimaPercent: JcdAndPercentAndName = {
+    jcd: 16,
+    percent: 0.15,
+    jcdName: "児島",
+  };
+
+  // 宮島   0の割合:4%, 的中率の平均値:24%
+  const jcdMiyajimaPercent: JcdAndPercentAndName = {
+    jcd: 17,
     percent: 0.138,
     jcdName: "宮島",
   };
-  jcdAndPercentAndNameArray[7] = {
-    jcd: [19],
-    percent: 0.141,
+
+  // 徳山   0の割合:6%, 的中率の平均値:28%
+  const jcdTokuyamaPercent: JcdAndPercentAndName = {
+    jcd: 18,
+    percent: 0.111,
+    jcdName: "徳山",
+  };
+
+  // 下関   0の割合:5%, 的中率の平均値:28%
+  const jcdShimotosekiPercent: JcdAndPercentAndName = {
+    jcd: 19,
+    percent: 0.138,
     jcdName: "下関",
   };
-  jcdAndPercentAndNameArray[8] = {
-    jcd: [15],
-    percent: 0.121,
-    jcdName: "丸亀",
+
+  // 若松   0の割合:4%, 的中率の平均値:28%
+  const jcdWakamatsuPercent: JcdAndPercentAndName = {
+    jcd: 20,
+    percent: 0.111,
+    jcdName: "若松",
   };
-  const jcdAndPercentAndNameArraySize = 8;
-  for (let i = 1; i <= jcdAndPercentAndNameArraySize; i++) {
-    hittingRate3tPercent[i] = [];
+
+  // 芦屋   0の割合:2%, 的中率の平均値:28%
+  const jcdAshiyaPercent: JcdAndPercentAndName = {
+    jcd: 21,
+    percent: 0.121,
+    jcdName: "芦屋",
+  };
+
+  // 福岡   0の割合:3%, 的中率の平均値:28%
+  const jcdFukuokaPercent: JcdAndPercentAndName = {
+    jcd: 22,
+    percent: 0.121,
+    jcdName: "福岡",
+  };
+
+  // 唐津   0の割合:2%, 的中率の平均値:28%
+  const jcdKaratsuPercent: JcdAndPercentAndName = {
+    jcd: 23,
+    percent: 0.121,
+    jcdName: "唐津",
+  };
+
+  // 大村   0の割合:2%, 的中率の平均値:30%
+  const jcdOomuraPercent: JcdAndPercentAndName = {
+    jcd: 24,
+    percent: 0.121,
+    jcdName: "大村",
+  };
+
+  // 全レース場
+  const jcdAndPercentAndNameArrayAll: JcdAndPercentAndNameArray = {
+    jcdAndPercentAndNameArray: [
+      jcdKiryuPercent,
+      jcdTodaPercent,
+      jcdEdogawaPercent,
+      jcdHeiwajimaPercent,
+      jcdTamagawaPercent,
+      jcdHamanakoPercent,
+      jcdGamagoriPercent,
+      jcdTokonamePercent,
+      jcdTsuPercent,
+      jcdMikuniPercent,
+      jcdBiwakoPercent,
+      jcdSuminoePercent,
+      jcdAmagasakiPercent,
+      jcdNarutoPercent,
+      jcdMarugamePercent,
+      jcdKojimaPercent,
+      jcdMiyajimaPercent,
+      jcdTokuyamaPercent,
+      jcdShimotosekiPercent,
+      jcdWakamatsuPercent,
+      jcdAshiyaPercent,
+      jcdFukuokaPercent,
+      jcdKaratsuPercent,
+      jcdOomuraPercent,
+    ],
+    selectCount: 24,
+  };
+
+  // 0の割合 3%以下、的中率の平均値 28%以上
+  const jcdAndPercentAndNameArrayOver20: JcdAndPercentAndNameArray = {
+    jcdAndPercentAndNameArray: [
+      jcdMikuniPercent, //    三国   0の割合:2%, 的中率の平均値:30%
+      jcdOomuraPercent, //    大村   0の割合:2%, 的中率の平均値:30%
+      jcdGamagoriPercent, //  蒲郡   0の割合:2%, 的中率の平均値:29%
+      jcdHamanakoPercent, //  浜名湖 0の割合:3%, 的中率の平均値:29%
+      jcdSuminoePercent, //   住之江 0の割合:3%, 的中率の平均値:29%
+      jcdKaratsuPercent, //   唐津   0の割合:2%, 的中率の平均値:28%
+      jcdAmagasakiPercent, // 尼崎   0の割合:3%, 的中率の平均値:28%
+      jcdAshiyaPercent, //    芦屋   0の割合:2%, 的中率の平均値:28%
+      jcdFukuokaPercent, //   福岡   0の割合:3%, 的中率の平均値:28%
+    ],
+    selectCount: 9,
+  };
+
+  const jcdAndPercentAndNameArrayArray: JcdAndPercentAndNameArray[] = [
+    jcdAndPercentAndNameArrayAll,
+    jcdAndPercentAndNameArrayOver20,
+  ];
+  const hittingRate3fPercent: (number | null)[][] = [];
+  for (let i = 0; i < jcdAndPercentAndNameArrayArray.length; i++) {
+    hittingRate3fPercent[i] = [];
   }
+  // } ========== 三連複 選抜した場所 指定確率以上 的中率 ========== END
 
   const htmlStart = `
   <!DOCTYPE html>
@@ -852,13 +1096,13 @@ export async function reportSummary(
     hittingRate2tArray.push(calcHittingRate(betDayResult, "2t"));
     hittingRate2fArray.push(calcHittingRate(betDayResult, "2f"));
 
-    // ========== 三連単 場所別 的中率 ========== START
+    // ========== 三連複 場所別 的中率 ========== START {
     for (let j = 0; j < percentFromToArray.length; j++) {
       for (let jcd = 1; jcd <= 24; jcd++) {
-        hittingRate3tJcd[j][jcd].push(
+        hittingRate3fJcd[j][jcd].push(
           calcHittingRate(
             betDayResult,
-            "3t",
+            "3f",
             undefined,
             undefined,
             [jcd],
@@ -868,22 +1112,24 @@ export async function reportSummary(
         );
       }
     }
-    // ========== 三連単 場所別 的中率 ========== END
+    // } ========== 三連複 場所別 的中率 ========== END
 
-    // 三連単 選抜した場所 指定確率以上 的中率
-    for (let j = 1; j <= jcdAndPercentAndNameArraySize; j++) {
-      hittingRate3tPercent[j].push(
+    // ========== 三連複 選抜した場所 指定確率以上 的中率 ========== START {
+    for (let j = 0; j < jcdAndPercentAndNameArrayArray.length; j++) {
+      hittingRate3fPercent[j].push(
         calcHittingRate(
           betDayResult,
-          "3t",
+          "3f",
           0,
           11,
-          jcdAndPercentAndNameArray[j].jcd,
+          undefined,
           1,
-          jcdAndPercentAndNameArray[j].percent
+          undefined,
+          jcdAndPercentAndNameArrayArray[j]
         )
       );
     }
+    // } ========== 三連複 選抜した場所 指定確率以上 的中率 ========== END
 
     // 日別のまとめ行
     htmlSummaryTable += createSummaryTableHtmlRow(betDayResult);
@@ -903,8 +1149,8 @@ export async function reportSummary(
     htmlParameterTable += createTypeParameterTableHtml(type, betDayResults);
   }
 
+  // ========== 三連複 選抜した場所 指定確率以上 的中率 ========== START {
   const chartsPercentColors = [
-    "",
     "#ff3300",
     "#99cc00",
     "#33ff66",
@@ -935,20 +1181,23 @@ export async function reportSummary(
             datasets: [
   `;
   let chartsPercentBody = ``;
-  for (let i = 1; i <= jcdAndPercentAndNameArraySize; i++) {
-    if (i > 1) {
+  for (let i = 0; i < jcdAndPercentAndNameArrayArray.length; i++) {
+    if (i > 0) {
       chartsPercentBody += ",";
     }
+    const label = jcdAndPercentAndNameArrayArray[i].jcdAndPercentAndNameArray
+      .map((value) => value.jcdName)
+      .join(",");
     chartsPercentBody += `
               {
-                label: '三連単的中率(percent>=${
-                  jcdAndPercentAndNameArray[i].percent
-                }, ${jcdAndPercentAndNameArray[i].jcdName}, wave=0-10)',
+                label: '三連複的中率(${
+                  jcdAndPercentAndNameArrayArray[i].selectCount
+                } ${label}, wave=0-10)',
                 backgroundColor: '${chartsPercentColors[i]}',
                 borderColor: '${chartsPercentColors[i]}',
-                data: ${JSON.stringify(hittingRate3tPercent[i])},
+                data: ${JSON.stringify(hittingRate3fPercent[i])},
                 fill: false,
-                hidden: false
+                hidden: true
               }
     `;
   }
@@ -967,8 +1216,9 @@ export async function reportSummary(
   `;
   const chartsPercent =
     chartsPercentHead + chartsPercentBody + chartsPercentTail;
+  // } ========== 三連複 選抜した場所 指定確率以上 的中率 ========== END
 
-  // ========== 三連単 場所別 的中率 ========== START
+  // ========== 三連複 場所別 的中率 ========== START {
   const charts4TableStart = `
   <table>
   `;
@@ -1005,7 +1255,7 @@ export async function reportSummary(
   `;
     for (let jcd = 1; jcd <= 24; jcd++) {
       // 的中率が 0 の数
-      const zeroCount = hittingRate3tJcd[i][jcd].filter(
+      const zeroCount = hittingRate3fJcd[i][jcd].filter(
         (value) => value === 0
       ).length;
 
@@ -1022,12 +1272,12 @@ export async function reportSummary(
   `;
     for (let jcd = 1; jcd <= 24; jcd++) {
       // 的中率が 0 の数
-      const zeroCount = hittingRate3tJcd[i][jcd].filter(
+      const zeroCount = hittingRate3fJcd[i][jcd].filter(
         (value) => value === 0
       ).length;
 
       // すべての数
-      const allCount = hittingRate3tJcd[i][jcd].filter(
+      const allCount = hittingRate3fJcd[i][jcd].filter(
         (value) => value !== null && value >= 0
       ).length;
 
@@ -1036,7 +1286,7 @@ export async function reportSummary(
 
       // 背景色の設定
       let zeroPercentClass = "zero-percent";
-      if (zeroPercent <= 55) {
+      if (zeroPercent <= 40) {
         zeroPercentClass += "-pickup";
       }
       charts4TableRow += `<td class="${zeroPercentClass}">${zeroPercent}%</td>`;
@@ -1052,7 +1302,7 @@ export async function reportSummary(
   `;
     for (let jcd = 1; jcd <= 24; jcd++) {
       // 有効なすべての的中率
-      const filteredHittingRate3tJcdArray = hittingRate3tJcd[i][jcd].filter(
+      const filteredHittingRate3tJcdArray = hittingRate3fJcd[i][jcd].filter(
         (value) => value !== null && value >= 0
       );
 
@@ -1079,7 +1329,7 @@ export async function reportSummary(
 
         // 背景色の設定
         let averageHittingRateClass = "average-hitting-rate";
-        if (averageHittingRate3tJcd >= 20) {
+        if (averageHittingRate3tJcd >= 55) {
           averageHittingRateClass += "-pickup";
         }
         charts4TableRow += `<td class="${averageHittingRateClass}">${averageHittingRate3tJcd}%</td>`;
@@ -1102,7 +1352,7 @@ export async function reportSummary(
   </table>
   `;
   const charts4Table = charts4TableStart + charts4TableRow + charts4TableEnd;
-  // ========== 三連単 場所別 的中率 ========== END
+  // } ========== 三連複 場所別 的中率 ========== END
 
   const htmlEnd = `
       <script src="../node_modules/chart.js/dist/Chart.js"></script>
