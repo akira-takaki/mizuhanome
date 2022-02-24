@@ -3,7 +3,7 @@ import path from "path";
 import { Mutex } from "await-semaphore";
 
 import { getRaceResult } from "#/api";
-import { TicketType } from "#/myUtil";
+import { getNow, TicketType } from "#/myUtil";
 import dayjs from "dayjs";
 
 interface BetHistory {
@@ -245,7 +245,7 @@ export async function updateCocomo(
 
         writeCocomo(cocomo, type, isSim);
       } else {
-        const now: dayjs.Dayjs = dayjs();
+        const now: dayjs.Dayjs = getNow();
         if (now.hour() >= 23) {
           // 23:00 過ぎても結果が取得できなければ強制的に結果を設定する
           updateCocomo2(

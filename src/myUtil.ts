@@ -1,5 +1,6 @@
 import { Odds, PredictsAll, RaceCardBody } from "#/api";
 import { BetRaceResult } from "#/betResult";
+import dayjs, { Dayjs } from "dayjs";
 
 export type TicketType = "3t" | "3f" | "2t" | "2f";
 
@@ -418,4 +419,9 @@ export function raceCardBodyOrderByDeadlinegai(
   } else {
     return 0;
   }
+}
+
+export function getNow(): Dayjs {
+  return dayjs();
+  // return dayjs("2022-02-19 23:00:00", "YYYY-MM-DD HH:mm:ss");
 }

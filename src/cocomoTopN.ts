@@ -3,7 +3,7 @@ import path from "path";
 import { Mutex } from "await-semaphore";
 
 import { getRaceResult, Ticket } from "#/api";
-import { NumbersetInfo, roundBet, TicketType } from "#/myUtil";
+import { getNow, NumbersetInfo, roundBet, TicketType } from "#/myUtil";
 import dayjs from "dayjs";
 
 interface BetNumberset {
@@ -311,7 +311,7 @@ export async function updateCocomoTopN(
 
         writeCocomo(cocomo, type, isSim);
       } else {
-        const now: dayjs.Dayjs = dayjs();
+        const now: dayjs.Dayjs = getNow();
         if (now.hour() >= 23) {
           // 23:00 過ぎても結果が取得できなければ強制的に結果を設定する
           for (let i = 0; i < betRace.betNumbersetArray.length; i++) {

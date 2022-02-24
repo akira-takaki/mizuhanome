@@ -1,7 +1,7 @@
 import cron from "node-cron";
-import dayjs from "dayjs";
 import { boatRace, logger } from "#/boatRace";
 import { sendmail } from "#/sendmail";
+import { getNow } from "#/myUtil";
 
 async function main(): Promise<void> {
   logger.info("起動");
@@ -16,8 +16,8 @@ async function main(): Promise<void> {
   );
 
   // 08:30を過ぎて起動されたら処理を始める
-  const startDayjs = dayjs().set("hour", 8).set("minute", 30).set("second", 0);
-  const nowDayjs = dayjs();
+  const startDayjs = getNow().set("hour", 8).set("minute", 30).set("second", 0);
+  const nowDayjs = getNow();
   if (nowDayjs.isAfter(startDayjs)) {
     logger.info("08:30を過ぎたため実行");
     await boatRace();

@@ -13,7 +13,11 @@ import {
   RaceResult,
   Ticket,
 } from "#/api";
-import { generateNumbersetInfoOrderByPercent, TicketType } from "#/myUtil";
+import {
+  generateNumbersetInfoOrderByPercent,
+  getNow,
+  TicketType,
+} from "#/myUtil";
 
 /**
  * 賭け結果
@@ -735,7 +739,7 @@ export async function updateBetRaceResult(
         betRaceResult.dataid
       );
       if (raceResult === undefined) {
-        const now: dayjs.Dayjs = dayjs();
+        const now: dayjs.Dayjs = getNow();
         if (now.hour() >= 23) {
           // 23:00 過ぎても結果が取得できなければ強制的に結果を設定する
           betRaceResult.isDecision = true;

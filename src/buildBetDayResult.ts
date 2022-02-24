@@ -22,7 +22,7 @@ import {
   setupApi,
   Ticket,
 } from "#/api";
-import { raceCardBodyOrderByDeadlinegai } from "#/myUtil";
+import { getNow, raceCardBodyOrderByDeadlinegai } from "#/myUtil";
 import { logger } from "#/boatRace";
 
 /**
@@ -164,7 +164,7 @@ async function buildBetDayResult(): Promise<void> {
 
     // 開始日 (今日)
     const startDate: dayjs.Dayjs = dayjs(
-      dayjs().format(DATE_FORMAT),
+      getNow().format(DATE_FORMAT),
       DATE_FORMAT
     );
 
