@@ -19,13 +19,7 @@ import {
 } from "#/report";
 import { NumbersetInfo, playerPowersFromBetRaceResult } from "#/myUtil";
 import { Ticket } from "#/api";
-import {
-  addTicket2f2,
-  addTicket2t2Cocomo,
-  addTicket3f2Cocomo,
-  addTicket3t2Cocomo,
-  addTicket3t2CocomoTopN,
-} from "#/boatRace";
+import { addTicket3f2CocomoTopN } from "#/boatRace";
 import { initCocomo, updateCocomoSim } from "#/cocomo";
 import { initCocomoTopN, updateCocomoTopNSim } from "#/cocomoTopN";
 
@@ -99,7 +93,7 @@ async function simulation2(
       type: "3t",
       numbers: [],
     };
-    // await addTicket3t2Cocomo(
+    // await addTicket3t2CocomoTopN(
     //   yyyymmdd,
     //   simulationBetRaceResult.raceCardBody,
     //   simulationBetRaceResult.beforeInfoBody,
@@ -109,30 +103,22 @@ async function simulation2(
     //   ticket3t,
     //   true
     // );
-    await addTicket3t2CocomoTopN(
-      yyyymmdd,
-      simulationBetRaceResult.raceCardBody,
-      simulationBetRaceResult.beforeInfoBody,
-      powers,
-      numbersetInfos3t,
-      todayJcdArray,
-      ticket3t,
-      true
-    );
 
     // 購入する三連複の舟券を追加する
     const ticket3f: Ticket = {
       type: "3f",
       numbers: [],
     };
-    // await addTicket3f2Cocomo(
-    //   yyyymmdd,
-    //   simulationBetRaceResult.dataid,
-    //   powers,
-    //   numbersetInfos3f,
-    //   ticket3f,
-    //   true
-    // );
+    await addTicket3f2CocomoTopN(
+      yyyymmdd,
+      simulationBetRaceResult.raceCardBody,
+      simulationBetRaceResult.beforeInfoBody,
+      powers,
+      numbersetInfos3f,
+      todayJcdArray,
+      ticket3f,
+      true
+    );
 
     // 購入する二連単の舟券を追加する
     const ticket2t: Ticket = {
@@ -224,6 +210,21 @@ async function simulation2(
           "3t"
         );
       }
+      if (originalBetResult.type === "3f" && bet !== 0) {
+        await updateCocomoSim(
+          simulationBetRaceResult.dataid,
+          originalBetResult.numberset,
+          originalBetResult.odds,
+          "3f"
+        );
+
+        await updateCocomoTopNSim(
+          simulationBetRaceResult.dataid,
+          originalBetResult.numberset,
+          originalBetResult.odds,
+          "3f"
+        );
+      }
     }
   }
 
@@ -250,6 +251,8 @@ async function simulation(): Promise<void> {
   // ココモ法 初期化
   await initCocomo("3t", true);
   await initCocomoTopN("3t", true);
+  await initCocomo("3f", true);
+  await initCocomoTopN("3f", true);
 
   // ファイルに保存してある「日単位の賭け結果」の日付配列
   let isSim = false;
@@ -271,10 +274,10 @@ async function simulation(): Promise<void> {
 
   console.log("連続ではずれたカウントの最大値 missCountMax=" + missCountMax);
   let totalCount = 0;
-  for (let i = 1; i <= missCountMax; i++) {
+  for (let i = 0; i <= missCountMax; i++) {
     totalCount += missCountMaxDistributionMap[i];
   }
-  for (let i = 1; i <= missCountMax; i++) {
+  for (let i = 0; i <= missCountMax; i++) {
     const percent = Math.round(
       (missCountMaxDistributionMap[i] / totalCount) * 100
     );
@@ -285,7 +288,10 @@ async function simulation(): Promise<void> {
         missCountMaxDistributionMap[i] +
         ", " +
         percent +
-        "%"
+        "%" +
+        " : " +
+        (i + 1) +
+        "回目"
     );
   }
 }

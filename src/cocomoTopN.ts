@@ -90,7 +90,8 @@ export async function initCocomoTopN(
  * @param type 舟券種類
  * @param paidOffset 支払ったお金の底上げ分
  * @param hitCountArray n回目で当たった割合 (hitCountArray[0]が10の場合、0回目で当たった割合が10%ということ)
- * @param maxCount 損切り回数
+ * @param boostRate hitCountArray で増やす倍率
+ * @param maxCount maxCount回数を超えたら損切りする
  * @param wantRate 儲けたいお金の倍率
  * @param limitCount limitCount回数を超えたら「賭けたいお金の倍率」を強制的に 1.0 にする
  * @param ticket 舟券
@@ -103,6 +104,7 @@ export async function calcCocomoTopNBet(
   type: TicketType,
   paidOffset: number,
   hitCountArray: number[],
+  boostRate: number,
   maxCount: number,
   wantRate: number,
   limitCount: number,
@@ -130,8 +132,8 @@ export async function calcCocomoTopNBet(
       // すべてのレース結果が決定していれば
 
       // 損切り
-      if (cocomo.betRaceArray.length >= maxCount) {
-        // すでに 指定回数 負けていたらリセット
+      if (cocomo.betRaceArray.length > maxCount - 1) {
+        // maxCount回数を超えたら損切りする
         cocomo.betRaceArray = [];
       }
 
@@ -142,24 +144,22 @@ export async function calcCocomoTopNBet(
         // 1回目 は「支払ったお金の底上げ分」
         paid = paidOffset;
       } else {
-        // 2回目以降 は「支払ったお金の底上げ分」+「今までに支払ったお金」
-        paid =
-          paidOffset +
-          cocomo.betRaceArray
-            .map((betRace) => betRace.allBet)
-            .reduce(
-              (previousValue, currentValue) => previousValue + currentValue
-            );
+        // 2回目以降 は「今までに支払ったお金」
+        paid = cocomo.betRaceArray
+          .map((betRace) => betRace.allBet)
+          .reduce(
+            (previousValue, currentValue) => previousValue + currentValue
+          );
       }
 
       // 統計の結果から
-      const nCount = cocomo.betRaceArray.length; // 0 が 1回目
       let adjustedWantRate = wantRate;
-      if (hitCountArray.length > nCount) {
+      if (hitCountArray.length > cocomo.betRaceArray.length) {
         // 当たる確率が高い n回目の「儲けたいお金の倍率」を増やす
-        adjustedWantRate += 0.05 * hitCountArray[nCount];
+        adjustedWantRate +=
+          boostRate * hitCountArray[cocomo.betRaceArray.length];
       }
-      if (nCount >= limitCount) {
+      if (cocomo.betRaceArray.length > limitCount - 1) {
         // limitCount回目を超えたら、賭け金の高騰を防ぐために 1.0 にする。
         // 回収率より、被害が最小になるようにする。
         adjustedWantRate = 1.0;
@@ -241,8 +241,7 @@ function updateCocomoTopN2(
 
         if (betNumberset.numberset === numberset) {
           betNumberset.odds = odds;
-          if (odds !== null && odds >= 2.6) {
-            // 2.6倍以上で勝ち
+          if (odds !== null && odds > 1) {
             isWin = true;
           }
         }
