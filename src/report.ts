@@ -1016,6 +1016,18 @@ export async function reportSummary(
       jcdSuminoePercent, //     住之江
       jcdMarugamePercent, //    丸亀
       jcdShimotosekiPercent, // 下関
+      // jcdFukuokaPercent, //     福岡
+      jcdOomuraPercent, //      大村
+    ],
+    selectCount: 24,
+  };
+  const jcdAndPercentAndNameArrayBet2: JcdAndPercentAndNameArray = {
+    jcdAndPercentAndNameArray: [
+      jcdTamagawaPercent, //    多摩川
+      jcdMikuniPercent, //      三国
+      jcdSuminoePercent, //     住之江
+      jcdMarugamePercent, //    丸亀
+      jcdShimotosekiPercent, // 下関
       jcdFukuokaPercent, //     福岡
       jcdOomuraPercent, //      大村
     ],
@@ -1025,6 +1037,7 @@ export async function reportSummary(
   const jcdAndPercentAndNameArrayArray: JcdAndPercentAndNameArray[] = [
     jcdAndPercentAndNameArrayAll,
     jcdAndPercentAndNameArrayBet,
+    jcdAndPercentAndNameArrayBet2,
   ];
   const hittingRate3fPercent: (number | null)[][] = [];
   for (let i = 0; i < jcdAndPercentAndNameArrayArray.length; i++) {
