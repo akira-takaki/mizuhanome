@@ -82,15 +82,6 @@ export async function addTicket3t2CocomoTopN(
   isSim: boolean
 ): Promise<void> {
   const paidOffset = 5500; // 支払ったお金の底上げ分
-  // n回目で当たった割合 n回目の「儲けたいお金の倍率」を増やす
-  const hitCountArray: number[] = [
-    // 21, // 1回目、21%
-    // 15, // 2回目、15%
-    // 12, // 3回目、12%
-    // 11, // 4回目、11%
-    // 10, // 5回目、10%
-  ];
-  const boostRate = 0.05; // hitCountArray で増やす倍率
   const maxCount = 40; // maxCount回数を超えたら損切りする
   const wantRate = 1.5; // 儲けたいお金の倍率
   const limitCount = 40; // limitCount回数を超えたら「賭けたいお金の倍率」を強制的に 1.0 にする
@@ -107,18 +98,9 @@ export async function addTicket3t2CocomoTopN(
   ];
 
   // const paidOffset = 0; // 支払ったお金の底上げ分
-  // // n回目で当たった割合 n回目の「儲けたいお金の倍率」を増やす
-  // const hitCountArray: number[] = [
-  //   19, // 1回目、19%
-  //   17, // 2回目、17%
-  //   10, // 3回目、10%
-  //   12, // 4回目、12%
-  //   8, // 5回目、8%
-  // ];
-  // const boostRate = 0.1; // hitCountArray で増やす倍率
   // const maxCount = 40; // maxCount回数を超えたら損切りする
   // const wantRate = 1.5; // 儲けたいお金の倍率
-  // const limitCount = hitCountArray.length; // limitCount回数を超えたら「賭けたいお金の倍率」を強制的に 1.0 にする
+  // const limitCount = 40; // limitCount回数を超えたら「賭けたいお金の倍率」を強制的に 1.0 にする
   // const selectCount = 6; // 舟券を購入するレース場の数
   // const jcdArray: JcdPercent[] = [
   //   { jcd: 10, percent: 0.133 }, // 三国   0の割合:49%, 的中率の平均値:24%
@@ -191,8 +173,6 @@ export async function addTicket3t2CocomoTopN(
     sliceNumbersetInfoTopN,
     "3t",
     paidOffset,
-    hitCountArray,
-    boostRate,
     maxCount,
     wantRate,
     limitCount,
@@ -275,13 +255,7 @@ export async function addTicket3f2CocomoTopN(
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
-  const paidOffset = 30000; // 支払ったお金の底上げ分
-  // n回目で当たった割合 n回目の「儲けたいお金の倍率」を増やす
-  const hitCountArray: number[] = [
-    // 55, // 1回目、55%
-    // 25, // 2回目、25%
-  ];
-  const boostRate = 0.05; // hitCountArray で増やす倍率
+  const paidOffset = 27000; // 支払ったお金の底上げ分
   const maxCount = 6; // maxCount回数を超えたら損切りする
   const wantRate = 1.9; // 儲けたいお金の倍率
   const limitCount = 5; // limitCount回数を超えたら「賭けたいお金の倍率」を強制的に 1.0 にする
@@ -373,8 +347,6 @@ export async function addTicket3f2CocomoTopN(
     sliceNumbersetInfoTopN,
     "3f",
     paidOffset,
-    hitCountArray,
-    boostRate,
     maxCount,
     wantRate,
     limitCount,
