@@ -12,14 +12,19 @@ import {
   writeBetDayResult,
 } from "#/betResult";
 import {
+  betMax,
   missCountMax,
   missCountMaxDistributionMap,
   report,
   reportSummary,
 } from "#/report";
-import { NumbersetInfo, playerPowersFromBetRaceResult } from "#/myUtil";
+import {
+  currencyFormatter,
+  NumbersetInfo,
+  playerPowersFromBetRaceResult,
+} from "#/myUtil";
 import { Ticket } from "#/api";
-import { addTicket3f2CocomoTopN } from "#/boatRace";
+import { addTicket3f2CocomoTopN, addTicket3t2CocomoTopN } from "#/boatRace";
 import { initCocomo, updateCocomoSim } from "#/cocomo";
 import { initCocomoTopN, updateCocomoTopNSim } from "#/cocomoTopN";
 
@@ -272,6 +277,7 @@ async function simulation(): Promise<void> {
   dateArray = storedBetDayResultDates(isSim);
   await reportSummary(dateArray, isSim);
 
+  console.log("賭け金の最大値 betMax=" + currencyFormatter.format(betMax));
   console.log("連続ではずれたカウントの最大値 missCountMax=" + missCountMax);
   let totalCount = 0;
   for (let i = 0; i <= missCountMax; i++) {

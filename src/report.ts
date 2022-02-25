@@ -65,6 +65,9 @@ jnames[22] = "福岡";
 jnames[23] = "唐津";
 jnames[24] = "大村";
 
+/* 賭け金の最大値 */
+export let betMax = 0;
+
 /* 連続ではずれたカウント */
 export let missCount = 0;
 
@@ -302,6 +305,8 @@ function createBetRaceResultTableHtmlRow(
   const trStart = `
     <tr class="bet-${classSuffix}">
   `;
+
+  betMax = Math.max(betMax, betResult.bet);
 
   let td = "";
   td =
@@ -823,171 +828,147 @@ export async function reportSummary(
   // } ========== 三連複 場所別 的中率 ========== END
 
   // ========== 三連複 選抜した場所 指定確率以上 的中率 ========== START {
-  // 桐生   0の割合:6%, 的中率の平均値:28%
   const jcdKiryuPercent: JcdAndPercentAndName = {
     jcd: 1,
-    percent: 0.143,
+    percent: 0.43,
     jcdName: "桐生",
   };
 
-  // 戸田   0の割合:5%, 的中率の平均値:23%
   const jcdTodaPercent: JcdAndPercentAndName = {
     jcd: 2,
-    percent: 0.15,
+    percent: 0.435,
     jcdName: "戸田",
   };
 
-  // 江戸川 0の割合:22%, 的中率の平均値:23%
   const jcdEdogawaPercent: JcdAndPercentAndName = {
     jcd: 3,
-    percent: 0.15,
+    percent: 0.389,
     jcdName: "江戸川",
   };
 
-  // 平和島 0の割合:8%, 的中率の平均値:27%
   const jcdHeiwajimaPercent: JcdAndPercentAndName = {
     jcd: 4,
-    percent: 0.15,
+    percent: 0.393,
     jcdName: "平和島",
   };
 
-  // 多摩川 0の割合:10%, 的中率の平均値:26%
   const jcdTamagawaPercent: JcdAndPercentAndName = {
     jcd: 5,
-    percent: 0.15,
+    percent: 0.447,
     jcdName: "多摩川",
   };
 
-  // 浜名湖 0の割合:3%, 的中率の平均値:29%
   const jcdHamanakoPercent: JcdAndPercentAndName = {
     jcd: 6,
-    percent: 0.119,
+    percent: 0.413,
     jcdName: "浜名湖",
   };
 
-  // 蒲郡 0の割合:2%, 的中率の平均値:29%
   const jcdGamagoriPercent: JcdAndPercentAndName = {
     jcd: 7,
-    percent: 0.141,
+    percent: 0.418,
     jcdName: "蒲郡",
   };
 
-  // 常滑 0の割合:3%, 的中率の平均値:27%
   const jcdTokonamePercent: JcdAndPercentAndName = {
     jcd: 8,
-    percent: 0.15,
+    percent: 0.402,
     jcdName: "常滑",
   };
 
-  // 津     0の割合:12%, 的中率の平均値:28%
   const jcdTsuPercent: JcdAndPercentAndName = {
     jcd: 9,
-    percent: 0.15,
+    percent: 0.397,
     jcdName: "津",
   };
 
-  // 三国   0の割合:2%, 的中率の平均値:30%
   const jcdMikuniPercent: JcdAndPercentAndName = {
     jcd: 10,
-    percent: 0.121,
+    percent: 0.4,
     jcdName: "三国",
   };
 
-  // びわこ   0の割合:5%, 的中率の平均値:27%
   const jcdBiwakoPercent: JcdAndPercentAndName = {
     jcd: 11,
-    percent: 0.133,
+    percent: 0.426,
     jcdName: "びわこ",
   };
 
-  // 住之江   0の割合:3%, 的中率の平均値:29%
   const jcdSuminoePercent: JcdAndPercentAndName = {
     jcd: 12,
-    percent: 0.131,
+    percent: 0.448,
     jcdName: "住之江",
   };
 
-  // 尼崎   0の割合:3%, 的中率の平均値:28%
   const jcdAmagasakiPercent: JcdAndPercentAndName = {
     jcd: 13,
-    percent: 0.118,
+    percent: 0.429,
     jcdName: "尼崎",
   };
 
-  // 鳴門   0の割合:8%, 的中率の平均値:28%
   const jcdNarutoPercent: JcdAndPercentAndName = {
     jcd: 14,
-    percent: 0.143,
+    percent: 0.383,
     jcdName: "鳴門",
   };
 
-  // 丸亀   0の割合:6%, 的中率の平均値:29%
   const jcdMarugamePercent: JcdAndPercentAndName = {
     jcd: 15,
-    percent: 0.124,
+    percent: 0.415,
     jcdName: "丸亀",
   };
 
-  // 児島   0の割合:8%, 的中率の平均値:23%
   const jcdKojimaPercent: JcdAndPercentAndName = {
     jcd: 16,
-    percent: 0.15,
+    percent: 0.443,
     jcdName: "児島",
   };
 
-  // 宮島   0の割合:4%, 的中率の平均値:24%
   const jcdMiyajimaPercent: JcdAndPercentAndName = {
     jcd: 17,
-    percent: 0.138,
+    percent: 0.404,
     jcdName: "宮島",
   };
 
-  // 徳山   0の割合:6%, 的中率の平均値:28%
   const jcdTokuyamaPercent: JcdAndPercentAndName = {
     jcd: 18,
-    percent: 0.111,
+    percent: 0.412,
     jcdName: "徳山",
   };
 
-  // 下関   0の割合:5%, 的中率の平均値:28%
   const jcdShimotosekiPercent: JcdAndPercentAndName = {
     jcd: 19,
-    percent: 0.138,
+    percent: 0.438,
     jcdName: "下関",
   };
 
-  // 若松   0の割合:4%, 的中率の平均値:28%
   const jcdWakamatsuPercent: JcdAndPercentAndName = {
     jcd: 20,
-    percent: 0.111,
+    percent: 0.42,
     jcdName: "若松",
   };
 
-  // 芦屋   0の割合:2%, 的中率の平均値:28%
   const jcdAshiyaPercent: JcdAndPercentAndName = {
     jcd: 21,
-    percent: 0.121,
+    percent: 0.387,
     jcdName: "芦屋",
   };
 
-  // 福岡   0の割合:3%, 的中率の平均値:28%
   const jcdFukuokaPercent: JcdAndPercentAndName = {
     jcd: 22,
-    percent: 0.121,
+    percent: 0.402,
     jcdName: "福岡",
   };
 
-  // 唐津   0の割合:2%, 的中率の平均値:28%
   const jcdKaratsuPercent: JcdAndPercentAndName = {
     jcd: 23,
-    percent: 0.121,
+    percent: 0.43,
     jcdName: "唐津",
   };
 
-  // 大村   0の割合:2%, 的中率の平均値:30%
   const jcdOomuraPercent: JcdAndPercentAndName = {
     jcd: 24,
-    percent: 0.121,
+    percent: 0.425,
     jcdName: "大村",
   };
 
@@ -1022,25 +1003,22 @@ export async function reportSummary(
     selectCount: 24,
   };
 
-  // 0の割合 3%以下、的中率の平均値 28%以上
-  const jcdAndPercentAndNameArrayOver20: JcdAndPercentAndNameArray = {
+  const jcdAndPercentAndNameArrayBet: JcdAndPercentAndNameArray = {
     jcdAndPercentAndNameArray: [
-      jcdMikuniPercent, //    三国   0の割合:2%, 的中率の平均値:30%
-      jcdOomuraPercent, //    大村   0の割合:2%, 的中率の平均値:30%
-      jcdGamagoriPercent, //  蒲郡   0の割合:2%, 的中率の平均値:29%
-      jcdHamanakoPercent, //  浜名湖 0の割合:3%, 的中率の平均値:29%
-      jcdSuminoePercent, //   住之江 0の割合:3%, 的中率の平均値:29%
-      jcdKaratsuPercent, //   唐津   0の割合:2%, 的中率の平均値:28%
-      jcdAmagasakiPercent, // 尼崎   0の割合:3%, 的中率の平均値:28%
-      jcdAshiyaPercent, //    芦屋   0の割合:2%, 的中率の平均値:28%
-      jcdFukuokaPercent, //   福岡   0の割合:3%, 的中率の平均値:28%
+      jcdTamagawaPercent, //    多摩川
+      jcdMikuniPercent, //      三国
+      jcdSuminoePercent, //     住之江
+      jcdMarugamePercent, //    丸亀
+      jcdShimotosekiPercent, // 下関
+      jcdFukuokaPercent, //     福岡
+      jcdOomuraPercent, //      大村
     ],
-    selectCount: 9,
+    selectCount: 24,
   };
 
   const jcdAndPercentAndNameArrayArray: JcdAndPercentAndNameArray[] = [
     jcdAndPercentAndNameArrayAll,
-    jcdAndPercentAndNameArrayOver20,
+    jcdAndPercentAndNameArrayBet,
   ];
   const hittingRate3fPercent: (number | null)[][] = [];
   for (let i = 0; i < jcdAndPercentAndNameArrayArray.length; i++) {
