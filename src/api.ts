@@ -131,7 +131,7 @@ export interface RaceCardBody {
   // jname: string;
 
   /** その大会のグレード */
-  // tbgradename: string;
+  tbgradename: string | undefined;
 
   /** 大会名 */
   // ktitle: string;
@@ -174,7 +174,7 @@ function renewRaceCardBody(raceCardBody: RaceCardBody): RaceCardBody {
     kfrom: raceCardBody.kfrom,
     kto: raceCardBody.kto,
     // jname: raceCardBody.jname,
-    // tbgradename: raceCardBody.tbgradename,
+    tbgradename: raceCardBody.tbgradename,
     // ktitle: raceCardBody.ktitle,
     nightflag: raceCardBody.nightflag,
     gradeicon: raceCardBody.gradeicon,

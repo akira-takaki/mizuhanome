@@ -255,6 +255,13 @@ export async function addTicket3f2CocomoTopN(
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
+  if (raceCardBody.tbgradename !== undefined) {
+    if (raceCardBody.tbgradename === "女子") {
+      // 女子のレースは荒れる可能性が高いので賭けない
+      return;
+    }
+  }
+
   const paidOffset = 27000; // 支払ったお金の底上げ分
   const maxCount = 6; // maxCount回数を超えたら損切りする
   const wantRate = 1.9; // 儲けたいお金の倍率
@@ -773,16 +780,16 @@ export async function boatRace(): Promise<void> {
       // );
 
       // 購入する三連複の舟券を追加する
-      await addTicket3f(
-        yyyymmdd,
-        raceCardBody,
-        beforeInfo.body,
-        powers,
-        odds,
-        predictsAll,
-        todayJcdArray,
-        tickets
-      );
+      // await addTicket3f(
+      //   yyyymmdd,
+      //   raceCardBody,
+      //   beforeInfo.body,
+      //   powers,
+      //   odds,
+      //   predictsAll,
+      //   todayJcdArray,
+      //   tickets
+      // );
 
       // 購入する二連単の舟券を追加する
       // await addTicket2t(
