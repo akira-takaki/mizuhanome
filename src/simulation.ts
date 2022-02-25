@@ -13,6 +13,7 @@ import {
 } from "#/betResult";
 import {
   betMax,
+  betMin,
   missCountMax,
   missCountMaxDistributionMap,
   report,
@@ -277,6 +278,7 @@ async function simulation(): Promise<void> {
   dateArray = storedBetDayResultDates(isSim);
   await reportSummary(dateArray, isSim);
 
+  console.log("賭け金の最小値 betMin=" + currencyFormatter.format(betMin));
   console.log("賭け金の最大値 betMax=" + currencyFormatter.format(betMax));
   console.log("連続ではずれたカウントの最大値 missCountMax=" + missCountMax);
   let totalCount = 0;

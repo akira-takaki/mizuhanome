@@ -65,6 +65,9 @@ jnames[22] = "福岡";
 jnames[23] = "唐津";
 jnames[24] = "大村";
 
+/* 賭け金の最小値 */
+export let betMin = 10000000;
+
 /* 賭け金の最大値 */
 export let betMax = 0;
 
@@ -306,6 +309,9 @@ function createBetRaceResultTableHtmlRow(
     <tr class="bet-${classSuffix}">
   `;
 
+  if (betResult.bet > 0) {
+    betMin = Math.min(betMin, betResult.bet);
+  }
   betMax = Math.max(betMax, betResult.bet);
 
   let td = "";
