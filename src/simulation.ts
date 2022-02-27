@@ -30,9 +30,17 @@ import {
   playerPowersFromBetRaceResult,
 } from "#/myUtil";
 import { Ticket } from "#/api";
-import { addTicket3f2CocomoTopN, addTicket3t2CocomoTopN } from "#/boatRace";
+import {
+  addTicket3f2CocomoTopN,
+  addTicket3f2WinnersInvestmentMethod,
+  addTicket3t2CocomoTopN,
+} from "#/boatRace";
 import { initCocomo, updateCocomoSim } from "#/cocomo";
 import { initCocomoTopN, updateCocomoTopNSim } from "#/cocomoTopN";
+import {
+  initWinnersInvestmentMethod,
+  updateWinnersInvestmentMethodSim,
+} from "#/winnersInvestmentMethod";
 
 async function simulation2(
   config: Config,
@@ -205,7 +213,7 @@ async function simulation2(
       };
       simulationBetRaceResult.betResults.push(simulationBetResult);
 
-      // ココモ法の更新
+      // ココモ法、ウィナーズ投資法の更新
       if (originalBetResult.type === "3t" && bet !== 0) {
         await updateCocomoSim(
           simulationBetRaceResult.dataid,
@@ -235,6 +243,13 @@ async function simulation2(
           originalBetResult.odds,
           "3f"
         );
+
+        await updateWinnersInvestmentMethodSim(
+          simulationBetRaceResult.dataid,
+          originalBetResult.numberset,
+          originalBetResult.odds,
+          "3f"
+        );
       }
     }
   }
@@ -259,11 +274,12 @@ async function simulation(): Promise<void> {
     assumedEntryRaceCountRate: 0.02,
   };
 
-  // ココモ法 初期化
+  // ココモ法、ウィナーズ投資法 初期化
   await initCocomo("3t", true);
   await initCocomoTopN("3t", true);
   await initCocomo("3f", true);
   await initCocomoTopN("3f", true);
+  await initWinnersInvestmentMethod("3f", true);
 
   // ファイルに保存してある「日単位の賭け結果」の日付配列
   let isSim = false;

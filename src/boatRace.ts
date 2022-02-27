@@ -45,6 +45,7 @@ import { report, reportSummary } from "#/report";
 import { calcCocomoBet, updateCocomo } from "#/cocomo";
 import { calcCocomoTopNBet, updateCocomoTopN } from "#/cocomoTopN";
 import { sendmail } from "#/sendmail";
+import { calcWinnersInvestmentMethod } from "#/winnersInvestmentMethod";
 
 log4js.configure("./config/LogConfig.json");
 export const logger: log4js.Logger = log4js.getLogger("mizuhanome");
@@ -262,8 +263,8 @@ export async function addTicket3f2CocomoTopN(
     }
   }
 
-  const paidOffset = 27000; // 支払ったお金の底上げ分
-  const maxCount = 6; // maxCount回数を超えたら損切りする
+  const paidOffset = 16000; // 支払ったお金の底上げ分
+  const maxCount = 5; // maxCount回数を超えたら損切りする
   const wantRate = 1.9; // 儲けたいお金の倍率
   const limitCount = 5; // limitCount回数を超えたら「賭けたいお金の倍率」を強制的に 1.0 にする
   const selectCount = 24; // 舟券を購入するレース場の数
@@ -364,6 +365,128 @@ export async function addTicket3f2CocomoTopN(
 
 /**
  * 購入する三連複の舟券を追加する
+ * ウィナーズ投資法
+ *
+ * @param yyyymmdd 当日
+ * @param raceCardBody 出走表 body
+ * @param beforeInfoBody 直前情報 body
+ * @param powers プレイヤーのパワー配列
+ * @param numbersetInfos 1レースの 3f 組番情報
+ * @param todayJcdArray 今日レースをやるレース場コード配列
+ * @param ticket 舟券
+ * @param isSim
+ */
+export async function addTicket3f2WinnersInvestmentMethod(
+  yyyymmdd: string,
+  raceCardBody: RaceCardBody,
+  beforeInfoBody: BeforeInfoBody,
+  powers: Power[],
+  numbersetInfos: NumbersetInfo[],
+  todayJcdArray: number[],
+  ticket: Ticket,
+  isSim: boolean
+): Promise<void> {
+  if (raceCardBody.tbgradename !== undefined) {
+    if (raceCardBody.tbgradename === "女子") {
+      // 女子のレースは荒れる可能性が高いので賭けない
+      return;
+    }
+  }
+
+  const baseBet = 100;
+  const selectCount = 24; // 舟券を購入するレース場の数
+  // ↓「参加レース数」を最大で 3 にするように percent を調整する continuingMissCountMax=5
+  const jcdArray: JcdPercent[] = [
+    { jcd: 1, percent: 0.43 }, // 桐生     0の割合:46%, 的中率の平均値:50%, continuingMissCountMax=3 X
+    { jcd: 2, percent: 0.435 }, // 戸田    0の割合:50%, 的中率の平均値:50%, continuingMissCountMax=3 X
+    // { jcd: 3, percent: 0.389 }, // 江戸川  0の割合:57%, 的中率の平均値:36%, continuingMissCountMax=3 X
+    { jcd: 4, percent: 0.393 }, //  平和島 0の割合:36%, 的中率の平均値:55%, continuingMissCountMax=3 X
+    { jcd: 5, percent: 0.447 }, //  多摩川 0の割合:39%, 的中率の平均値:59%, continuingMissCountMax=2
+    { jcd: 6, percent: 0.413 }, // 浜名湖  0の割合:48%, 的中率の平均値:52%, continuingMissCountMax=4 X
+    { jcd: 7, percent: 0.418 }, //  蒲郡   0の割合:37%, 的中率の平均値:57%, continuingMissCountMax=5 X
+    // { jcd: 8, percent: 0.402 }, // 常滑    0の割合:38%, 的中率の平均値:47%, continuingMissCountMax=4 X
+    { jcd: 9, percent: 0.397 }, //  津     0の割合:39%, 的中率の平均値:55%, continuingMissCountMax=6 X
+    { jcd: 10, percent: 0.4 }, //   三国   0の割合:28%, 的中率の平均値:61%, continuingMissCountMax=5
+    // { jcd: 11, percent: 0.426 }, // びわこ 0の割合:38%, 的中率の平均値:48%, continuingMissCountMax=6 X
+    { jcd: 12, percent: 0.448 }, // 住之江 0の割合:40%, 的中率の平均値:58%, continuingMissCountMax=3
+    { jcd: 13, percent: 0.429 }, // 尼崎   0の割合:36%, 的中率の平均値:55%, continuingMissCountMax=4
+    { jcd: 14, percent: 0.383 }, // 鳴門   0の割合:39%, 的中率の平均値:57%, continuingMissCountMax=5
+    { jcd: 15, percent: 0.415 }, // 丸亀   0の割合:32%, 的中率の平均値:63%, continuingMissCountMax=3
+    { jcd: 16, percent: 0.443 }, // 児島   0の割合:42%, 的中率の平均値:54%, continuingMissCountMax=3 X
+    // { jcd: 17, percent: 0.404 }, // 宮島   0の割合:46%, 的中率の平均値:48%, continuingMissCountMax=4 X
+    // { jcd: 18, percent: 0.412 }, // 徳山   0の割合:51%, 的中率の平均値:40%, continuingMissCountMax=6 X
+    { jcd: 19, percent: 0.438 }, // 下関   0の割合:39%, 的中率の平均値:58%, continuingMissCountMax=3
+    { jcd: 20, percent: 0.42 }, //  若松   0の割合:35%, 的中率の平均値:55%, continuingMissCountMax=6 X
+    { jcd: 21, percent: 0.387 }, // 芦屋   0の割合:37%, 的中率の平均値:52%, continuingMissCountMax=4 X
+    { jcd: 22, percent: 0.402 }, // 福岡   0の割合:32%, 的中率の平均値:57%, continuingMissCountMax=4
+    { jcd: 23, percent: 0.43 }, // 唐津    0の割合:37%, 的中率の平均値:55%, continuingMissCountMax=6 X
+    { jcd: 24, percent: 0.425 }, // 大村   0の割合:30%, 的中率の平均値:57%, continuingMissCountMax=3
+  ];
+
+  const selectedJcdArray: JcdPercent[] = []; // 選抜レース場コード配列
+  for (let i = 0; i < jcdArray.length; i++) {
+    for (let j = 0; j < todayJcdArray.length; j++) {
+      if (jcdArray[i].jcd === todayJcdArray[j]) {
+        // 今日レースをやるレース場コードの場合、
+        // 選抜レース場コード配列 に追加
+        selectedJcdArray.push(jcdArray[i]);
+        break;
+      }
+    }
+    if (selectedJcdArray.length >= selectCount) {
+      // 選抜レース場コード配列 が指定数になったら、そこまで。
+      break;
+    }
+  }
+
+  const selectedJcdArray1 = selectedJcdArray.filter(
+    (value) => value.jcd === parseInt(raceCardBody.jcd.toString())
+  );
+  if (selectedJcdArray1.length <= 0) {
+    // 選抜レース場コード配列 に含まれていなければ賭けない
+    return;
+  }
+  const selectedJcd1 = selectedJcdArray1[0];
+
+  if (
+    beforeInfoBody.wave !== null &&
+    parseInt(beforeInfoBody.wave.replace("cm", "")) > 10
+  ) {
+    // 波の高さが 10cm より大きい場合賭けない
+    return;
+  }
+
+  // 確率が大きい順にソート
+  const sortedNumbersetInfos = numbersetInfos
+    .sort(numbersetInfoOrderByPercent)
+    .reverse();
+
+  const numbersetInfoTop1 = sortedNumbersetInfos[0];
+
+  if (numbersetInfoTop1.percent < selectedJcd1.percent) {
+    // 確率の閾値より低い場合賭けない
+    return;
+  }
+
+  if (numbersetInfoTop1.odds === null || numbersetInfoTop1.odds < 2) {
+    // オッズが 2 より小さい場合は賭けない
+    return;
+  }
+
+  // 賭け金を計算し、舟券へ追加する
+  await calcWinnersInvestmentMethod(
+    yyyymmdd,
+    parseInt(raceCardBody.dataid.toString()),
+    numbersetInfoTop1,
+    "3f",
+    baseBet,
+    ticket,
+    isSim
+  );
+}
+
+/**
+ * 購入する三連複の舟券を追加する
  *
  * @param yyyymmdd 当日
  * @param raceCardBody 出走表 body
@@ -396,7 +519,7 @@ async function addTicket3f(
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
   // 購入する三連単の舟券を追加する
-  await addTicket3f2CocomoTopN(
+  await addTicket3f2WinnersInvestmentMethod(
     yyyymmdd,
     raceCardBody,
     beforeInfoBody,
