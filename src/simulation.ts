@@ -14,10 +14,15 @@ import {
 import {
   betMax,
   betMin,
-  missCountMax,
-  missCountMaxDistributionMap,
+  continuingHitCountMax,
+  continuingHitCountMaxDistributionMap,
+  continuingMissCountMax,
+  continuingMissCountMaxDistributionMap,
   report,
   reportSummary,
+  totalBetCount,
+  totalHitCount,
+  totalMissCount,
 } from "#/report";
 import {
   currencyFormatter,
@@ -278,22 +283,63 @@ async function simulation(): Promise<void> {
   dateArray = storedBetDayResultDates(isSim);
   await reportSummary(dateArray, isSim);
 
+  console.log("賭けた回数 totalBetCount=" + totalBetCount);
+  console.log(
+    "当たった回数 totalHitCount=" +
+      totalHitCount +
+      ", " +
+      Math.round((totalHitCount / totalBetCount) * 100) +
+      "%"
+  );
+  console.log("はずれた回数 totalMissCount=" + totalMissCount);
   console.log("賭け金の最小値 betMin=" + currencyFormatter.format(betMin));
   console.log("賭け金の最大値 betMax=" + currencyFormatter.format(betMax));
-  console.log("連続ではずれたカウントの最大値 missCountMax=" + missCountMax);
-  let totalCount = 0;
-  for (let i = 0; i <= missCountMax; i++) {
-    totalCount += missCountMaxDistributionMap[i];
+
+  console.log(
+    "連続で当たったカウントの最大値 continuingHitCountMax=" +
+      continuingHitCountMax
+  );
+  let totalContinuingHitCountMax = 0;
+  for (let i = 0; i <= continuingHitCountMax; i++) {
+    totalContinuingHitCountMax += continuingHitCountMaxDistributionMap[i];
   }
-  for (let i = 0; i <= missCountMax; i++) {
+  for (let i = 0; i <= continuingHitCountMax; i++) {
     const percent = Math.round(
-      (missCountMaxDistributionMap[i] / totalCount) * 100
+      (continuingHitCountMaxDistributionMap[i] / totalContinuingHitCountMax) *
+        100
     );
     console.log(
-      "missCountMaxDistributionMap[" +
+      "continuingHitCountMaxDistributionMap[" +
         i +
         "]=" +
-        missCountMaxDistributionMap[i] +
+        continuingHitCountMaxDistributionMap[i] +
+        ", " +
+        percent +
+        "%" +
+        " : " +
+        (i + 1) +
+        "回目"
+    );
+  }
+
+  console.log(
+    "連続ではずれたカウントの最大値 continuingMissCountMax=" +
+      continuingMissCountMax
+  );
+  let totalContinuingMissCountMax = 0;
+  for (let i = 0; i <= continuingMissCountMax; i++) {
+    totalContinuingMissCountMax += continuingMissCountMaxDistributionMap[i];
+  }
+  for (let i = 0; i <= continuingMissCountMax; i++) {
+    const percent = Math.round(
+      (continuingMissCountMaxDistributionMap[i] / totalContinuingMissCountMax) *
+        100
+    );
+    console.log(
+      "continuingMissCountMaxDistributionMap[" +
+        i +
+        "]=" +
+        continuingMissCountMaxDistributionMap[i] +
         ", " +
         percent +
         "%" +

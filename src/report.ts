@@ -65,21 +65,41 @@ jnames[22] = "福岡";
 jnames[23] = "唐津";
 jnames[24] = "大村";
 
+/* 賭けた回数 */
+export let totalBetCount = 0;
+
+/* 当たった回数 */
+export let totalHitCount = 0;
+
+/* はずれた回数 */
+export let totalMissCount = 0;
+
 /* 賭け金の最小値 */
 export let betMin = 10000000;
 
 /* 賭け金の最大値 */
 export let betMax = 0;
 
+/* 連続で当たったカウント */
+export let continuingHitCount = 0;
+
+/* 連続で当たったカウントの最大値 */
+export let continuingHitCountMax = 0;
+
+export const continuingHitCountMaxDistributionMap: number[] = [];
+for (let i = 0; i < 50; i++) {
+  continuingHitCountMaxDistributionMap[i] = 0;
+}
+
 /* 連続ではずれたカウント */
-export let missCount = 0;
+export let continuingMissCount = 0;
 
 /* 連続ではずれたカウントの最大値 */
-export let missCountMax = 0;
+export let continuingMissCountMax = 0;
 
-export const missCountMaxDistributionMap: number[] = [];
+export const continuingMissCountMaxDistributionMap: number[] = [];
 for (let i = 0; i < 50; i++) {
-  missCountMaxDistributionMap[i] = 0;
+  continuingMissCountMaxDistributionMap[i] = 0;
 }
 
 /**
@@ -294,25 +314,51 @@ function createBetRaceResultTableHtmlRow(
   if (isHit) {
     classSuffix = "hit";
     statusStr = "当";
-    missCountMax = Math.max(missCount, missCountMax);
-    missCountMaxDistributionMap[missCount] += 1;
-    missCount = 0;
+
+    totalHitCount++;
+
+    // 連続で当たったカウント 更新
+    if (continuingMissCount === 0) {
+      continuingHitCount++;
+    }
+
+    // 連続ではずれたカウントの最大値 記録
+    continuingMissCountMax = Math.max(
+      continuingMissCount,
+      continuingMissCountMax
+    );
+
+    // 連続ではずれたカウント 記録、リセット
+    continuingMissCountMaxDistributionMap[continuingMissCount] += 1;
+    continuingMissCount = 0;
   } else if (isResult) {
     classSuffix = "result";
     statusStr = "結";
   } else {
     classSuffix = "miss";
     statusStr = "";
-    missCount++;
+
+    totalMissCount++;
+
+    // 連続で当たったカウントの最大値 記録
+    continuingHitCountMax = Math.max(continuingHitCount, continuingHitCountMax);
+
+    // 連続で当たったカウント 記録、リセット
+    continuingHitCountMaxDistributionMap[continuingHitCount] += 1;
+    continuingHitCount = 0;
+
+    // 連続ではずれたカウント 更新
+    continuingMissCount++;
   }
   const trStart = `
     <tr class="bet-${classSuffix}">
   `;
 
   if (betResult.bet > 0) {
+    totalBetCount++;
     betMin = Math.min(betMin, betResult.bet);
+    betMax = Math.max(betMax, betResult.bet);
   }
-  betMax = Math.max(betMax, betResult.bet);
 
   let td = "";
   td =
