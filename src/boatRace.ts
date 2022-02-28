@@ -42,7 +42,7 @@ import {
 } from "#/myUtil";
 import { Config, readConfig, writeConfig } from "#/config";
 import { report, reportSummary } from "#/report";
-import { calcCocomoBet, updateCocomo } from "#/cocomo";
+import { calcCocomoBet } from "#/cocomo";
 import { calcCocomoTopNBet, updateCocomoTopN } from "#/cocomoTopN";
 import { sendmail } from "#/sendmail";
 import { calcWinnersInvestmentMethod } from "#/winnersInvestmentMethod";
@@ -263,37 +263,37 @@ export async function addTicket3f2CocomoTopN(
     }
   }
 
-  const paidOffset = 16000; // 支払ったお金の底上げ分
-  const maxCount = 5; // maxCount回数を超えたら損切りする
+  const paidOffset = 10000; // 支払ったお金の底上げ分
+  const maxCount = 8; // maxCount回数を超えたら損切りする
   const wantRate = 1.9; // 儲けたいお金の倍率
-  const limitCount = 5; // limitCount回数を超えたら「賭けたいお金の倍率」を強制的に 1.0 にする
+  const limitCount = 6; // limitCount回数を超えたら「賭けたいお金の倍率」を強制的に 1.0 にする
   const selectCount = 24; // 舟券を購入するレース場の数
   // ↓「参加レース数」を最大で 3 にするように percent を調整する continuingMissCountMax=5
   const jcdArray: JcdPercent[] = [
-    // { jcd: 1, percent: 0.43 }, // 桐生     0の割合:46%, 的中率の平均値:50%, continuingMissCountMax=3 X
-    // { jcd: 2, percent: 0.435 }, // 戸田    0の割合:50%, 的中率の平均値:50%, continuingMissCountMax=3 X
-    // { jcd: 3, percent: 0.389 }, // 江戸川  0の割合:57%, 的中率の平均値:36%, continuingMissCountMax=3 X
+    // { jcd: 1, percent: 0.43 }, //   桐生   0の割合:46%, 的中率の平均値:50%, continuingMissCountMax=3 X
+    // { jcd: 2, percent: 0.435 }, //  戸田   0の割合:50%, 的中率の平均値:50%, continuingMissCountMax=3 X
+    // { jcd: 3, percent: 0.389 }, //  江戸川 0の割合:57%, 的中率の平均値:36%, continuingMissCountMax=3 XX
     // { jcd: 4, percent: 0.393 }, //  平和島 0の割合:36%, 的中率の平均値:55%, continuingMissCountMax=3
-    { jcd: 5, percent: 0.447 }, //  多摩川 0の割合:39%, 的中率の平均値:59%, continuingMissCountMax=2
-    // { jcd: 6, percent: 0.413 }, // 浜名湖  0の割合:48%, 的中率の平均値:52%, continuingMissCountMax=4 X
+    { jcd: 5, percent: 0.447 }, //  多摩川 0の割合:39%, 的中率の平均値:59%, continuingMissCountMax=2 O
+    // { jcd: 6, percent: 0.413 }, //  浜名湖 0の割合:48%, 的中率の平均値:52%, continuingMissCountMax=4 X
     // { jcd: 7, percent: 0.418 }, //  蒲郡   0の割合:37%, 的中率の平均値:57%, continuingMissCountMax=5
-    // { jcd: 8, percent: 0.402 }, // 常滑    0の割合:38%, 的中率の平均値:47%, continuingMissCountMax=4 X
+    // { jcd: 8, percent: 0.402 }, //  常滑   0の割合:38%, 的中率の平均値:47%, continuingMissCountMax=4 XX
     // { jcd: 9, percent: 0.397 }, //  津     0の割合:39%, 的中率の平均値:55%, continuingMissCountMax=6
-    { jcd: 10, percent: 0.4 }, //   三国   0の割合:28%, 的中率の平均値:61%, continuingMissCountMax=5
-    // { jcd: 11, percent: 0.426 }, // びわこ 0の割合:38%, 的中率の平均値:48%, continuingMissCountMax=6 X
-    { jcd: 12, percent: 0.448 }, // 住之江 0の割合:40%, 的中率の平均値:58%, continuingMissCountMax=3
+    { jcd: 10, percent: 0.4 }, //   三国   0の割合:28%, 的中率の平均値:61%, continuingMissCountMax=5 O
+    // { jcd: 11, percent: 0.426 }, // びわこ 0の割合:38%, 的中率の平均値:48%, continuingMissCountMax=6 XX
+    { jcd: 12, percent: 0.448 }, // 住之江 0の割合:40%, 的中率の平均値:58%, continuingMissCountMax=3 O
     // { jcd: 13, percent: 0.429 }, // 尼崎   0の割合:36%, 的中率の平均値:55%, continuingMissCountMax=4
     // { jcd: 14, percent: 0.383 }, // 鳴門   0の割合:39%, 的中率の平均値:57%, continuingMissCountMax=5
-    { jcd: 15, percent: 0.415 }, // 丸亀   0の割合:32%, 的中率の平均値:63%, continuingMissCountMax=3
+    { jcd: 15, percent: 0.415 }, // 丸亀   0の割合:32%, 的中率の平均値:63%, continuingMissCountMax=3 O
     // { jcd: 16, percent: 0.443 }, // 児島   0の割合:42%, 的中率の平均値:54%, continuingMissCountMax=3 X
-    // { jcd: 17, percent: 0.404 }, // 宮島   0の割合:46%, 的中率の平均値:48%, continuingMissCountMax=4 X
-    // { jcd: 18, percent: 0.412 }, // 徳山   0の割合:51%, 的中率の平均値:40%, continuingMissCountMax=6 X
-    { jcd: 19, percent: 0.438 }, // 下関   0の割合:39%, 的中率の平均値:58%, continuingMissCountMax=3
+    // { jcd: 17, percent: 0.404 }, // 宮島   0の割合:46%, 的中率の平均値:48%, continuingMissCountMax=4 XX
+    // { jcd: 18, percent: 0.412 }, // 徳山   0の割合:51%, 的中率の平均値:40%, continuingMissCountMax=6 XX
+    { jcd: 19, percent: 0.438 }, // 下関   0の割合:39%, 的中率の平均値:58%, continuingMissCountMax=3 O
     // { jcd: 20, percent: 0.42 }, //  若松   0の割合:35%, 的中率の平均値:55%, continuingMissCountMax=6
     // { jcd: 21, percent: 0.387 }, // 芦屋   0の割合:37%, 的中率の平均値:52%, continuingMissCountMax=4 X
-    { jcd: 22, percent: 0.402 }, // 福岡   0の割合:32%, 的中率の平均値:57%, continuingMissCountMax=4
-    // { jcd: 23, percent: 0.43 }, // 唐津    0の割合:37%, 的中率の平均値:55%, continuingMissCountMax=6
-    { jcd: 24, percent: 0.425 }, // 大村   0の割合:30%, 的中率の平均値:57%, continuingMissCountMax=3
+    // { jcd: 22, percent: 0.402 }, // 福岡   0の割合:32%, 的中率の平均値:57%, continuingMissCountMax=4
+    // { jcd: 23, percent: 0.43 }, //  唐津   0の割合:37%, 的中率の平均値:55%, continuingMissCountMax=6
+    // { jcd: 24, percent: 0.425 }, // 大村   0の割合:30%, 的中率の平均値:57%, continuingMissCountMax=3
   ];
 
   const selectedJcdArray: JcdPercent[] = []; // 選抜レース場コード配列
@@ -518,8 +518,8 @@ async function addTicket3f(
   // 組番情報配列を生成する。
   const numbersetInfos = generateNumbersetInfo(type, predictsAll, odds);
 
-  // 購入する三連単の舟券を追加する
-  await addTicket3f2WinnersInvestmentMethod(
+  // 購入する三連複の舟券を追加する
+  await addTicket3f2CocomoTopN(
     yyyymmdd,
     raceCardBody,
     beforeInfoBody,
@@ -798,8 +798,7 @@ export async function boatRace(): Promise<void> {
 
     cocomoIntervalId = setInterval(async () => {
       // ココモ法の賭け結果 の勝敗を更新する
-      await updateCocomo(session, "3t");
-      await updateCocomoTopN(session, "3t");
+      await updateCocomoTopN(session, "3f");
     }, 9000);
 
     // 今日レースをやるレース場コード
@@ -903,16 +902,16 @@ export async function boatRace(): Promise<void> {
       // );
 
       // 購入する三連複の舟券を追加する
-      // await addTicket3f(
-      //   yyyymmdd,
-      //   raceCardBody,
-      //   beforeInfo.body,
-      //   powers,
-      //   odds,
-      //   predictsAll,
-      //   todayJcdArray,
-      //   tickets
-      // );
+      await addTicket3f(
+        yyyymmdd,
+        raceCardBody,
+        beforeInfo.body,
+        powers,
+        odds,
+        predictsAll,
+        todayJcdArray,
+        tickets
+      );
 
       // 購入する二連単の舟券を追加する
       // await addTicket2t(
