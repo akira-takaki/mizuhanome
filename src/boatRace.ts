@@ -82,7 +82,7 @@ export async function addTicket3t2CocomoTopN(
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
-  const paidOffset = 5500; // 支払ったお金の底上げ分
+  const paidOffset = 7000; // 支払ったお金の底上げ分
   const maxCount = 40; // maxCount回数を超えたら損切りする
   const wantRate = 1.5; // 儲けたいお金の倍率
   const limitCount = 40; // limitCount回数を超えたら「賭けたいお金の倍率」を強制的に 1.0 にする
@@ -798,6 +798,7 @@ export async function boatRace(): Promise<void> {
 
     cocomoIntervalId = setInterval(async () => {
       // ココモ法の賭け結果 の勝敗を更新する
+      await updateCocomoTopN(session, "3t");
       await updateCocomoTopN(session, "3f");
     }, 9000);
 
@@ -890,19 +891,7 @@ export async function boatRace(): Promise<void> {
       const tickets: Ticket[] = [];
 
       // 購入する三連単の舟券を追加する
-      // await addTicket3t(
-      //   yyyymmdd,
-      //   raceCardBody,
-      //   beforeInfo.body,
-      //   powers,
-      //   odds,
-      //   predictsAll,
-      //   todayJcdArray,
-      //   tickets
-      // );
-
-      // 購入する三連複の舟券を追加する
-      await addTicket3f(
+      await addTicket3t(
         yyyymmdd,
         raceCardBody,
         beforeInfo.body,
@@ -912,6 +901,18 @@ export async function boatRace(): Promise<void> {
         todayJcdArray,
         tickets
       );
+
+      // 購入する三連複の舟券を追加する
+      // await addTicket3f(
+      //   yyyymmdd,
+      //   raceCardBody,
+      //   beforeInfo.body,
+      //   powers,
+      //   odds,
+      //   predictsAll,
+      //   todayJcdArray,
+      //   tickets
+      // );
 
       // 購入する二連単の舟券を追加する
       // await addTicket2t(

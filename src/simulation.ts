@@ -30,7 +30,7 @@ import {
   playerPowersFromBetRaceResult,
 } from "#/myUtil";
 import { Ticket } from "#/api";
-import { addTicket3f2CocomoTopN } from "#/boatRace";
+import { addTicket3f2CocomoTopN, addTicket3t2CocomoTopN } from "#/boatRace";
 import { initCocomoTopN, updateCocomoTopNSim } from "#/cocomoTopN";
 
 async function simulation2(
@@ -103,32 +103,32 @@ async function simulation2(
       type: "3t",
       numbers: [],
     };
-    // await addTicket3t2CocomoTopN(
-    //   yyyymmdd,
-    //   simulationBetRaceResult.raceCardBody,
-    //   simulationBetRaceResult.beforeInfoBody,
-    //   powers,
-    //   numbersetInfos3t,
-    //   todayJcdArray,
-    //   ticket3t,
-    //   true
-    // );
+    await addTicket3t2CocomoTopN(
+      yyyymmdd,
+      simulationBetRaceResult.raceCardBody,
+      simulationBetRaceResult.beforeInfoBody,
+      powers,
+      numbersetInfos3t,
+      todayJcdArray,
+      ticket3t,
+      true
+    );
 
     // 購入する三連複の舟券を追加する
     const ticket3f: Ticket = {
       type: "3f",
       numbers: [],
     };
-    await addTicket3f2CocomoTopN(
-      yyyymmdd,
-      simulationBetRaceResult.raceCardBody,
-      simulationBetRaceResult.beforeInfoBody,
-      powers,
-      numbersetInfos3f,
-      todayJcdArray,
-      ticket3f,
-      true
-    );
+    // await addTicket3f2CocomoTopN(
+    //   yyyymmdd,
+    //   simulationBetRaceResult.raceCardBody,
+    //   simulationBetRaceResult.beforeInfoBody,
+    //   powers,
+    //   numbersetInfos3f,
+    //   todayJcdArray,
+    //   ticket3f,
+    //   true
+    // );
 
     // 購入する二連単の舟券を追加する
     const ticket2t: Ticket = {
