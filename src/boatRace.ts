@@ -256,13 +256,6 @@ export async function addTicket3f2CocomoTopN(
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
-  if (raceCardBody.tbgradename !== undefined) {
-    if (raceCardBody.tbgradename === "女子") {
-      // 女子のレースは荒れる可能性が高いので賭けない
-      return;
-    }
-  }
-
   const paidOffset = 10000; // 支払ったお金の底上げ分
   const maxCount = 8; // maxCount回数を超えたら損切りする
   const wantRate = 1.9; // 儲けたいお金の倍率
@@ -386,13 +379,6 @@ export async function addTicket3f2WinnersInvestmentMethod(
   ticket: Ticket,
   isSim: boolean
 ): Promise<void> {
-  if (raceCardBody.tbgradename !== undefined) {
-    if (raceCardBody.tbgradename === "女子") {
-      // 女子のレースは荒れる可能性が高いので賭けない
-      return;
-    }
-  }
-
   const baseBet = 100;
   const selectCount = 24; // 舟券を購入するレース場の数
   // ↓「参加レース数」を最大で 3 にするように percent を調整する continuingMissCountMax=5
