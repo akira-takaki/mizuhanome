@@ -6,11 +6,14 @@
       <w>ashiya</w>
       <w>beforeinfo</w>
       <w>biwako</w>
+      <w>cocomo</w>
+      <w>dataid</w>
       <w>edogawa</w>
       <w>gamagori</w>
       <w>gradeicon</w>
       <w>hamanako</w>
       <w>heiwajima</w>
+      <w>hhmmss</w>
       <w>jnames</w>
       <w>karatsu</w>
       <w>kfrom</w>
@@ -22,6 +25,7 @@
       <w>mikuni</w>
       <w>miyajima</w>
       <w>nightflag</w>
+      <w>numberset</w>
       <w>oomura</w>
       <w>rtitle</w>
       <w>shimonoseki</w>
@@ -35,6 +39,7 @@
       <w>waka</w>
       <w>wakamatsu</w>
       <w>winddirec</w>
+      <w>yyyymmdd</w>
     </words>
   </dictionary>
 </component>
