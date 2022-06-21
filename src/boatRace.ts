@@ -30,6 +30,7 @@ import {
 import {
   currencyFormatter,
   generateNumbersetInfo,
+  getNow,
   isRough,
   NumbersetInfo,
   numbersetInfoOrderByPercent,
@@ -714,7 +715,7 @@ function addTicket2f(
  * ボートレース
  */
 export async function boatRace(): Promise<void> {
-  const today = dayjs();
+  const today = getNow();
 
   logger.info("設定ファイルの読み込み");
   let config: Config;
