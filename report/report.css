@@ -230,6 +230,11 @@ td.zero-percent-pickup {
     background-color: yellow;
 }
 
+td.zero-percent-pickup2 {
+    text-align: right;
+    background-color: khaki;
+}
+
 th.average-hitting-rate-header {
     background-color: lightgray;
 }
@@ -242,6 +247,11 @@ td.average-hitting-rate {
 td.average-hitting-rate-pickup {
     text-align: right;
     background-color: orange;
+}
+
+td.average-hitting-rate-pickup2 {
+    text-align: right;
+    background-color: orangered;
 }
 
 td.space-row {
