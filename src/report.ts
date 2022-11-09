@@ -933,32 +933,17 @@ export async function reportSummary(
     label: "的中率の平均値23%以上",
     jcdAndPercentAndNameArray: [
       {
-        jcd: 14,
-        percent: 0.133,
-        jcdName: "鳴門",
-      },
-      {
         jcd: 2,
-        percent: 0.136,
+        percent: 0.141,
         jcdName: "戸田",
       },
       {
         jcd: 5,
-        percent: 0.138,
+        percent: 0.139,
         jcdName: "多摩川",
       },
-      {
-        jcd: 6,
-        percent: 0.14,
-        jcdName: "浜名湖",
-      },
-      {
-        jcd: 13,
-        percent: 0.145,
-        jcdName: "尼崎",
-      },
     ],
-    selectCount: 3,
+    selectCount: 2,
   };
 
   const jcdAndPercentAndNameArrayArray: JcdAndPercentAndNameArray[] = [
